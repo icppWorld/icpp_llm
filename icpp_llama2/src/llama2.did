@@ -1,0 +1,55 @@
+type Prompt = 
+  record {
+    prompt         : text; 
+    steps          : nat64;  
+    temperature    : float32;
+  };
+
+type Inference = 
+  variant {
+    err: text;
+    ok: text;
+  };
+
+type Config = 
+  record {
+    dim            : int; 
+    hidden_dim     : int; 
+    n_layers       : int; 
+    n_heads        : int; 
+    n_kv_heads     : int; 
+    vocab_size     : int; 
+    seq_len        : int;  
+  };
+
+type StatusCode = nat16;
+
+type Result = 
+  variant {
+    err: StatusCode;
+    ok: StatusCode;
+  };
+
+service : {
+  // --------------------------------------------------------------------------------------------------
+  // Called automatically during INITIAL deployment
+  canister_init: () -> ();
+
+  // health endpoint (liveness)
+  health: () -> (bool);
+
+  // readiness endpoint (ready for inference)
+  ready: () -> (bool);
+
+  // --------------------------------------------------------------------------------------------------
+  reset_model: () -> (Result);
+  reset_tokenizer: () -> (Result);
+  
+  upload_model_bytes_chunk: (vec nat8) -> (Result);
+  upload_tokenizer_bytes_chunk: (vec nat8) -> (Result);
+  
+  initialize: () -> (Result);
+  get_model_config: () -> (Config) query;
+
+  inference: (Prompt) -> (Inference) query;
+}

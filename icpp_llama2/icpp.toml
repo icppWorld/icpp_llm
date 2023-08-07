@@ -1,0 +1,30 @@
+[build-wasm]
+canister          = "llama2"
+did_path          = "src/llama2.did"
+cpp_paths         = [
+                        "src/canister.cpp",
+                        "src/http.cpp",
+                        "src/upload.cpp",
+                        "src/initialize.cpp",
+                        "src/inference.cpp",
+                    ]
+cpp_header_paths  = [
+                        "src/canister.h",
+                        "src/http.h",
+                        "src/upload.h",
+                        "src/initialize.h",
+                        "src/inference.h",
+                    ]
+cpp_compile_flags = []
+cpp_link_flags    = []
+c_paths           = ["src/run.c"]
+c_header_paths    = ["src/run.h"]
+c_compile_flags   = []
+[build-native]
+cpp_paths         = ["native/main.cpp"]
+cpp_header_paths  = ["native/main.h"]
+cpp_compile_flags = []
+cpp_link_flags    = []
+c_paths           = []
+c_header_paths    = []
+c_compile_flags   = []

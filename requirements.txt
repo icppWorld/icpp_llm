@@ -1,0 +1,6 @@
+-r icpp_llama2/requirements.txt
+
+# to lint python scripts
+black
+pylint==2.13.9
+mypy
