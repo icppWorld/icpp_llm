@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+#include <stdbool.h>
+
 // ----------------------------------------------------------------------------
 // Transformer and RunState structs, and related memory management
 

@@ -1,17 +1,19 @@
 /*
 Slightly modified copy from: https://github.com/karpathy/llama2.c
 
+(-) Externalized declarations into "run.h", for use by the Canister's C++ code.
 (-) Avoid using printf
 (-) No main function
-(-) No reading of data from files
+(-) No reading of files
+    -> They are uploaded separately to the canister and stored in memory (See README)
 
 That's it. Everything else is identical...
 
 */
+#include "run.h" // ICPP
 
 #include <fcntl.h>
 #include <math.h>
-#include <stdbool.h> // ICPP
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -27,8 +29,6 @@ That's it. Everything else is identical...
 // #include <sys/mman.h>
 // #include <unistd.h>
 // #endif
-
-#include "run.h"
 
 bool malloc_run_state(RunState *s, Config *p) {
   // we calloc instead of malloc to keep valgrind happy
@@ -47,11 +47,12 @@ bool malloc_run_state(RunState *s, Config *p) {
   // ensure all mallocs went fine
   if (!s->x || !s->xb || !s->xb2 || !s->hb || !s->hb2 || !s->q || !s->k ||
       !s->v || !s->att || !s->logits || !s->key_cache || !s->value_cache) {
+    // ICPP: The calling function will trap the canister with a message
     // printf("malloc failed!\n");
     // exit(1);
-    return false; // AB: when running in a canister, caller will trap
+    return false;
   }
-  return true; // AB: all is ok
+  return true; // ICPP: all is ok
 }
 
 void free_run_state(RunState *s) {
@@ -324,9 +325,10 @@ bool bpe_encode(const char *text, char **vocab, float *vocab_scores,
     sprintf(str_buffer, "%c", *c);
     int id = str_lookup(str_buffer, vocab, vocab_size);
     if (id == -1) {
+      // ICPP: The calling function will trap the canister with a message
       //   printf("not good\n");
       //   exit(1);
-      return false; // AB: when running in a canister, caller will trap
+      return false;
     }
     tokens[*n_tokens] = id;
     (*n_tokens)++;
@@ -364,7 +366,7 @@ bool bpe_encode(const char *text, char **vocab, float *vocab_scores,
   }
 
   free(str_buffer);
-  return true; // AB: all is ok
+  return true; // ICPP: all is ok
 }
 
 // ----------------------------------------------------------------------------
