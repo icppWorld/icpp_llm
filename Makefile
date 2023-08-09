@@ -42,16 +42,42 @@ ICPP_COMPILER_ROOT := $(HOME)/.icpp/wasi-sdk-20.0
 CLANG_FORMAT = $(ICPP_COMPILER_ROOT)/bin/clang-format
 CLANG_TIDY = $(ICPP_COMPILER_ROOT)/bin/clang-tidy
 
+
 ###########################################################################
 # CI/CD - Phony Makefile targets
 #
 .PHONY: all-tests
 all-tests: all-static test-all-llms 
-	
+
+.PHONY: icpp_llama2_get_stories15M
+icpp_llama2_get_stories15M:
+	cd icpp_llama2 && \
+		mkdir -p models && \
+		wget -P models https://huggingface.co/karpathy/tinyllamas/resolve/main/stories15M.bin
+
+.PHONY: summary
+summary:
+	@echo "-------------------------------------------------------------"
+	@echo OS=$(OS)
+	@echo VERSION_DIDC=$(VERSION_DIDC)
+	@echo VERSION_CLANG=$(VERSION_CLANG)
+	@echo CLANG_FORMAT=$(CLANG_FORMAT)
+	@echo CLANG_TIDY=$(CLANG_TIDY)
+	@echo ICPP_COMPILER_ROOT=$(ICPP_COMPILER_ROOT)
+	@echo "-------------------------------------------------------------"
+
 .PHONY: test-all-llms
 test-all-llms:
 	dfx identity use default
-	cd icpp_llama2 && ./demo.sh
+	@echo "#########################################"
+	@echo "####### testing icpp_llama2 #############"
+	@echo "#########################################"
+	cd icpp_llama2 && \
+		icpp build-native && \
+		./build-native/mockic.exe && \
+		./demo.sh && \
+		pytest && \
+		dfx stop
 	
 .PHONY: all-static
 all-static: \
@@ -59,7 +85,8 @@ all-static: \
 	python-format python-lint python-type
 	
 CPP_AND_H_FILES = $(shell ls \
-icpp_llama2/*/src/*.cpp icpp_llama2/*/src/*.h)
+icpp_llama2/src/*.cpp icpp_llama2/src/*.h \
+icpp_llama2/native/*.cpp icpp_llama2/native/*.h)
 
 .PHONY: cpp-format
 cpp-format:
@@ -92,3 +119,46 @@ python-type:
 	@echo "---"
 	@echo "python-type"
 	python -m mypy --config-file .mypy.ini --show-column-numbers --strict --explicit-package-bases $(PYTHON_DIRS)
+
+
+###########################################################################
+# Toolchain installation for .github/workflows
+
+.PHONY: install-clang-ubuntu
+install-clang-ubuntu:
+	@echo "Installing clang-$(VERSION_CLANG) compiler"
+	sudo apt-get remove python3-lldb-14
+	wget https://apt.llvm.org/llvm.sh
+	chmod +x llvm.sh
+	echo | sudo ./llvm.sh $(VERSION_CLANG)
+	rm llvm.sh
+
+	@echo "Creating soft links for compiler executables"
+	sudo ln --force -s /usr/bin/clang-$(VERSION_CLANG) /usr/bin/clang
+	sudo ln --force -s /usr/bin/clang++-$(VERSION_CLANG) /usr/bin/clang++
+
+# This installs ~/bin/dfx
+# Make sure to source ~/.profile afterwards -> it adds ~/bin to the path if it exists
+.PHONY: install-dfx
+install-dfx:
+	sh -ci "$$(curl -fsSL https://sdk.dfinity.org/install.sh)"
+
+.PHONY: install-didc
+install-didc:
+	@echo "Installing didc $(VERSION_DIDC) ..."
+	sudo rm -rf /usr/local/bin/didc
+	wget https://github.com/dfinity/candid/releases/download/${VERSION_DIDC}/$(DIDC)
+	sudo mv $(DIDC) /usr/local/bin/didc
+	chmod +x /usr/local/bin/didc
+	@echo " "
+	@echo "Installed successfully in:"
+	@echo /usr/local/bin/didc
+
+.PHONY: install-jp
+install-jp:
+	sudo apt-get update && sudo apt-get install jp
+
+.PHONY: install-python
+install-python:
+	pip install --upgrade pip
+	pip install -r requirements.txt
