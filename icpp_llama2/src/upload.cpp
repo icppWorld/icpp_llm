@@ -1,5 +1,5 @@
 // Endpoints for uploading the trained model           & the tokenizer files
-// eg.                         models/stories15M.bin     tokenizers/tokenizer.bin
+// eg.                         models/stories15M.bin   & tokenizers/tokenizer.bin
 
 #include "upload.h"
 
