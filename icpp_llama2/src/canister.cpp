@@ -1,3 +1,4 @@
+// canister_init, and health & ready endpoints
 #include "canister.h"
 
 #include <string>
@@ -47,8 +48,6 @@ void print_canister_metadata() {
 }
 
 // --------------------------------------------------------------------------------------------------
-// Called using dfx during deployment
-
 // See: https://internetcomputer.org/docs/current/references/ic-interface-spec#system-api-init
 // - This method will be called automatically during INITIAL deployment
 void canister_init() {

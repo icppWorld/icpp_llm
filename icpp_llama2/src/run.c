@@ -1,21 +1,17 @@
 /*
-Refactored copy from: https://github.com/karpathy/llama2.c
+Slightly modified copy from: https://github.com/karpathy/llama2.c
 
-With compiler flag to by-pass main when running on IC canister
-*/
-/*
-Inference for Llama-2 Transformer model in pure C.
+(-) Avoid using printf
+(-) No main function
+(-) No reading of data from files
 
-Example compile: (see README for more details)
-$ gcc -O3 -o run run.c -lm
+That's it. Everything else is identical...
 
-Then run with:
-$ ./run
 */
 
 #include <fcntl.h>
 #include <math.h>
-#include <stdbool.h> // AB
+#include <stdbool.h> // ICPP
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

@@ -1,4 +1,5 @@
-// Uploads the stories15M.bin & tokenizer.bin into byte vectors
+// Endpoints for uploading the trained model           & the tokenizer files
+// eg.                         models/stories15M.bin     tokenizers/tokenizer.bin
 
 #include "upload.h"
 

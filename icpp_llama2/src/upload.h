@@ -4,14 +4,14 @@
 #include <cstdint>
 #include <vector>
 
-// The uploaded bytes of the trained model (models/stories15M.bin)
+// The uploaded bytes of the trained model (eg. models/stories15M.bin)
 class ModelBytes {
 public:
   std::vector<uint8_t> vec;
 };
 extern ModelBytes *p_model_bytes;
 
-// The uploaded bytes of the tokenizer (tokenizers/tokenizer.bin)
+// The uploaded bytes of the tokenizer (eg. tokenizers/tokenizer.bin)
 class TokenizerBytes {
 public:
   std::vector<uint8_t> vec;

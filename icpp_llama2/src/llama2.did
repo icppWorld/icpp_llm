@@ -1,3 +1,6 @@
+// Candid interface of the canister endpoints
+// https://internetcomputer.org/docs/current/references/candid-ref/
+
 type Prompt = 
   record {
     prompt         : text; 
@@ -31,25 +34,14 @@ type Result =
   };
 
 service : {
-  // --------------------------------------------------------------------------------------------------
-  // Called automatically during INITIAL deployment
   canister_init: () -> ();
-
-  // health endpoint (liveness)
-  health: () -> (bool);
-
-  // readiness endpoint (ready for inference)
-  ready: () -> (bool);
-
-  // --------------------------------------------------------------------------------------------------
-  reset_model: () -> (Result);
-  reset_tokenizer: () -> (Result);
-  
-  upload_model_bytes_chunk: (vec nat8) -> (Result);
+  health: ()                               -> (bool);
+  ready: ()                                -> (bool);
+  reset_model: ()                          -> (Result);
+  reset_tokenizer: ()                      -> (Result);
+  upload_model_bytes_chunk: (vec nat8)     -> (Result);
   upload_tokenizer_bytes_chunk: (vec nat8) -> (Result);
-  
-  initialize: () -> (Result);
-  get_model_config: () -> (Config) query;
-
-  inference: (Prompt) -> (Inference) query;
+  initialize: ()                           -> (Result);
+  get_model_config: ()                     -> (Config)    query;
+  inference: (Prompt)                      -> (Inference) query;
 }

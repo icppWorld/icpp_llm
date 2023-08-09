@@ -1,4 +1,4 @@
-// Inference
+// Inference endpoint generating a token string for a given prompt
 
 #include "inference.h"
 

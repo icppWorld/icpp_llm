@@ -1,4 +1,4 @@
-// Initializes the canister and the run time memory
+// Initializes llama2's config, weights & tokenizer with the uploaded file-bytes
 
 #include "initialize.h"
 
