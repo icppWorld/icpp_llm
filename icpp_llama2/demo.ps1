@@ -1,19 +1,6 @@
 #######################################################################
-# This is a Windows PowerShell script
-#
-# (-) Install icpp-pro or icpp-free in a python environment on windows
-# (-) Install dfx  in wsl
-# (-) In a Windows PowerShell (*):
-#
-#     .\demo.ps1
-#
-# (*) The Miniconda Powershell is highly recommended
-#
+# For Windows PowerShell (Miniconda is recommended)
 #######################################################################
-Write-Host " "
-Write-Host "--------------------------------------------------"
-Write-Host "Make sure the LLM specific python dependencies are installed"
-pip install -r requirements.txt
 
 Write-Host " "
 Write-Host "--------------------------------------------------"

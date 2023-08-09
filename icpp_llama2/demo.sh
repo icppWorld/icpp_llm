@@ -1,19 +1,8 @@
 #!/bin/sh
 
 #######################################################################
-# This is a Linux & Mac shell script
-#
-# (-) Install icpp-pro in a python environment
-# (-) Install dfx
-# (-) In a terminal:
-#
-#     ./demo.sh
-#
+# For Linux & Mac
 #######################################################################
-echo " "
-echo "--------------------------------------------------"
-echo "Make sure the LLM specific python dependencies are installed"
-pip install -r requirements.txt
 
 echo " "
 echo "--------------------------------------------------"
