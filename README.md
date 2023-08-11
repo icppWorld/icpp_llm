@@ -7,7 +7,7 @@ Video: [How to run llama2.c on the Internet Computer](https://www.loom.com/share
 After deploying icpp_llama2, you can call the llama2 canister's inference endpoint:
 
 ```bash
-dfx canister call llama2 inference '(record {"prompt" = "" : text; "steps" = 20 : nat64; "temperature" = 0.9 : float32;})'
+dfx canister call llama2 inference '(record {prompt = "" : text; steps = 20 : nat64; temperature = 0.9 : float32; topp = 1.0 : float32;})'
 (
   variant {
     ok = "Once upon a time, there was a little boat named Bob. Bob loved to float on the water"

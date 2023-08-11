@@ -5,9 +5,7 @@ import argparse
 
 def parse_args() -> argparse.Namespace:
     """Returns the command line arguments"""
-    parser = argparse.ArgumentParser(
-        description="Load a model and set temperature and steps"
-    )
+    parser = argparse.ArgumentParser(description="Load a model and set parameters")
     parser.add_argument(
         "--network",
         type=str,
@@ -46,6 +44,12 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--temperature", type=float, default=0.9, help="Temperature (e.g. 1.0, or 0.0)"
+    )
+    parser.add_argument(
+        "--topp",
+        type=float,
+        default=1.0,
+        help="p value in top-p (nucleus) sampling. default 1.0 (=off)",
     )
     parser.add_argument(
         "--steps",

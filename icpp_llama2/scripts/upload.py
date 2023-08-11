@@ -53,6 +53,7 @@ def main() -> int:
     tokenizer_path = ROOT_PATH / args.tokenizer
     chunk_size_mb = args.chunksize
     temperature = args.temperature
+    topp = args.topp
     steps = args.steps
 
     dfx_json_path = ROOT_PATH / "dfx.json"
@@ -64,8 +65,9 @@ def main() -> int:
         f"\n - dfx_json_path  = {dfx_json_path}"
         f"\n - candid_path    = {candid_path}"
         f"\n - model_path     = {model_path}"
-        f"\n - tokenizer_path     = {tokenizer_path}"
+        f"\n - tokenizer_path = {tokenizer_path}"
         f"\n - temperature    = {temperature}"
+        f"\n - topp           = {topp}"
         f"\n - steps          = {steps}"
     )
 
@@ -78,6 +80,9 @@ def main() -> int:
     response = canister_llama2.health()
     if response == [True]:
         print("Ok!")
+    else:
+        print("Not OK, response is:")
+        print(response)
 
     # ---------------------------------------------------------------------------
     # THE MODEL FILE

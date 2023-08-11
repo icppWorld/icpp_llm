@@ -6,6 +6,7 @@ type Prompt =
     prompt         : text; 
     steps          : nat64;  
     temperature    : float32;
+    topp           : float32;
   };
 
 type Inference = 

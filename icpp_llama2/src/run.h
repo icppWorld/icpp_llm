@@ -38,24 +38,30 @@ typedef struct {
   // final rmsnorm
   float *rms_final_weight; // (dim,)
   // freq_cis for RoPE relatively positional embeddings
-  float *freq_cis_real; // (seq_len, dim/2)
-  float *freq_cis_imag; // (seq_len, dim/2)
+  float *freq_cis_real; // (seq_len, head_size/2)
+  float *freq_cis_imag; // (seq_len, head_size/2)
   // (optional) classifier weights for the logits, on the last layer
   float *wcls;
 } TransformerWeights;
 
 typedef struct {
+  float prob;
+  int index;
+} ProbIndex; // struct used when sorting probabilities during top-p sampling
+
+typedef struct {
   // current wave of activations
-  float *x;      // activation at current time stamp (dim,)
-  float *xb;     // same, but inside a residual branch (dim,)
-  float *xb2;    // an additional buffer just for convenience (dim,)
-  float *hb;     // buffer for hidden dimension in the ffn (hidden_dim,)
-  float *hb2;    // buffer for hidden dimension in the ffn (hidden_dim,)
-  float *q;      // query (dim,)
-  float *k;      // key (dim,)
-  float *v;      // value (dim,)
-  float *att;    // buffer for scores/attention values (n_heads, seq_len)
-  float *logits; // output logits
+  float *x;             // activation at current time stamp (dim,)
+  float *xb;            // same, but inside a residual branch (dim,)
+  float *xb2;           // an additional buffer just for convenience (dim,)
+  float *hb;            // buffer for hidden dimension in the ffn (hidden_dim,)
+  float *hb2;           // buffer for hidden dimension in the ffn (hidden_dim,)
+  float *q;             // query (dim,)
+  float *k;             // key (dim,)
+  float *v;             // value (dim,)
+  float *att;           // buffer for scores/attention values (n_heads, seq_len)
+  float *logits;        // output logits
+  ProbIndex *probindex; // buffer used in top-p sampling
   // kv cache
   float *key_cache;   // (layer, seq_len, dim)
   float *value_cache; // (layer, seq_len, dim)
@@ -70,9 +76,8 @@ extern char **vocab;
 extern float *vocab_scores;
 extern unsigned int max_token_length;
 
-// For each inference
+// At inference
 extern unsigned long long rng_seed;
-extern RunState state;
 
 bool malloc_run_state(RunState *s, Config *p);
 void free_run_state(RunState *s);
@@ -86,6 +91,7 @@ void transformer(int token, int pos, Config *p, RunState *s,
 int argmax(float *v, int n);
 void softmax(float *x, int size);
 int sample(float *probabilities, int n);
+int sample_topp(float *probabilities, int n, float topp, ProbIndex *probindex);
 
 #ifdef __cplusplus
 }
