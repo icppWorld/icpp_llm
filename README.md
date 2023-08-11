@@ -18,9 +18,10 @@ dfx canister call llama2 inference '(record {prompt = "" : text; steps = 20 : na
 
 ## The LLMs included in this repo
 
-| LLM folder        | content                                                      |
+| LLM folder        | reference                                                      |
 | ------------- | ------------------------------------------------------------ |
-| icpp_llama2   | [karpathy/llama2.c](https://github.com/karpathy/llama2.c) for the Internet Computer |
+| [icpp_llama2](https://github.com/icppWorld/icpp-llm/tree/main/icpp_llama2)   | [karpathy/llama2.c](https://github.com/karpathy/llama2.c) |
+
 
 ## Instructions
 
