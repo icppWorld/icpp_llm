@@ -2,6 +2,8 @@
 
 # LLMs for the Internet Computer
 
+![icpp-llm logo](./assets/icpp-llm-logo.png)
+
 Video: [How to run llama2.c on the Internet Computer](https://www.loom.com/share/a065b678df63462fb2f637d1b550b5d2?sid=1aeee693-25c0-4d1f-be0c-8231b53eb742)
 
 # Try it
