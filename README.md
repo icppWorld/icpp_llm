@@ -33,3 +33,9 @@ dfx canister call --network ic 4c4bn-daaaa-aaaag-abvcq-cai inference '(record {p
 ## Instructions
 
 See the README in each LLM folder
+
+
+## Support
+
+For support, kindly create a GitHub Issue as outlined in the [Support](https://docs.icpp.world/support.html) documentation page.
+  
