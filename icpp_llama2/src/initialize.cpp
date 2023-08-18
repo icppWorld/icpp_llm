@@ -58,6 +58,19 @@ void initialize() {
   int *data = reinterpret_cast<int *>(p_model_bytes->vec.data());
   memcpy(&config, data, sizeof(Config));
 
+  IC_API::debug_print("-------------------------------------");
+  IC_API::debug_print("config.dim        = " + std::to_string(config.dim));
+  IC_API::debug_print("config.hidden_dim = " +
+                      std::to_string(config.hidden_dim));
+  IC_API::debug_print("config.n_layers   = " + std::to_string(config.n_layers));
+  IC_API::debug_print("config.n_heads    = " + std::to_string(config.n_heads));
+  IC_API::debug_print("config.n_kv_heads = " +
+                      std::to_string(config.n_kv_heads));
+  IC_API::debug_print("config.vocab_size = " +
+                      std::to_string(config.vocab_size));
+  IC_API::debug_print("config.seq_len    = " + std::to_string(config.seq_len));
+  IC_API::debug_print("-------------------------------------");
+
   // negative vocab size is hacky way of signaling unshared weights. bit yikes.
   int shared_weights = config.vocab_size > 0 ? 1 : 0;
   config.vocab_size = abs(config.vocab_size);
