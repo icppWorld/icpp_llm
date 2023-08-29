@@ -53,8 +53,6 @@ dfx canister call --network ic 4c4bn-daaaa-aaaag-abvcq-cai inference '(record {p
    Invoke-WebRequest -Uri https://huggingface.co/karpathy/tinyllamas/resolve/main/stories15M.bin -OutFile .\models\stories15M.bin
    ```
 
-   
-
 - The *demo* script starts the local network, deploys llama2, and uploads the model & tokenizer:
   - `./demo.sh`  , on Linux / Mac
   - `.\demo.ps1` , in Windows PowerShell (Miniconda recommended)
@@ -74,3 +72,11 @@ dfx canister call --network ic 4c4bn-daaaa-aaaag-abvcq-cai inference '(record {p
 
 - When asking llama2 to generate a story of 25 steps or more, the canister throws an error due to a current limit on number of instructions per message.
 - The weights are stored in static/global memory, so they are Orthogonally Persisted. Canisters have a 4 Gb limit at the moment.
+
+# Fine tuning
+
+  When making your own checkpoint via fine-tuning, make sure to train with the correct version of karpathy/llama2.c:
+
+  | release | reference (commit sha)                                                     |
+  | --------| ---------------------------------------------------- |
+  | 0.1.0 | [karpathy/llama2.c](https://github.com/karpathy/llama2.c) (b28c1e26c5ab5660267633e1bdc910a43b7255bf) |
