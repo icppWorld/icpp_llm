@@ -19,7 +19,7 @@ public:
   std::string prompt{""};
   uint64_t steps{256};
   float temperature{1.0};
-  float topp{1.0};
+  float topp{0.9};
 };
 
 void print_prompt(const Prompt &prompt) {
@@ -61,7 +61,7 @@ std::string generate(IC_API ic_api, const Prompt &prompt_,
   int *prompt_tokens = NULL;
   int num_prompt_tokens = 0;
   if (prompt != NULL) {
-    prompt_tokens = (int *)malloc(strlen(prompt) * sizeof(int));
+    prompt_tokens = (int *)malloc((strlen(prompt) + 1) * sizeof(int));
     if (!bpe_encode(prompt, vocab, vocab_scores, config.vocab_size,
                     max_token_length, prompt_tokens, &num_prompt_tokens))
       IC_API::trap("ERROR: bpe_encode of the prompt failed.");
@@ -130,8 +130,22 @@ std::string generate(IC_API ic_api, const Prompt &prompt_,
     // following BOS (1) token, sentencepiece decoder strips any leading whitespace (see PR #89)
     char *token_str =
         (token == 1 && vocab[next][0] == ' ') ? vocab[next] + 1 : vocab[next];
-    output += token_str;
-    IC_API::debug_print(output);
+    // careful, some tokens designate raw bytes, and look like e.g. '<0x01>'
+    unsigned char byte_val;
+    if (sscanf(token_str, "<0x%02hhX>", &byte_val) == 1) {
+      // ok this token is a raw byte token, carefuly to only print printable chars or whitespace
+      // some of the other bytes can be various control codes, backspace, etc. => skip
+      if (isprint(byte_val) || isspace(byte_val)) {
+        char byte_piece[2];
+        byte_piece[0] = byte_val;
+        byte_piece[1] = '\0';
+        output += byte_piece;
+      }
+    } else {
+      output += token_str;
+    }
+
+    // IC_API::debug_print(output);
     token = next;
 
     // init the timer here because the first iteration can be slower
@@ -150,7 +164,7 @@ std::string generate(IC_API ic_api, const Prompt &prompt_,
   free_run_state(&state);
   if (prompt_tokens != NULL) free(prompt_tokens);
 
-  IC_API::debug_print(output);
+  // IC_API::debug_print(output);
   return output;
 }
 
