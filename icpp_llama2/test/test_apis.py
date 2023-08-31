@@ -19,39 +19,88 @@ CANISTER_NAME = "llama2"
 
 
 def test__health(identity_anonymous: dict[str, str], network: str) -> None:
+    # for IC network, the update calls take longer
+    update_timeout_seconds = 3
+    if network == "ic":
+        update_timeout_seconds = 10
+
     response = call_canister_api(
         dfx_json_path=DFX_JSON_PATH,
         canister_name=CANISTER_NAME,
         canister_method="health",
         canister_argument="()",
         network=network,
+        timeout_seconds=update_timeout_seconds,
     )
     expected_response = "(true)"
     assert response == expected_response
 
 
 def test__ready(identity_anonymous: dict[str, str], network: str) -> None:
+    # for IC network, the update calls take longer
+    update_timeout_seconds = 3
+    if network == "ic":
+        update_timeout_seconds = 10
+
     response = call_canister_api(
         dfx_json_path=DFX_JSON_PATH,
         canister_name=CANISTER_NAME,
         canister_method="ready",
         canister_argument="()",
         network=network,
+        timeout_seconds=update_timeout_seconds,
     )
     expected_response = "(true)"
     assert response == expected_response
 
 
 def test__reset_model_err(identity_anonymous: dict[str, str], network: str) -> None:
+    # for IC network, the update calls take longer
+    update_timeout_seconds = 3
+    if network == "ic":
+        update_timeout_seconds = 10
+
     response = call_canister_api(
         dfx_json_path=DFX_JSON_PATH,
         canister_name=CANISTER_NAME,
         canister_method="reset_model",
         canister_argument="()",
         network=network,
+        timeout_seconds=update_timeout_seconds,
     )
     expected_response = "(variant { err = 401 : nat16 })"
     assert response == expected_response
 
 
-# TODO -- more testing
+def test__inference_1(identity_anonymous: dict[str, str], network: str) -> None:
+    # for IC network, the update calls take longer
+    update_timeout_seconds = 3
+    if network == "ic":
+        update_timeout_seconds = 10
+
+    response = call_canister_api(
+        dfx_json_path=DFX_JSON_PATH,
+        canister_name=CANISTER_NAME,
+        canister_method="inference",
+        canister_argument='(record {prompt = "" : text; steps = 20 : nat64; temperature = 0.9 : float32; topp = 0.9 : float32;})',
+        network=network,
+        timeout_seconds=update_timeout_seconds,
+    )
+    assert "ok" in response
+
+
+def test__inference_2(identity_anonymous: dict[str, str], network: str) -> None:
+    # for IC network, the update calls take longer
+    update_timeout_seconds = 3
+    if network == "ic":
+        update_timeout_seconds = 10
+
+    response = call_canister_api(
+        dfx_json_path=DFX_JSON_PATH,
+        canister_name=CANISTER_NAME,
+        canister_method="inference",
+        canister_argument='(record {prompt = "Lilly " : text; steps = 19 : nat64; temperature = 0.9 : float32; topp = 0.9 : float32;})',
+        network=network,
+        timeout_seconds=update_timeout_seconds,
+    )
+    assert "ok" in response
