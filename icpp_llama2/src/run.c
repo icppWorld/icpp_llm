@@ -485,7 +485,12 @@ int str_lookup(char *str, TokenIndex *sorted_vocab, int vocab_size) {
 void encode(Tokenizer* t, const char *text, int8_t bos, int8_t eos, int *tokens, int *n_tokens) {
     // encode the string text (input) into an upper-bound preallocated tokens[] array
     // bos != 0 means prepend the BOS token (=1), eos != 0 means append the EOS token (=2)
-    if (text == NULL) { fprintf(stderr, "cannot encode NULL text\n"); exit(EXIT_FAILURE); }
+
+    // ICPP: We made sure this does not happen when calling encode.
+    if (text == NULL) { 
+        return;
+        // fprintf(stderr, "cannot encode NULL text\n"); exit(EXIT_FAILURE); 
+        }
 
     if (t->sorted_vocab == NULL) {
         // lazily malloc and sort the vocabulary

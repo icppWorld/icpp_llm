@@ -48,7 +48,7 @@ dfx canister call llama2 ready
 echo " "
 echo "--------------------------------------------------"
 echo "Inference call  (Generate a story...)"
-dfx canister call llama2 inference '(record {prompt = "" : text; steps = 20 : nat64; temperature = 0.9 : float32; topp = 0.9 : float32; rng_seed = 0 : nat64;})'
+dfx canister call llama2 inference '(record {prompt = "" : text; steps = 19 : nat64; temperature = 0.9 : float32; topp = 0.9 : float32; rng_seed = 0 : nat64;})'
 dfx canister call llama2 inference '(record {prompt = "Lilly " : text; steps = 19 : nat64; temperature = 0.9 : float32; topp = 0.9 : float32; rng_seed = 0 : nat64;})'
 
 # #######################################################################
