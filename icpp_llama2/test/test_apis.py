@@ -82,7 +82,7 @@ def test__inference_1(identity_anonymous: dict[str, str], network: str) -> None:
         dfx_json_path=DFX_JSON_PATH,
         canister_name=CANISTER_NAME,
         canister_method="inference",
-        canister_argument='(record {prompt = "" : text; steps = 20 : nat64; temperature = 0.9 : float32; topp = 0.9 : float32; rng_seed = 0 : nat64;})',
+        canister_argument='(record {prompt = "" : text; steps = 19 : nat64; temperature = 0.9 : float32; topp = 0.9 : float32; rng_seed = 0 : nat64;})',
         network=network,
         timeout_seconds=update_timeout_seconds,
     )
