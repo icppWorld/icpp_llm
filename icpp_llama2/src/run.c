@@ -486,6 +486,9 @@ void encode(Tokenizer* t, const char *text, int8_t bos, int8_t eos, int *tokens,
     // encode the string text (input) into an upper-bound preallocated tokens[] array
     // bos != 0 means prepend the BOS token (=1), eos != 0 means append the EOS token (=2)
 
+    // start at 0 tokens
+    *n_tokens = 0;
+
     // ICPP: We made sure this does not happen when calling encode.
     if (text == NULL) { 
         return;
@@ -507,10 +510,9 @@ void encode(Tokenizer* t, const char *text, int8_t bos, int8_t eos, int *tokens,
     // create a temporary buffer that will store merge candidates of always two consecutive tokens
     // *2 for concat, +1 for null terminator +2 for UTF8 (in case max_token_length is 1)
     char* str_buffer = malloc((t->max_token_length*2 +1 +2) * sizeof(char));
+    if (!str_buffer)
+        return; // ICPP: allocation failed. Just return and it will trap
     size_t str_len = 0;
-
-    // start at 0 tokens
-    *n_tokens = 0;
 
     // add optional BOS (=1) token, if desired
     if (bos) tokens[(*n_tokens)++] = 1;

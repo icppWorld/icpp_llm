@@ -70,6 +70,8 @@ std::string generate(IC_API ic_api, Transformer *transformer,
 
   // +3 for '\0', ?BOS, ?EOS
   int *prompt_tokens = (int *)malloc((prompt.length() + 3) * sizeof(int));
+  if (!prompt_tokens)
+    IC_API::trap("Failed to allocate memory for prompt_tokens.");
   encode(tokenizer, prompt.c_str(), 1, 0, prompt_tokens, &num_prompt_tokens);
   if (num_prompt_tokens < 1) {
     IC_API::trap("something is wrong, expected at least 1 prompt token");
