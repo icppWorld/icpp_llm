@@ -492,15 +492,17 @@ void encode(Tokenizer* t, const char *text, int8_t bos, int8_t eos, int *tokens,
         // fprintf(stderr, "cannot encode NULL text\n"); exit(EXIT_FAILURE); 
         }
 
-    if (t->sorted_vocab == NULL) {
-        // lazily malloc and sort the vocabulary
-        t->sorted_vocab = malloc(t->vocab_size * sizeof(TokenIndex));
-        for (int i = 0; i < t->vocab_size; i++) {
-            t->sorted_vocab[i].str = t->vocab[i];
-            t->sorted_vocab[i].id = i;
-        }
-        qsort(t->sorted_vocab, t->vocab_size, sizeof(TokenIndex), compare_tokens);
-    }
+    // ICPP: we do not want to do this lazily, because during a query, it is not stored
+    //       instead, we do this as part of initialize.cpp
+    // if (t->sorted_vocab == NULL) {
+    //     // lazily malloc and sort the vocabulary
+    //     t->sorted_vocab = malloc(t->vocab_size * sizeof(TokenIndex));
+    //     for (int i = 0; i < t->vocab_size; i++) {
+    //         t->sorted_vocab[i].str = t->vocab[i];
+    //         t->sorted_vocab[i].id = i;
+    //     }
+    //     qsort(t->sorted_vocab, t->vocab_size, sizeof(TokenIndex), compare_tokens);
+    // }
 
     // create a temporary buffer that will store merge candidates of always two consecutive tokens
     // *2 for concat, +1 for null terminator +2 for UTF8 (in case max_token_length is 1)
