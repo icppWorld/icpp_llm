@@ -13,75 +13,141 @@
 
 #include "run.h"
 
-Config config;
-TransformerWeights weights;
-char **vocab;
-float *vocab_scores;
-unsigned int max_token_length;
+Transformer transformer;
+Tokenizer tokenizer;
 
-// This is an exact copy of run.c,
+// This is an exact copy of code in this method run.c,
 // Modified to read the data from the uploaded tokenizer.bin bytes
-void initialize_tokenizer() {
+void build_tokenizer(Tokenizer *t, int vocab_size) {
+  // i should have written the vocab_size into the tokenizer file... sigh
+  t->vocab_size = vocab_size;
+  // malloc space to hold the scores and the strings
+  t->vocab = (char **)malloc(vocab_size * sizeof(char *));
+  t->vocab_scores = (float *)malloc(vocab_size * sizeof(float));
+  t->sorted_vocab = NULL; // initialized lazily
+  for (int i = 0; i < 256; i++) {
+    t->byte_pieces[i * 2] = (unsigned char)i;
+    t->byte_pieces[i * 2 + 1] = '\0';
+  }
+
+  // read in the file
+  // FILE *file = fopen(tokenizer_path, "rb");
+  // if (!file) {
+  //   fprintf(stderr, "couldn't load %s\n", tokenizer_path);
+  //   exit(EXIT_FAILURE);
+  // }
   // create a pointer to the start of the vector data
   const uint8_t *data_ptr = p_tokenizer_bytes->vec.data();
 
-  // allocate memory for vocab and vocab_scores
-  vocab = (char **)malloc(config.vocab_size * sizeof(char *));
-  vocab_scores = (float *)malloc(config.vocab_size * sizeof(float));
-
+  // if (fread(&t->max_token_length, sizeof(int), 1, file) != 1) {
+  //   fprintf(stderr, "failed read\n");
+  //   exit(EXIT_FAILURE);
+  // }
   // read max_token_length from data
-  memcpy(&max_token_length, data_ptr, sizeof(int));
+  memcpy(&t->max_token_length, data_ptr, sizeof(int));
   data_ptr += sizeof(int);
 
   int len;
-  for (int i = 0; i < config.vocab_size; i++) {
-    memcpy(vocab_scores + i, data_ptr, sizeof(float));
+  for (int i = 0; i < vocab_size; i++) {
+    // if (fread(t->vocab_scores + i, sizeof(float), 1, file) != 1) {
+    //   fprintf(stderr, "failed read\n");
+    //   exit(EXIT_FAILURE);
+    // }
+    memcpy(t->vocab_scores + i, data_ptr, sizeof(float));
     data_ptr += sizeof(float);
 
+    // if (fread(&len, sizeof(int), 1, file) != 1) {
+    //   fprintf(stderr, "failed read\n");
+    //   exit(EXIT_FAILURE);
+    // }
     memcpy(&len, data_ptr, sizeof(int));
     data_ptr += sizeof(int);
 
-    vocab[i] = (char *)malloc(len + 1);
-
-    memcpy(vocab[i], data_ptr, len);
+    t->vocab[i] = (char *)malloc(len + 1);
+    // if (fread(t->vocab[i], len, 1, file) != 1) {
+    //   fprintf(stderr, "failed read\n");
+    //   exit(EXIT_FAILURE);
+    // }
+    memcpy(t->vocab[i], data_ptr, len);
     data_ptr += len;
 
-    vocab[i][len] = '\0'; // add the string terminating token
+    t->vocab[i][len] = '\0'; // add the string terminating token
   }
+  // fclose(file);
+}
+
+// This is an exact copy of code in these methods of run.c
+// - read_checkpoint
+// - build_transformer
+// - free_transformer
+// Modified to read the data from the uploaded tokenizer.bin bytes
+void read_checkpoint(Config *config, TransformerWeights *weights) {
+  // FILE *file = fopen(checkpoint, "rb");
+  // if (!file) {
+  //   fprintf(stderr, "Couldn't open file %s\n", checkpoint);
+  //   exit(EXIT_FAILURE);
+  // }
+  // // read in the config header
+  // if (fread(config, sizeof(Config), 1, file) != 1) {
+  //   exit(EXIT_FAILURE);
+  // }
+  // Copy the data into config
+  int *data = reinterpret_cast<int *>(p_model_bytes->vec.data());
+  memcpy(config, data, sizeof(Config));
+
+  IC_API::debug_print("-------------------------------------");
+  IC_API::debug_print("config.dim        = " + std::to_string(config->dim));
+  IC_API::debug_print("config.hidden_dim = " +
+                      std::to_string(config->hidden_dim));
+  IC_API::debug_print("config.n_layers   = " +
+                      std::to_string(config->n_layers));
+  IC_API::debug_print("config.n_heads    = " + std::to_string(config->n_heads));
+  IC_API::debug_print("config.n_kv_heads = " +
+                      std::to_string(config->n_kv_heads));
+  IC_API::debug_print("config.vocab_size = " +
+                      std::to_string(config->vocab_size));
+  IC_API::debug_print("config.seq_len    = " + std::to_string(config->seq_len));
+  IC_API::debug_print("-------------------------------------");
+
+  // negative vocab size is hacky way of signaling unshared weights. bit yikes.
+  int shared_weights = config->vocab_size > 0 ? 1 : 0;
+  config->vocab_size = abs(config->vocab_size);
+  // // figure out the file size
+  // fseek(file, 0, SEEK_END); // move file pointer to end of file
+  // *file_size = ftell(file); // get the file size, in bytes
+  // fclose(file);
+  // // memory map the Transformer weights into the data pointer
+  // *fd = open(checkpoint, O_RDONLY); // open in read only mode
+  // if (*fd == -1) {
+  //   fprintf(stderr, "open failed!\n");
+  //   exit(EXIT_FAILURE);
+  // }
+  // *data = mmap(NULL, *file_size, PROT_READ, MAP_PRIVATE, *fd, 0);
+  // if (*data == MAP_FAILED) {
+  //   fprintf(stderr, "mmap failed!\n");
+  //   exit(EXIT_FAILURE);
+  // }
+  // float *weights_ptr = *data + sizeof(Config) / sizeof(float);
+  // Copy the data into weights
+  float *weights_ptr =
+      reinterpret_cast<float *>(data + sizeof(Config) / sizeof(int));
+
+  memory_map_weights(weights, config, weights_ptr, shared_weights);
+}
+
+void build_transformer(Transformer *t) {
+  // read in the Config and the Weights from the checkpoint
+  read_checkpoint(&t->config, &t->weights);
+  // allocate the RunState buffers
+  malloc_run_state(&t->state, &t->config);
 }
 
 void initialize() {
   IC_API ic_api(CanisterUpdate{std::string(__func__)}, false);
   if (!is_owner(ic_api)) return;
 
-  // Copy the data into config
-  int *data = reinterpret_cast<int *>(p_model_bytes->vec.data());
-  memcpy(&config, data, sizeof(Config));
-
-  IC_API::debug_print("-------------------------------------");
-  IC_API::debug_print("config.dim        = " + std::to_string(config.dim));
-  IC_API::debug_print("config.hidden_dim = " +
-                      std::to_string(config.hidden_dim));
-  IC_API::debug_print("config.n_layers   = " + std::to_string(config.n_layers));
-  IC_API::debug_print("config.n_heads    = " + std::to_string(config.n_heads));
-  IC_API::debug_print("config.n_kv_heads = " +
-                      std::to_string(config.n_kv_heads));
-  IC_API::debug_print("config.vocab_size = " +
-                      std::to_string(config.vocab_size));
-  IC_API::debug_print("config.seq_len    = " + std::to_string(config.seq_len));
-  IC_API::debug_print("-------------------------------------");
-
-  // negative vocab size is hacky way of signaling unshared weights. bit yikes.
-  int shared_weights = config.vocab_size > 0 ? 1 : 0;
-  config.vocab_size = abs(config.vocab_size);
-
-  // Copy the data into weights
-  float *weights_ptr =
-      reinterpret_cast<float *>(data + sizeof(Config) / sizeof(int));
-  checkpoint_init_weights(&weights, &config, weights_ptr, shared_weights);
-
-  // initialize tokenizer
-  initialize_tokenizer();
+  build_transformer(&transformer);
+  build_tokenizer(&tokenizer, transformer.config.vocab_size);
 
   ready_for_inference = true;
 
@@ -90,6 +156,7 @@ void initialize() {
 }
 
 void print_config() {
+  Config config = transformer.config;
   std::string msg = std::string(__func__) + "model config:";
   msg += "\nconfig.dim             = " + std::to_string(config.dim);
   msg += "\nconfig.hidden_dim      = " + std::to_string(config.hidden_dim);
@@ -109,6 +176,7 @@ void get_model_config() {
   print_config();
 
   CandidTypeRecord r_out;
+  Config config = transformer.config;
   r_out.append("dim", CandidTypeInt{config.dim});
   r_out.append("hidden_dim", CandidTypeInt{config.hidden_dim});
   r_out.append("n_layers", CandidTypeInt{config.n_layers});

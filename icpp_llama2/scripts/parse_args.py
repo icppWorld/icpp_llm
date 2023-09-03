@@ -57,6 +57,12 @@ def parse_args() -> argparse.Namespace:
         default=256,
         help="Max number of steps to run for, 0: use seq_len",
     )
+    parser.add_argument(
+        "--rng-seed",
+        type=int,
+        default=0,
+        help="seed, 0: use random seed based on time",
+    )
 
     args = parser.parse_args()
     return args

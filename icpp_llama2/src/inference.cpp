@@ -20,151 +20,109 @@ public:
   uint64_t steps{256};
   float temperature{1.0};
   float topp{0.9};
+  uint64_t rng_seed{0};
 };
 
-void print_prompt(const Prompt &prompt) {
+void print_prompt(const Prompt &wire_prompt) {
   std::string msg = std::string(__func__) + "- model config:";
-  msg += "\nprompt.prompt       = " + prompt.prompt;
-  msg += "\nprompt.steps        = " + std::to_string(prompt.steps);
-  msg += "\nprompt.temperature  = " + std::to_string(prompt.temperature);
-  msg += "\nprompt.topp         = " + std::to_string(prompt.topp);
+  msg += "\nwire_prompt.prompt       = " + wire_prompt.prompt;
+  msg += "\nwire_prompt.steps        = " + std::to_string(wire_prompt.steps);
+  msg +=
+      "\nwire_prompt.temperature  = " + std::to_string(wire_prompt.temperature);
+  msg += "\nwire_prompt.topp         = " + std::to_string(wire_prompt.topp);
+  msg += "\nwire_prompt.rng_seed     = " + std::to_string(wire_prompt.rng_seed);
   IC_API::debug_print(msg);
 }
 
-// Copied from main() of run.c and modified slightly
-std::string generate(IC_API ic_api, const Prompt &prompt_,
-                     uint64_t *token_per_sec, std::string *sampling_method) {
+// Replacement for run.c safe_printf
+std::string safe_stringify(const char *piece) {
+  std::string result;
+
+  // piece might be a raw byte token, and we only want to convert printable chars or whitespace
+  // because some of the other bytes can be various control codes, backspace, etc.
+  if (piece == NULL) {
+    return result;
+  }
+
+  if (piece[0] == '\0') {
+    return result;
+  }
+
+  if (piece[1] == '\0') {
+    unsigned char byte_val = piece[0];
+    if (!(isprint(byte_val) || isspace(byte_val))) {
+      return result; // bad byte, don't include it in the result
+    }
+  }
+
+  result = piece; // Assign the valid string to the result
+  return result;
+}
+
+// Copied from run.c and modified slightly
+std::string generate(IC_API ic_api, Transformer *transformer,
+                     Tokenizer *tokenizer, Sampler *sampler, std::string prompt,
+                     int steps) {
   std::string output;
 
-  // 0.0 = greedy deterministic. 1.0 = original. don't set higher
-  float temperature = prompt_.temperature;
-  // top-p in nucleus sampling. 1.0 = off. 0.9 works well, but slower
-  float topp = prompt_.topp;
-  int steps = prompt_.steps; // max number of steps to run for, 0: use seq_len
-  const char *prompt = NULL; // prompt string
-  if (prompt_.prompt.size() > 0) prompt = prompt_.prompt.c_str();
-
-  // seed rng with time. if you want deterministic behavior use temperature 0.0
-  rng_seed = ic_api.time(); // time in ns
-
-  // right now we cannot run for more than config.seq_len steps
-  if (steps <= 0 || steps > config.seq_len) {
-    steps = config.seq_len;
-  }
-
-  // create and init the application RunState
-  RunState state;
-  if (!malloc_run_state(&state, &config))
-    IC_API::trap("malloc_run_state failed!");
-
-  // process the prompt, if any
-  int *prompt_tokens = NULL;
+  // encode the (string) prompt into tokens sequence
   int num_prompt_tokens = 0;
-  if (prompt != NULL) {
-    prompt_tokens = (int *)malloc((strlen(prompt) + 1) * sizeof(int));
-    if (!bpe_encode(prompt, vocab, vocab_scores, config.vocab_size,
-                    max_token_length, prompt_tokens, &num_prompt_tokens))
-      IC_API::trap("ERROR: bpe_encode of the prompt failed.");
-  }
 
-  if (temperature == 0.0f) {
-    *sampling_method =
-        "greedy argmax sampling: take the token with the highest probability";
-  } else {
-    if (topp <= 0 || topp >= 1) {
-      *sampling_method =
-          "simply sample from the predicted probability distribution";
-    } else {
-      *sampling_method =
-          "top-p (nucleus) sampling, clamping the least likely tokens to zero";
-    }
+  // +3 for '\0', ?BOS, ?EOS
+  int *prompt_tokens = (int *)malloc((prompt.length() + 3) * sizeof(int));
+  encode(tokenizer, prompt.c_str(), 1, 0, prompt_tokens, &num_prompt_tokens);
+  if (num_prompt_tokens < 1) {
+    IC_API::trap("something is wrong, expected at least 1 prompt token");
   }
 
   // start the main loop
-  // used to time our code, only initialized after first iteration
-  uint64_t start = 0;
-  // will store the next token in the sequence
-  int next;
-  // init with token 1 (=BOS), as done in Llama-2 sentencepiece tokenizer
-  int token = 1;
-  int pos = 0; // position in the sequence
+  long start =
+      0;    // used to time our code, only initialized after first iteration
+  int next; // will store the next token in the sequence
+  int token = prompt_tokens[0]; // kick off with the first token in the prompt
+  int pos = 0;                  // position in the sequence
   while (pos < steps) {
 
     // forward the transformer to get logits for the next token
-    transformer(token, pos, &config, &state, &weights);
+    float *logits = forward(transformer, token, pos);
 
     // advance the state state machine
-    if (pos < num_prompt_tokens) {
+    if (pos < num_prompt_tokens - 1) {
       // if we are still processing the input prompt, force the next prompt token
-      next = prompt_tokens[pos];
+      next = prompt_tokens[pos + 1];
     } else {
-      // sample the next token
-      if (temperature == 0.0f) {
-        // greedy argmax sampling: take the token with the highest probability
-        next = argmax(state.logits, config.vocab_size);
-      } else {
-        // apply the temperature to the logits
-        for (int q = 0; q < config.vocab_size; q++) {
-          state.logits[q] /= temperature;
-        }
-        // apply softmax to the logits to get the probabilities for next token
-        softmax(state.logits, config.vocab_size);
-        // we sample from this distribution to get the next token
-        if (topp <= 0 || topp >= 1) {
-          // simply sample from the predicted probability distribution
-          next = sample(state.logits, config.vocab_size);
-        } else {
-          // top-p (nucleus) sampling, clamping the least likely tokens to zero
-          next = sample_topp(state.logits, config.vocab_size, topp,
-                             state.probindex);
-        }
-      }
+      // otherwise sample the next token from the logits
+      next = sample(sampler, logits);
     }
     pos++;
 
-    // data-dependent terminating condition: the BOS (1) token delimits sequences
+    // data-dependent terminating condition: the BOS (=1) token delimits sequences
     if (next == 1) {
       break;
     }
 
-    // following BOS (1) token, sentencepiece decoder strips any leading whitespace (see PR #89)
-    char *token_str =
-        (token == 1 && vocab[next][0] == ' ') ? vocab[next] + 1 : vocab[next];
-    // careful, some tokens designate raw bytes, and look like e.g. '<0x01>'
-    unsigned char byte_val;
-    if (sscanf(token_str, "<0x%02hhX>", &byte_val) == 1) {
-      // ok this token is a raw byte token, carefuly to only print printable chars or whitespace
-      // some of the other bytes can be various control codes, backspace, etc. => skip
-      if (isprint(byte_val) || isspace(byte_val)) {
-        char byte_piece[2];
-        byte_piece[0] = byte_val;
-        byte_piece[1] = '\0';
-        output += byte_piece;
-      }
-    } else {
-      output += token_str;
-    }
+    // print the token as string, decode it with the Tokenizer object
+    char *piece = decode(tokenizer, token, next);
+    // safe_printf(piece); // same as printf("%s", piece), but skips "unsafe" bytes
+    output += safe_stringify(piece);
 
-    // IC_API::debug_print(output);
+    // fflush(stdout);
     token = next;
 
     // init the timer here because the first iteration can be slower
-    if (start == 0) {
-      start = ic_api.time(); // time in ns
-    }
+    // if (start == 0) { start = time_in_ms(); }
   }
+  // printf("\n");
+  output += "\n";
 
   // report achieved tok/s (pos-1 because the timer starts after first iteration)
-  if (pos > 1) {
-    uint64_t end = ic_api.time(); // time in ns
-    *token_per_sec = (pos - 1) / (double)(end - start) * 1e9;
-  }
+  // if (pos > 1) {
+  //     long end = time_in_ms();
+  //     fprintf(stderr, "achieved tok/s: %f\n", (pos-1) / (double)(end-start)*1000);
+  // }
 
-  // memory and file handles cleanup
-  free_run_state(&state);
-  if (prompt_tokens != NULL) free(prompt_tokens);
+  free(prompt_tokens);
 
-  // IC_API::debug_print(output);
   return output;
 }
 
@@ -182,25 +140,49 @@ void inference() {
   }
 
   // Get the Prompt from the wire
-  Prompt prompt;
+  Prompt wire_prompt;
   CandidTypeRecord r_in;
-  r_in.append("prompt", CandidTypeText{&prompt.prompt});
-  r_in.append("steps", CandidTypeNat64{&prompt.steps});
-  r_in.append("temperature", CandidTypeFloat32{&prompt.temperature});
-  r_in.append("topp", CandidTypeFloat32{&prompt.topp});
+  r_in.append("prompt", CandidTypeText{&wire_prompt.prompt});
+  r_in.append("steps", CandidTypeNat64{&wire_prompt.steps});
+  r_in.append("temperature", CandidTypeFloat32{&wire_prompt.temperature});
+  r_in.append("topp", CandidTypeFloat32{&wire_prompt.topp});
+  r_in.append("rng_seed", CandidTypeNat64{&wire_prompt.rng_seed});
   ic_api.from_wire(r_in);
-  print_prompt(prompt);
+  print_prompt(wire_prompt);
 
-  // Generate the response
-  RunState state;
-  uint64_t token_per_sec;
-  std::string sampling_method;
-  std::string output =
-      generate(ic_api, prompt, &token_per_sec, &sampling_method);
+  // parameter validation/overrides
+  if (wire_prompt.rng_seed <= 0)
+    wire_prompt.rng_seed = ic_api.time(); // time in ns
+  if (wire_prompt.temperature < 0.0) wire_prompt.temperature = 0.0;
+  if (wire_prompt.topp < 0.0 || 1.0 < wire_prompt.topp) wire_prompt.topp = 0.9;
+  if (wire_prompt.steps < 0) wire_prompt.steps = 0;
+
+  if (wire_prompt.steps == 0 || wire_prompt.steps > transformer.config.seq_len)
+    wire_prompt.steps = transformer.config.seq_len; // override to ~max length
+  IC_API::debug_print("--\nAfter parameter validation/overrides.");
+  print_prompt(wire_prompt);
+
+  // build the Sampler
+  Sampler sampler;
+  build_sampler(&sampler, transformer.config.vocab_size,
+                wire_prompt.temperature, wire_prompt.topp,
+                wire_prompt.rng_seed);
+
+  // run!
+  std::string output;
+  // if (mode == "generate") {
+  output += generate(ic_api, &transformer, &tokenizer, &sampler,
+                     wire_prompt.prompt, wire_prompt.steps);
+  // } else if (mode =="chat") {
+  // chat(&transformer, &tokenizer, &sampler, prompt, system_prompt, steps);
+  // } else {
+  //   IC_API::trap("unsupported mode: " + mode);
+  // }
+
+  // memory and file handles cleanup
+  free_sampler(&sampler);
+
   IC_API::debug_print(output);
-  IC_API::debug_print("Achieved token/second: " +
-                      std::to_string(token_per_sec));
-  IC_API::debug_print("Sampling method used: " + sampling_method);
 
   // Return the generated response
   ic_api.to_wire(CandidTypeVariant{"ok", CandidTypeText{output}});

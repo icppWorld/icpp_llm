@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 #include <stdbool.h>
+#include <sys/types.h>
 
 // ----------------------------------------------------------------------------
 // Transformer and RunState structs, and related memory management
@@ -37,12 +38,50 @@ typedef struct {
   float *w3; // (layer, hidden_dim, dim)
   // final rmsnorm
   float *rms_final_weight; // (dim,)
-  // freq_cis for RoPE relatively positional embeddings
-  float *freq_cis_real; // (seq_len, head_size/2)
-  float *freq_cis_imag; // (seq_len, head_size/2)
   // (optional) classifier weights for the logits, on the last layer
   float *wcls;
 } TransformerWeights;
+
+typedef struct {
+  // current wave of activations
+  float *x;      // activation at current time stamp (dim,)
+  float *xb;     // same, but inside a residual branch (dim,)
+  float *xb2;    // an additional buffer just for convenience (dim,)
+  float *hb;     // buffer for hidden dimension in the ffn (hidden_dim,)
+  float *hb2;    // buffer for hidden dimension in the ffn (hidden_dim,)
+  float *q;      // query (dim,)
+  float *k;      // key (dim,)
+  float *v;      // value (dim,)
+  float *att;    // buffer for scores/attention values (n_heads, seq_len)
+  float *logits; // output logits
+  // kv cache
+  float *key_cache;   // (layer, seq_len, dim)
+  float *value_cache; // (layer, seq_len, dim)
+} RunState;
+
+typedef struct {
+  Config config; // the hyperparameters of the architecture (the blueprint)
+  TransformerWeights weights; // the weights of the model
+  RunState state; // buffers for the "wave" of activations in the forward pass
+  // some more state needed to properly clean up the memory mapping (sigh)
+  int fd;            // file descriptor for memory mapping
+  float *data;       // memory mapped data pointer
+  ssize_t file_size; // size of the checkpoint file in bytes
+} Transformer;
+
+typedef struct {
+  char *str;
+  int id;
+} TokenIndex;
+
+typedef struct {
+  char **vocab;
+  float *vocab_scores;
+  TokenIndex *sorted_vocab;
+  int vocab_size;
+  unsigned int max_token_length;
+  unsigned char byte_pieces[512]; // stores all single-byte strings
+} Tokenizer;
 
 typedef struct {
   float prob;
@@ -50,48 +89,38 @@ typedef struct {
 } ProbIndex; // struct used when sorting probabilities during top-p sampling
 
 typedef struct {
-  // current wave of activations
-  float *x;             // activation at current time stamp (dim,)
-  float *xb;            // same, but inside a residual branch (dim,)
-  float *xb2;           // an additional buffer just for convenience (dim,)
-  float *hb;            // buffer for hidden dimension in the ffn (hidden_dim,)
-  float *hb2;           // buffer for hidden dimension in the ffn (hidden_dim,)
-  float *q;             // query (dim,)
-  float *k;             // key (dim,)
-  float *v;             // value (dim,)
-  float *att;           // buffer for scores/attention values (n_heads, seq_len)
-  float *logits;        // output logits
+  int vocab_size;
   ProbIndex *probindex; // buffer used in top-p sampling
-  // kv cache
-  float *key_cache;   // (layer, seq_len, dim)
-  float *value_cache; // (layer, seq_len, dim)
-} RunState;
+  float temperature;
+  float topp;
+  unsigned long long rng_state;
+} Sampler;
 
-// stories15M.bin
 extern Config config;
-extern TransformerWeights weights;
-
-// tokenizer.bin
-extern char **vocab;
-extern float *vocab_scores;
-extern unsigned int max_token_length;
+extern Transformer transformer;
+extern Tokenizer tokenizer;
+extern Sampler sampler;
 
 // At inference
 extern unsigned long long rng_seed;
 
 bool malloc_run_state(RunState *s, Config *p);
+void memory_map_weights(TransformerWeights *w, Config *p, float *ptr,
+                        int shared_weights);
+void encode(Tokenizer *t, const char *text, int8_t bos, int8_t eos, int *tokens,
+            int *n_tokens);
+float *forward(Transformer *transformer, int token, int pos);
+char *decode(Tokenizer *t, int prev_token, int token);
+void build_sampler(Sampler *sampler, int vocab_size, float temperature,
+                   float topp, unsigned long long rng_seed);
+int sample(Sampler *sampler, float *logits);
+int sample_topp(float *probabilities, int n, float topp, ProbIndex *probindex,
+                float coin);
+
 void free_run_state(RunState *s);
-void checkpoint_init_weights(TransformerWeights *w, Config *p, float *f,
-                             int shared_weights);
-bool bpe_encode(const char *text, char **vocab, float *vocab_scores,
-                int vocab_size, unsigned int max_token_length, int *tokens,
-                int *n_tokens);
-void transformer(int token, int pos, Config *p, RunState *s,
-                 TransformerWeights *w);
-int argmax(float *v, int n);
-void softmax(float *x, int size);
-int sample(float *probabilities, int n);
-int sample_topp(float *probabilities, int n, float topp, ProbIndex *probindex);
+void free_sampler(Sampler *sampler);
+void free_tokenizer(Tokenizer *t);
+void free_transformer(Transformer *t);
 
 #ifdef __cplusplus
 }
