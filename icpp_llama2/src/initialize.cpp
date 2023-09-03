@@ -23,8 +23,10 @@ void build_tokenizer(Tokenizer *t, int vocab_size) {
   t->vocab_size = vocab_size;
   // malloc space to hold the scores and the strings
   t->vocab = (char **)malloc(vocab_size * sizeof(char *));
+  if (!t->vocab) IC_API::trap("Failed to allocate memory for vocab.");
   t->vocab_scores = (float *)malloc(vocab_size * sizeof(float));
-  t->sorted_vocab = NULL; // initialized lazily
+  if (!t->vocab_scores)
+    IC_API::trap("Failed to allocate memory for vocab_scores.");
   for (int i = 0; i < 256; i++) {
     t->byte_pieces[i * 2] = (unsigned char)i;
     t->byte_pieces[i * 2 + 1] = '\0';
@@ -64,6 +66,9 @@ void build_tokenizer(Tokenizer *t, int vocab_size) {
     data_ptr += sizeof(int);
 
     t->vocab[i] = (char *)malloc(len + 1);
+    if (!t->vocab[i])
+      IC_API::trap("Failed to allocate memory for vocab[" + std::to_string(i) +
+                   "].");
     // if (fread(t->vocab[i], len, 1, file) != 1) {
     //   fprintf(stderr, "failed read\n");
     //   exit(EXIT_FAILURE);
@@ -74,6 +79,18 @@ void build_tokenizer(Tokenizer *t, int vocab_size) {
     t->vocab[i][len] = '\0'; // add the string terminating token
   }
   // fclose(file);
+
+  // Do this now, and not lazily
+  // malloc and sort the vocabulary
+  t->sorted_vocab = (TokenIndex *)malloc(t->vocab_size * sizeof(TokenIndex));
+  if (!t->sorted_vocab)
+    IC_API::trap("Failed to allocate memory for sorted_vocab.");
+
+  for (int i = 0; i < t->vocab_size; i++) {
+    t->sorted_vocab[i].str = t->vocab[i];
+    t->sorted_vocab[i].id = i;
+  }
+  qsort(t->sorted_vocab, t->vocab_size, sizeof(TokenIndex), compare_tokens);
 }
 
 // This is an exact copy of code in these methods of run.c

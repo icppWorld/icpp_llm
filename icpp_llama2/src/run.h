@@ -104,6 +104,7 @@ extern Sampler sampler;
 // At inference
 extern unsigned long long rng_seed;
 
+int compare_tokens(const void *a, const void *b);
 bool malloc_run_state(RunState *s, Config *p);
 void memory_map_weights(TransformerWeights *w, Config *p, float *ptr,
                         int shared_weights);
