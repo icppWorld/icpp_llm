@@ -49,6 +49,13 @@ CLANG_TIDY = $(ICPP_COMPILER_ROOT)/bin/clang-tidy
 .PHONY: all-tests
 all-tests: all-static test-all-llms 
 
+.PHONY: icpp_llama2_get_stories260K
+icpp_llama2_get_stories260K:
+	cd icpp_llama2 && \
+		mkdir -p stories260K && \
+		wget -P stories260K https://huggingface.co/karpathy/tinyllamas/resolve/main/stories260K/stories260K.bin && \
+		wget -P stories260K https://huggingface.co/karpathy/tinyllamas/resolve/main/stories260K/tok512.bin
+
 .PHONY: icpp_llama2_get_stories15M
 icpp_llama2_get_stories15M:
 	cd icpp_llama2 && \
