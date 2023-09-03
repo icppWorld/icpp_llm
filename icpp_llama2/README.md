@@ -104,9 +104,10 @@ For testing, it is nice to be able to work with a smaller model & tokenizer:
 
 # Fine tuning
 
-  When making your own checkpoint via fine-tuning, make sure to train with the correct version of karpathy/llama2.c:
+  When making your own checkpoint via fine-tuning, make sure to train with the correct version of [karpathy/llama2.c](https://github.com/karpathy/llama2.c):
 
-  | release | reference (commit sha)                                                     |
-  | --------| ---------------------------------------------------- |
-  | 0.1.0 | [karpathy/llama2.c](https://github.com/karpathy/llama2.c) (b28c1e26c5ab5660267633e1bdc910a43b7255bf) |
-  | 0.2.0 | [karpathy/llama2.c](https://github.com/karpathy/llama2.c) (57bf0e9ee4bbd61c98c4ad204b72f2b8881ac8cd) |
+  | release | commit sha                                |
+  | --------| ----------------------------------------- |
+  | 0.1.0   |  b28c1e26c5ab5660267633e1bdc910a43b7255bf |
+  | 0.2.0   |  57bf0e9ee4bbd61c98c4ad204b72f2b8881ac8cd |
+  | 0.3.0   |  b9fb86169f56bd787bb644c62a80bbab56f8dccc |

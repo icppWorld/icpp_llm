@@ -39,17 +39,9 @@ dfx canister call --network ic 4c4bn-daaaa-aaaag-abvcq-cai inference '(record {p
 ```
 
 
-## The LLMs included in this repo
-
-| LLM folder    | release | reference (commit sha)                                                     |
-| ------------- | --------| ---------------------------------------------------- |
-| [icpp_llama2](https://github.com/icppWorld/icpp-llm/tree/main/icpp_llama2)   | 0.1.0 | [karpathy/llama2.c](https://github.com/karpathy/llama2.c) (b28c1e26c5ab5660267633e1bdc910a43b7255bf) |
-|   | 0.2.0 | [karpathy/llama2.c](https://github.com/karpathy/llama2.c) (57bf0e9ee4bbd61c98c4ad204b72f2b8881ac8cd) |
-
-
 ## Instructions
 
-See the README in each LLM folder
+See the README in the icpp_llama2 folder
 
 
 ## Support
