@@ -69,6 +69,7 @@ jobs:
         shell: bash -l {0}
         run: |
           make icpp_llama2_get_stories15M
+          make icpp_llama2_get_stories260K
 
       - name: all-tests
         shell: bash -l {0}
