@@ -282,69 +282,69 @@ int main() {
       silent_on_trap, my_principal);
 
   // With temperature=0.0: greedy argmax sampling -> the story will be the same every time
-  // '(record {prompt = "" : text; steps = 100 : nat64; temperature = 0.0 : float32; topp = 1.0 : float32;})'
-  // -> '(variant { ok = "Once upon a time, there was a little girl named Lily. She loved to play outside and explore the world around her. One day, while she was walking in the park, she noticed a big pile of ash on the ground. She was very curious about it and decided to investigate.\nAs she got closer to the ash, she saw that it was very soft and nice to touch. It was not very harsh or made her shiver with fear. Suddenly, a" : text })'
+  // '(record {prompt = "" : text; steps = 100 : nat64; temperature = 0.0 : float32; topp = 1.0 : float32; rng_seed = 0 : nat64;})'
+  // -> '(variant { ok = "Once upon a time, there was a little girl named Lily. She loved to play outside in the sunshine. One day, she saw a big, red ball in the sky. It was the sun! She thought it was so pretty.\nLily wanted to play with the ball, but it was too high up in the sky. She tried to jump and reach it, but she couldn\'t. Then, she had an idea. She would use a stick to knock the\n" : text })'
   mockIC.run_test(
       "inference 1", inference,
-      "4449444c016c04b4e8c2e40373bbb885e80473a7f7b9a00878a4a3e1aa0b710100000000000000803f640000000000000000",
-      "4449444c016b019cc20171010000ed024f6e63652075706f6e20612074696d652c207468657265207761732061206c6974746c65206769726c206e616d6564204c696c792e20536865206c6f76656420746f20706c6179206f75747369646520696e207468652073756e7368696e652e204f6e65206461792c20736865207361772061206269672c207265642062616c6c20696e2074686520736b792e20497420776173207468652073756e21205368652074686f756768742069742077617320736f207072657474792e0a4c696c792077616e74656420746f20706c61792077697468207468652062616c6c2c206275742069742077617320746f6f206869676820757020696e2074686520736b792e2053686520747269656420746f206a756d7020616e642072656163682069742c206275742073686520636f756c646e27742e205468656e2c207368652068616420616e20696465612e2053686520776f756c6420757365206120737469636b20746f206b6e6f636b20746865",
+      "4449444c016c05b4e8c2e40373bbb885e80473a7f7b9a00878c5c8cea60878a4a3e1aa0b710100000000000000803f6400000000000000000000000000000000",
+      "4449444c016b019cc20171010000ee024f6e63652075706f6e20612074696d652c207468657265207761732061206c6974746c65206769726c206e616d6564204c696c792e20536865206c6f76656420746f20706c6179206f75747369646520696e207468652073756e7368696e652e204f6e65206461792c20736865207361772061206269672c207265642062616c6c20696e2074686520736b792e20497420776173207468652073756e21205368652074686f756768742069742077617320736f207072657474792e0a4c696c792077616e74656420746f20706c61792077697468207468652062616c6c2c206275742069742077617320746f6f206869676820757020696e2074686520736b792e2053686520747269656420746f206a756d7020616e642072656163682069742c206275742073686520636f756c646e27742e205468656e2c207368652068616420616e20696465612e2053686520776f756c6420757365206120737469636b20746f206b6e6f636b207468650a",
       silent_on_trap, my_principal);
 
   // With temperature=0.0 & topp=0.9, still greedy argmax sampling -> the story will be the same every time
-  // '(record {prompt = "" : text; steps = 100 : nat64; temperature = 0.0 : float32; topp = 0.9 : float32;})'
-  // -> '(variant { ok = "Once upon a time, there was a little girl named Lily. She loved to play outside and explore the world around her. One day, while she was walking in the park, she noticed a big pile of ash on the ground. She was very curious about it and decided to investigate.\nAs she got closer to the ash, she saw that it was very soft and nice to touch. It was not very harsh or made her shiver with fear. Suddenly, a" : text })'
+  // '(record {prompt = "" : text; steps = 100 : nat64; temperature = 0.0 : float32; topp = 0.9 : float32; rng_seed = 0 : nat64;})'
+  // -> '(variant { ok = "Once upon a time, there was a little girl named Lily. She loved to play outside in the sunshine. One day, she saw a big, red ball in the sky. It was the sun! She thought it was so pretty.\nLily wanted to play with the ball, but it was too high up in the sky. She tried to jump and reach it, but she couldn\'t. Then, she had an idea. She would use a stick to knock the\n" : text })'
   mockIC.run_test(
       "inference 2", inference,
-      "4449444c016c04b4e8c2e40373bbb885e80473a7f7b9a00878a4a3e1aa0b710100000000006666663f640000000000000000",
-      "4449444c016b019cc20171010000ed024f6e63652075706f6e20612074696d652c207468657265207761732061206c6974746c65206769726c206e616d6564204c696c792e20536865206c6f76656420746f20706c6179206f75747369646520696e207468652073756e7368696e652e204f6e65206461792c20736865207361772061206269672c207265642062616c6c20696e2074686520736b792e20497420776173207468652073756e21205368652074686f756768742069742077617320736f207072657474792e0a4c696c792077616e74656420746f20706c61792077697468207468652062616c6c2c206275742069742077617320746f6f206869676820757020696e2074686520736b792e2053686520747269656420746f206a756d7020616e642072656163682069742c206275742073686520636f756c646e27742e205468656e2c207368652068616420616e20696465612e2053686520776f756c6420757365206120737469636b20746f206b6e6f636b20746865",
+      "4449444c016c05b4e8c2e40373bbb885e80473a7f7b9a00878c5c8cea60878a4a3e1aa0b710100000000006666663f6400000000000000000000000000000000",
+      "4449444c016b019cc20171010000ee024f6e63652075706f6e20612074696d652c207468657265207761732061206c6974746c65206769726c206e616d6564204c696c792e20536865206c6f76656420746f20706c6179206f75747369646520696e207468652073756e7368696e652e204f6e65206461792c20736865207361772061206269672c207265642062616c6c20696e2074686520736b792e20497420776173207468652073756e21205368652074686f756768742069742077617320736f207072657474792e0a4c696c792077616e74656420746f20706c61792077697468207468652062616c6c2c206275742069742077617320746f6f206869676820757020696e2074686520736b792e2053686520747269656420746f206a756d7020616e642072656163682069742c206275742073686520636f756c646e27742e205468656e2c207368652068616420616e20696465612e2053686520776f756c6420757365206120737469636b20746f206b6e6f636b207468650a",
       silent_on_trap, my_principal);
 
   // With temperature>0.0 & topp=1.0: regular sampling
-  // '(record {prompt = "" : text; steps = 100 : nat64; temperature = 0.9 : float32; topp = 1.0 : float32;})'
+  // '(record {prompt = "" : text; steps = 100 : nat64; temperature = 0.9 : float32; topp = 1.0 : float32; rng_seed = 0 : nat64;})'
   // -> --can not check on story--
   mockIC.run_test(
       "inference 3", inference,
-      "4449444c016c04b4e8c2e40373bbb885e80473a7f7b9a00878a4a3e1aa0b7101006666663f0000803f640000000000000000",
+      "4449444c016c05b4e8c2e40373bbb885e80473a7f7b9a00878c5c8cea60878a4a3e1aa0b7101006666663f0000803f6400000000000000000000000000000000",
       "", silent_on_trap, my_principal);
 
   // With temperature>0.0 & topp<1.0: top-pp (nucleus) sampling
-  // '(record {prompt = "" : text; steps = 100 : nat64; temperature = 0.9 : float32; topp = 0.9 : float32;})'
+  // '(record {prompt = "" : text; steps = 100 : nat64; temperature = 0.9 : float32; topp = 0.9 : float32; rng_seed = 0 : nat64;})'
   // -> --can not check on story--
   mockIC.run_test(
       "inference 4", inference,
-      "4449444c016c04b4e8c2e40373bbb885e80473a7f7b9a00878a4a3e1aa0b7101006666663f6666663f640000000000000000",
+      "4449444c016c05b4e8c2e40373bbb885e80473a7f7b9a00878c5c8cea60878a4a3e1aa0b7101006666663f6666663f6400000000000000000000000000000000",
       "", silent_on_trap, my_principal);
 
   // With temperature=0.0: greedy argmax sampling -> the story will be the same every time
-  // '(record {prompt = "Yesterday I went for a walk" : text; steps = 100 : nat64; temperature = 0.0 : float32; topp = 1.0 : float32;})'
+  // '(record {prompt = "Yesterday I went for a walk" : text; steps = 100 : nat64; temperature = 0.0 : float32; topp = 1.0 : float32; rng_seed = 0 : nat64;})'
   // -> '(variant { ok = "..." : text })'
   mockIC.run_test(
       "inference 1a", inference,
-      "4449444c016c04b4e8c2e40373bbb885e80473a7f7b9a00878a4a3e1aa0b710100000000000000803f64000000000000001b59657374657264617920492077656e7420666f7220612077616c6b",
+      "4449444c016c05b4e8c2e40373bbb885e80473a7f7b9a00878c5c8cea60878a4a3e1aa0b710100000000000000803f640000000000000000000000000000001b59657374657264617920492077656e7420666f7220612077616c6b",
       "", silent_on_trap, my_principal);
 
   // With temperature=0.0 & topp=0.9, still greedy argmax sampling -> the story will be the same every time
-  // '(record {prompt = "Yesterday I went for a walk" : text; steps = 100 : nat64; temperature = 0.0 : float32; topp = 0.9 : float32;})'
+  // '(record {prompt = "Yesterday I went for a walk" : text; steps = 100 : nat64; temperature = 0.0 : float32; topp = 0.9 : float32; rng_seed = 0 : nat64;})'
   // -> '(variant { ok = "..." : text })'
   mockIC.run_test(
       "inference 2a", inference,
-      "4449444c016c04b4e8c2e40373bbb885e80473a7f7b9a00878a4a3e1aa0b710100000000006666663f64000000000000001b59657374657264617920492077656e7420666f7220612077616c6b",
+      "4449444c016c05b4e8c2e40373bbb885e80473a7f7b9a00878c5c8cea60878a4a3e1aa0b710100000000006666663f640000000000000000000000000000001b59657374657264617920492077656e7420666f7220612077616c6b",
       "", silent_on_trap, my_principal);
 
   // With temperature>0.0 & topp=1.0: regular sampling
-  // '(record {prompt = "Yesterday I went for a walk" : text; steps = 100 : nat64; temperature = 0.9 : float32; topp = 1.0 : float32;})'
+  // '(record {prompt = "Yesterday I went for a walk" : text; steps = 100 : nat64; temperature = 0.9 : float32; topp = 1.0 : float32; rng_seed = 0 : nat64;})'
   // -> --can not check on story--
   mockIC.run_test(
       "inference 3a", inference,
-      "4449444c016c04b4e8c2e40373bbb885e80473a7f7b9a00878a4a3e1aa0b7101006666663f0000803f64000000000000001b59657374657264617920492077656e7420666f7220612077616c6b",
+      "4449444c016c05b4e8c2e40373bbb885e80473a7f7b9a00878c5c8cea60878a4a3e1aa0b7101006666663f0000803f640000000000000000000000000000001b59657374657264617920492077656e7420666f7220612077616c6b",
       "", silent_on_trap, my_principal);
 
   // With temperature>0.0 & topp<1.0: top-pp (nucleus) sampling
-  // '(record {prompt = "Yesterday I went for a walk" : text; steps = 100 : nat64; temperature = 0.9 : float32; topp = 0.9 : float32;})'
+  // '(record {prompt = "Yesterday I went for a walk" : text; steps = 100 : nat64; temperature = 0.9 : float32; topp = 0.9 : float32; rng_seed = 0 : nat64;})'
   // -> --can not check on story--
   mockIC.run_test(
       "inference 4a", inference,
-      "4449444c016c04b4e8c2e40373bbb885e80473a7f7b9a00878a4a3e1aa0b7101006666663f6666663f64000000000000001b59657374657264617920492077656e7420666f7220612077616c6b",
+      "4449444c016c05b4e8c2e40373bbb885e80473a7f7b9a00878c5c8cea60878a4a3e1aa0b7101006666663f6666663f640000000000000000000000000000001b59657374657264617920492077656e7420666f7220612077616c6b",
       "", silent_on_trap, my_principal);
 
   // '()' -> '(variant { ok = 200 : nat16 })'

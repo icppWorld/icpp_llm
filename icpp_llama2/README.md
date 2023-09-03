@@ -9,7 +9,7 @@ Video: [How to run llama2.c on the Internet Computer](https://www.loom.com/share
 You can call it's inference endpoint with:
 
 ```bash
-dfx canister call --network ic 4c4bn-daaaa-aaaag-abvcq-cai inference '(record {prompt = "" : text; steps = 20 : nat64; temperature = 0.8 : float32; topp = 1.0 : float32;})'
+dfx canister call --network ic 4c4bn-daaaa-aaaag-abvcq-cai inference '(record {prompt = "" : text; steps = 20 : nat64; temperature = 0.8 : float32; topp = 0.9 : float32; rng_seed = 0 : nat64;})'
 (
   variant {
     ok = "Once upon a time, there was a little boat named Bob. Bob loved to float on the water"
@@ -60,7 +60,7 @@ dfx canister call --network ic 4c4bn-daaaa-aaaag-abvcq-cai inference '(record {p
 
 - Call the llama2 canister's *inference* endpoint:
   ```bash
-  dfx canister call llama2 inference '(record {prompt = "" : text; steps = 20 : nat64; temperature = 0.9 : float32; topp = 1.0 : float32;})'
+  dfx canister call llama2 inference '(record {prompt = "" : text; steps = 20 : nat64; temperature = 0.9 : float32; topp = 0.9 : float32; rng_seed = 0 : nat64;})'
   (
     variant {
       ok = "Once upon a time, there was a little boat named Bob. Bob loved to float on the water"

@@ -55,6 +55,7 @@ def main() -> int:
     temperature = args.temperature
     topp = args.topp
     steps = args.steps
+    rng_seed = args.rng_seed
 
     dfx_json_path = ROOT_PATH / "dfx.json"
 
@@ -69,6 +70,7 @@ def main() -> int:
         f"\n - temperature    = {temperature}"
         f"\n - topp           = {topp}"
         f"\n - steps          = {steps}"
+        f"\n - rng_seed       = {rng_seed}"
     )
 
     # ---------------------------------------------------------------------------

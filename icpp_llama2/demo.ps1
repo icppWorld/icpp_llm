@@ -69,8 +69,8 @@ wsl --% dfx canister call llama2 ready
 Write-Host " "
 Write-Host "--------------------------------------------------"
 Write-Host "Inference call  (Generate a story...)"
-wsl --% dfx canister call llama2 inference '(record {prompt = "" : text; steps = 20 : nat64; temperature = 0.9 : float32; topp = 0.9 : float32;})'
-wsl --% dfx canister call llama2 inference '(record {prompt = "Lilly " : text; steps = 19 : nat64; temperature = 0.9 : float32; topp = 0.9 : float32;})'
+wsl --% dfx canister call llama2 inference '(record {prompt = "" : text; steps = 20 : nat64; temperature = 0.9 : float32; topp = 0.9 : float32; rng_seed = 0 : nat64;})'
+wsl --% dfx canister call llama2 inference '(record {prompt = "Lilly " : text; steps = 19 : nat64; temperature = 0.9 : float32; topp = 0.9 : float32; rng_seed = 0 : nat64;})'
 
 # #######################################################################
 # Write-Host " "

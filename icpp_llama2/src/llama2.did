@@ -7,6 +7,7 @@ type Prompt =
     steps          : nat64;  
     temperature    : float32;
     topp           : float32;
+    rng_seed       : nat64;
   };
 
 type Inference = 
