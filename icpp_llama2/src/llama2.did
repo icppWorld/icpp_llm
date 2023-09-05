@@ -46,4 +46,5 @@ service : {
   initialize: ()                           -> (Result);
   get_model_config: ()                     -> (Config)    query;
   inference: (Prompt)                      -> (Inference) query;
+  inference_update: (Prompt)               -> (Inference);
 }

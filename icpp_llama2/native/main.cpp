@@ -311,6 +311,53 @@ int main() {
   mockIC.run_test("get_model_config", get_model_config, "4449444c0000",
                   expected_response, silent_on_trap, my_principal);
 
+  // Loop to create 1000 token long story
+  // With temperature=0.0: greedy argmax sampling -> the story will be the same every time
+  std::string prompt = "";
+  uint64_t steps = 10;
+  float temperature = 0.0;
+  float topp = 0.9;
+  uint64_t rng_seed = 0;
+  int8_t bos = 1;
+  int8_t eos = 0;
+
+  std::string generated_tokens = "";
+  std::string story = "";
+  for (int i = 0; i < 100; i++) {
+    CandidTypeRecord r_in;
+    r_in.append("prompt", CandidTypeText(prompt));
+    r_in.append("steps", CandidTypeNat64(steps));
+    r_in.append("temperature", CandidTypeFloat32(temperature));
+    r_in.append("topp", CandidTypeFloat32(topp));
+    r_in.append("rng_seed", CandidTypeNat64(uint64_t(rng_seed)));
+    r_in.append("bos", CandidTypeInt8{bos});
+    r_in.append("eos", CandidTypeInt8{eos});
+    candid_in = CandidSerialize(r_in).as_hex_string();
+
+    std::string candid_out;
+    mockIC.run_test("inference_update 1", inference_update, candid_in, "",
+                    silent_on_trap, my_principal, &candid_out);
+
+    std::string err_text;
+    CandidTypeVariant v_out;
+    v_out.append("ok", CandidTypeText(&generated_tokens));
+    v_out.append("err", CandidTypeText(&err_text));
+
+    CandidArgs A;
+    A.append(v_out);
+    CandidDeserialize(candid_out, A);
+    if (err_text.size() > 0) {
+      std::cout << "ERROR returned by inference_update function.";
+      exit(1);
+    }
+    story += generated_tokens;
+    std::cout << story;
+
+    prompt = "";
+    steps += 10;
+    bos = 0;
+  }
+
   // With temperature=0.0: greedy argmax sampling -> the story will be the same every time
   // '(record {prompt = "" : text; steps = 100 : nat64; temperature = 0.0 : float32; topp = 1.0 : float32; rng_seed = 0 : nat64;})'
   // -> '(variant { ok = "Once upon a time, there was a little girl named Lily. She loved to play outside in the sunshine. One day, she saw a big, red ball in the sky. It was the sun! She thought it was so pretty.\nLily wanted to play with the ball, but it was too high up in the sky. She tried to jump and reach it, but she couldn\'t. Then, she had an idea. She would use a stick to knock the\n" : text })'

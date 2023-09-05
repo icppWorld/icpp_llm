@@ -157,6 +157,10 @@ void build_transformer(Transformer *t) {
   read_checkpoint(&t->config, &t->weights);
   // allocate the RunState buffers
   malloc_run_state(&t->state, &t->config);
+
+  //icpp: initialize the next token predicted on pos 0 to the BOS token (1)
+  t->next = 1;
+  t->pos = 0;
 }
 
 void initialize() {

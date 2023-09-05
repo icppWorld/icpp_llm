@@ -21,6 +21,8 @@ public:
   float temperature{1.0};
   float topp{0.9};
   uint64_t rng_seed{0};
+  int8_t bos{1}; // add begin-of-sentence token if not 0
+  int8_t eos{0}; // add end-of-sentence token if not 0
 };
 
 void print_prompt(const Prompt &wire_prompt) {
@@ -31,6 +33,8 @@ void print_prompt(const Prompt &wire_prompt) {
       "\nwire_prompt.temperature  = " + std::to_string(wire_prompt.temperature);
   msg += "\nwire_prompt.topp         = " + std::to_string(wire_prompt.topp);
   msg += "\nwire_prompt.rng_seed     = " + std::to_string(wire_prompt.rng_seed);
+  msg += "\nwire_prompt.bos          = " + std::to_string(wire_prompt.bos);
+  msg += "\nwire_prompt.eos          = " + std::to_string(wire_prompt.eos);
   IC_API::debug_print(msg);
 }
 
@@ -60,9 +64,11 @@ std::string safe_stringify(const char *piece) {
 }
 
 // Copied from run.c and modified slightly
+// Added 'bos' and 'eos' as options.
+// In original, they were hard coded as 1 and 0
 std::string generate(IC_API ic_api, Transformer *transformer,
                      Tokenizer *tokenizer, Sampler *sampler, std::string prompt,
-                     int steps) {
+                     int steps, int8_t bos, int8_t eos) {
   std::string output;
 
   // encode the (string) prompt into tokens sequence
@@ -72,17 +78,19 @@ std::string generate(IC_API ic_api, Transformer *transformer,
   int *prompt_tokens = (int *)malloc((prompt.length() + 3) * sizeof(int));
   if (!prompt_tokens)
     IC_API::trap("Failed to allocate memory for prompt_tokens.");
-  encode(tokenizer, prompt.c_str(), 1, 0, prompt_tokens, &num_prompt_tokens);
-  if (num_prompt_tokens < 1) {
-    IC_API::trap("something is wrong, expected at least 1 prompt token");
+  encode(tokenizer, prompt.c_str(), bos, eos, prompt_tokens,
+         &num_prompt_tokens);
+
+  int token = transformer->next; // token that was predicted last, or BOS
+  int pos = transformer->pos;    // position in the sequence
+  if (num_prompt_tokens > 0) {
+    token = prompt_tokens[0]; // kick off with the first token in the prompt
   }
 
   // start the main loop
   long start =
       0;    // used to time our code, only initialized after first iteration
   int next; // will store the next token in the sequence
-  int token = prompt_tokens[0]; // kick off with the first token in the prompt
-  int pos = 0;                  // position in the sequence
   while (pos < steps) {
 
     // forward the transformer to get logits for the next token
@@ -111,6 +119,11 @@ std::string generate(IC_API ic_api, Transformer *transformer,
     // fflush(stdout);
     token = next;
 
+    // This can be done outside the loop, for last prediction
+    // safe the token in the transformer, used in follow-up calls to the endpoint
+    transformer->next = next;
+    transformer->pos = pos;
+
     // init the timer here because the first iteration can be slower
     // if (start == 0) { start = time_in_ms(); }
   }
@@ -129,9 +142,9 @@ std::string generate(IC_API ic_api, Transformer *transformer,
 }
 
 // Based on a given prompt, llama2 will generate a token string
-void inference() {
-  IC_API ic_api(CanisterQuery{std::string(__func__)}, false);
-
+// (-) Do the actual generation of the token string and send it back over the wire
+// (-) Pass in the ic_api object, which comes from either inference (a query) or inference_update
+void inference_doit(IC_API ic_api) {
   IC_API::debug_print("ready_for_inference =" +
                       std::to_string(ready_for_inference));
   if (!ready_for_inference) {
@@ -149,6 +162,8 @@ void inference() {
   r_in.append("temperature", CandidTypeFloat32{&wire_prompt.temperature});
   r_in.append("topp", CandidTypeFloat32{&wire_prompt.topp});
   r_in.append("rng_seed", CandidTypeNat64{&wire_prompt.rng_seed});
+  r_in.append("bos", CandidTypeInt8{&wire_prompt.bos});
+  r_in.append("eos", CandidTypeInt8{&wire_prompt.eos});
   ic_api.from_wire(r_in);
   print_prompt(wire_prompt);
 
@@ -173,8 +188,9 @@ void inference() {
   // run!
   std::string output;
   // if (mode == "generate") {
-  output += generate(ic_api, &transformer, &tokenizer, &sampler,
-                     wire_prompt.prompt, wire_prompt.steps);
+  output +=
+      generate(ic_api, &transformer, &tokenizer, &sampler, wire_prompt.prompt,
+               wire_prompt.steps, wire_prompt.bos, wire_prompt.eos);
   // } else if (mode =="chat") {
   // chat(&transformer, &tokenizer, &sampler, prompt, system_prompt, steps);
   // } else {
@@ -188,4 +204,13 @@ void inference() {
 
   // Return the generated response
   ic_api.to_wire(CandidTypeVariant{"ok", CandidTypeText{output}});
+}
+
+void inference() {
+  IC_API ic_api(CanisterQuery{std::string(__func__)}, false);
+  inference_doit(ic_api);
+}
+void inference_update() {
+  IC_API ic_api(CanisterUpdate{std::string(__func__)}, false);
+  inference_doit(ic_api);
 }
