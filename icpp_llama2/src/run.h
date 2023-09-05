@@ -69,8 +69,10 @@ typedef struct {
   float *data;       // memory mapped data pointer
   ssize_t file_size; // size of the checkpoint file in bytes
   // icpp: to support generation across endpoint calls, we need to save the next token predicted
-  int pos;  // position in the sequence
-  int next; // next token that was predicted
+  int pos;    // position in the sequence
+  int next;   // next token that was predicted
+  int8_t bos; // add begin-of-sentence token or not
+  int8_t eos; // add end-of-sentence token or not
 } Transformer;
 
 typedef struct {

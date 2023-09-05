@@ -121,18 +121,18 @@ bool malloc_run_state(RunState* s, Config* p) {
 }
 
 void free_run_state(RunState* s) {
-    free(s->x);
-    free(s->xb);
-    free(s->xb2);
-    free(s->hb);
-    free(s->hb2);
-    free(s->q);
-    free(s->k);
-    free(s->v);
-    free(s->att);
-    free(s->logits);
-    free(s->key_cache);
-    free(s->value_cache);
+    if(s->x) { free(s->x); s->x = NULL; }
+    if(s->xb) { free(s->xb); s->xb = NULL; }
+    if(s->xb2) { free(s->xb2); s->xb2 = NULL; }
+    if(s->hb) { free(s->hb); s->hb = NULL; }
+    if(s->hb2) { free(s->hb2); s->hb2 = NULL; }
+    if(s->q) { free(s->q); s->q = NULL; }
+    if(s->k) { free(s->k); s->k = NULL; }
+    if(s->v) { free(s->v); s->v = NULL; }
+    if(s->att) { free(s->att); s->att = NULL; }
+    if(s->logits) { free(s->logits); s->logits = NULL; }
+    if(s->key_cache) { free(s->key_cache); s->key_cache = NULL; }
+    if(s->value_cache) { free(s->value_cache); s->value_cache = NULL; }
 }
 
 void memory_map_weights(TransformerWeights *w, Config* p, float* ptr, int shared_weights) {

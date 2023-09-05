@@ -161,6 +161,23 @@ void build_transformer(Transformer *t) {
   //icpp: initialize the next token predicted on pos 0 to the BOS token (1)
   t->next = 1;
   t->pos = 0;
+
+  //icpp: initialize to add begin-of-sentence
+  t->bos = 1;
+  t->eos = 0;
+}
+
+void reset_run_state(Transformer *t) {
+  free_run_state(&t->state);
+  malloc_run_state(&t->state, &t->config);
+
+  //initialize the next token predicted on pos 0 to the BOS token (1)
+  t->next = 1;
+  t->pos = 0;
+
+  //icpp: initialize to add begin-of-sentence
+  t->bos = 1;
+  t->eos = 0;
 }
 
 void initialize() {
@@ -171,6 +188,22 @@ void initialize() {
   build_tokenizer(&tokenizer, transformer.config.vocab_size);
 
   ready_for_inference = true;
+
+  ic_api.to_wire(
+      CandidTypeVariant{"ok", CandidTypeNat16{Http::StatusCode::OK}});
+}
+
+void new_chat() {
+  IC_API ic_api(CanisterUpdate{std::string(__func__)}, false);
+  if (!ready_for_inference) {
+    ic_api.to_wire(CandidTypeVariant{
+        "err", CandidTypeText{
+                   "The Llama2 canister is not (yet) ready for inference."}});
+    return;
+  }
+
+  // TODO: Each user must have it's own run_state
+  reset_run_state(&transformer);
 
   ic_api.to_wire(
       CandidTypeVariant{"ok", CandidTypeNat16{Http::StatusCode::OK}});

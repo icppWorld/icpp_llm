@@ -44,6 +44,7 @@ service : {
   upload_model_bytes_chunk: (vec nat8)     -> (Result);
   upload_tokenizer_bytes_chunk: (vec nat8) -> (Result);
   initialize: ()                           -> (Result);
+  new_chat: ()                             -> (Result);
   get_model_config: ()                     -> (Config)    query;
   inference: (Prompt)                      -> (Inference) query;
   inference_update: (Prompt)               -> (Inference);
