@@ -343,8 +343,8 @@ int main() {
     candid_in = CandidSerialize(r_in).as_hex_string();
 
     std::string candid_out;
-    mockIC.run_test("inference_update 1", inference_update, candid_in, "",
-                    silent_on_trap, my_principal, &candid_out);
+    mockIC.run_test("inference 0", inference, candid_in, "", silent_on_trap,
+                    my_principal, &candid_out);
 
     std::string err_text;
     CandidTypeVariant v_out;
@@ -355,7 +355,7 @@ int main() {
     A.append(v_out);
     CandidDeserialize(candid_out, A);
     if (err_text.size() > 0) {
-      std::cout << "ERROR returned by inference_update function.";
+      std::cout << "ERROR returned by inference function.";
       exit(1);
     }
     story += generated_tokens;

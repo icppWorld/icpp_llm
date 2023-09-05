@@ -46,6 +46,5 @@ service : {
   initialize: ()                           -> (Result);
   new_chat: ()                             -> (Result);
   get_model_config: ()                     -> (Config)    query;
-  inference: (Prompt)                      -> (Inference) query;
-  inference_update: (Prompt)               -> (Inference);
+  inference: (Prompt)                      -> (Inference);
 }

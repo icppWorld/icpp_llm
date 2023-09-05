@@ -140,9 +140,8 @@ std::string generate(IC_API ic_api, Transformer *transformer,
 }
 
 // Based on a given prompt, llama2 will generate a token string
-// (-) Do the actual generation of the token string and send it back over the wire
-// (-) Pass in the ic_api object, which comes from either inference (a query) or inference_update
-void inference_doit(IC_API ic_api) {
+void inference() {
+  IC_API ic_api(CanisterUpdate{std::string(__func__)}, false);
   // IC_API::debug_print("ready_for_inference =" +
   //                     std::to_string(ready_for_inference));
   if (!ready_for_inference) {
@@ -199,13 +198,4 @@ void inference_doit(IC_API ic_api) {
 
   // Return the generated response
   ic_api.to_wire(CandidTypeVariant{"ok", CandidTypeText{output}});
-}
-
-void inference() {
-  IC_API ic_api(CanisterQuery{std::string(__func__)}, false);
-  inference_doit(ic_api);
-}
-void inference_update() {
-  IC_API ic_api(CanisterUpdate{std::string(__func__)}, false);
-  inference_doit(ic_api);
 }
