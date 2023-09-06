@@ -72,7 +72,8 @@ std::string generate(IC_API ic_api, Transformer *transformer,
   int *prompt_tokens = (int *)malloc((prompt.length() + 3) * sizeof(int));
   if (!prompt_tokens)
     IC_API::trap("Failed to allocate memory for prompt_tokens.");
-  encode(tokenizer, prompt.c_str(), transformer->bos, transformer->eos,
+  // We do not pass bos, but next, which is 1 after new_chat, else last token of previous call
+  encode(tokenizer, prompt.c_str(), transformer->next, transformer->eos,
          prompt_tokens, &num_prompt_tokens);
 
   // icpp: make sure we do not re-add bos next time, unless reset by new_chat
@@ -80,25 +81,40 @@ std::string generate(IC_API ic_api, Transformer *transformer,
   transformer->eos = 0;
 
   int token = transformer->next; // token that was predicted last, or BOS
-  int pos = transformer->pos;    // position in the sequence
-  if (num_prompt_tokens > 0) {
-    token = prompt_tokens[0]; // kick off with the first token in the prompt
-  }
+  int pos = transformer->pos;    // position in the total sequence
+  int prompt_pos = 0;            // position in the current prompt
+  // if (num_prompt_tokens > 0) {
+  //   token = prompt_tokens
+  //       [prompt_pos]; // kick off with the first token in the prompt
+  // }
+
+  transformer->total_steps += num_prompt_tokens + steps;
+  // override to ~max length
+  if (transformer->total_steps > transformer->config.seq_len)
+    transformer->total_steps = transformer->config.seq_len;
 
   // start the main loop
   long start =
       0;    // used to time our code, only initialized after first iteration
   int next; // will store the next token in the sequence
-  while (pos < steps) {
+  // icpp: use -1, so the exact prompt will be returned when steps is 0
+  //       this is critical when building the prompt in multiple calls
+  while (pos < transformer->total_steps - 1) {
 
     // forward the transformer to get logits for the next token
     float *logits = forward(transformer, token, pos);
 
     // advance the state state machine
-    if (pos < num_prompt_tokens - 1) {
+    if (prompt_pos < num_prompt_tokens - 1) {
       // if we are still processing the input prompt, force the next prompt token
-      next = prompt_tokens[pos + 1];
+      next = prompt_tokens[prompt_pos + 1];
+      prompt_pos++;
     } else {
+      // icpp: stop if we have exhausted the prompt_tokens, and caller did not ask for
+      //       any additional steps to be generated
+      if (steps == 0) {
+        break;
+      }
       // otherwise sample the next token from the logits
       next = sample(sampler, logits);
     }
@@ -117,8 +133,7 @@ std::string generate(IC_API ic_api, Transformer *transformer,
     // fflush(stdout);
     token = next;
 
-    // This can be done outside the loop, for last prediction
-    // safe the token in the transformer, used in follow-up calls to the endpoint
+    // safe state in the transformer, used in follow-up calls to the endpoint
     transformer->next = next;
     transformer->pos = pos;
 
@@ -169,8 +184,16 @@ void inference() {
   if (wire_prompt.topp < 0.0 || 1.0 < wire_prompt.topp) wire_prompt.topp = 0.9;
   if (wire_prompt.steps < 0) wire_prompt.steps = 0;
 
-  if (wire_prompt.steps == 0 || wire_prompt.steps > transformer.config.seq_len)
-    wire_prompt.steps = transformer.config.seq_len; // override to ~max length
+  // icpp: if caller provides a prompt , set bos & eos
+  // if (wire_prompt.prompt.size() > 0) {
+  //   transformer.bos = 1;
+  //   transformer.eos = 1;
+  // }
+
+  // icpp: We treat 'steps' as additional steps to generate
+  //       Do this check inside generate method
+  // if (wire_prompt.steps == 0 || wire_prompt.steps > transformer.config.seq_len)
+  //   wire_prompt.steps = transformer.config.seq_len; // override to ~max length
   // IC_API::debug_print("--\nAfter parameter validation/overrides.");
   // print_prompt(wire_prompt);
 

@@ -515,7 +515,8 @@ void encode(Tokenizer* t, const char *text, int8_t bos, int8_t eos, int *tokens,
     size_t str_len = 0;
 
     // add optional BOS (=1) token, if desired
-    if (bos) tokens[(*n_tokens)++] = 1;
+    // if (bos) tokens[(*n_tokens)++] = 1;
+    tokens[(*n_tokens)++] = bos; // icpp: 1 or last of previous call
 
     // add_dummy_prefix is true by default
     // so prepend a dummy prefix token to the input string, but only if text != ""

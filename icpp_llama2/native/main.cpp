@@ -63,7 +63,7 @@ int main() {
   bool silent_on_trap = true;
 
   // The model & tokenizer to use
-  int model_to_use = 2;
+  int model_to_use = 1;
 
   // Use this during final QA
   std::string model_path = "models/stories15M.bin";
@@ -317,53 +317,115 @@ int main() {
                   expected_response, silent_on_trap, my_principal);
 
   // -----------------------------------------------------------------------------------------
-  // A new chat
-  // '()' -> '(variant { ok = 200 : nat16 })'
-  mockIC.run_test("new_chat", new_chat, "4449444c0000",
-                  "4449444c016b019cc2017a010000c800", silent_on_trap,
-                  my_principal);
+  { // A new chat, using a prompt built in multiple steps
+    // '()' -> '(variant { ok = 200 : nat16 })'
+    mockIC.run_test("new_chat", new_chat, "4449444c0000",
+                    "4449444c016b019cc2017a010000c800", silent_on_trap,
+                    my_principal);
 
-  // Loop to create 1000 token long story, 10 tokens at a time
-  // With temperature=0.0: greedy argmax sampling -> the story will be the same every time
-  std::string prompt = "";
-  uint64_t steps = 10;
-  float temperature = 0.0;
-  float topp = 0.9;
-  uint64_t rng_seed = 0;
+    // Loop to create 1000 token long story, 10 tokens at a time
+    // With temperature=0.0: greedy argmax sampling -> the story will be the same every time
+    std::string prompt = "Lilly went to";
+    uint64_t steps = 0;
+    float temperature = 0.0;
+    float topp = 0.9;
+    uint64_t rng_seed = 0;
 
-  std::string generated_tokens = "";
-  std::string story = "";
-  for (int i = 0; i < 100; i++) {
-    CandidTypeRecord r_in;
-    r_in.append("prompt", CandidTypeText(prompt));
-    r_in.append("steps", CandidTypeNat64(steps));
-    r_in.append("temperature", CandidTypeFloat32(temperature));
-    r_in.append("topp", CandidTypeFloat32(topp));
-    r_in.append("rng_seed", CandidTypeNat64(uint64_t(rng_seed)));
-    candid_in = CandidSerialize(r_in).as_hex_string();
+    std::string generated_tokens = "";
+    std::string story = "";
+    for (int i = 0; i < 100; i++) {
+      CandidTypeRecord r_in;
+      r_in.append("prompt", CandidTypeText(prompt));
+      r_in.append("steps", CandidTypeNat64(steps));
+      r_in.append("temperature", CandidTypeFloat32(temperature));
+      r_in.append("topp", CandidTypeFloat32(topp));
+      r_in.append("rng_seed", CandidTypeNat64(uint64_t(rng_seed)));
+      candid_in = CandidSerialize(r_in).as_hex_string();
 
-    std::string candid_out;
-    mockIC.run_test("inference 0", inference, candid_in, "", silent_on_trap,
-                    my_principal, &candid_out);
+      std::string candid_out;
+      mockIC.run_test("inference 0a", inference, candid_in, "", silent_on_trap,
+                      my_principal, &candid_out);
 
-    std::string err_text;
-    CandidTypeVariant v_out;
-    v_out.append("ok", CandidTypeText(&generated_tokens));
-    v_out.append("err", CandidTypeText(&err_text));
+      std::string err_text;
+      CandidTypeVariant v_out;
+      v_out.append("ok", CandidTypeText(&generated_tokens));
+      v_out.append("err", CandidTypeText(&err_text));
 
-    CandidArgs A;
-    A.append(v_out);
-    CandidDeserialize(candid_out, A);
-    if (err_text.size() > 0) {
-      std::cout << "ERROR returned by inference function.";
-      exit(1);
+      CandidArgs A;
+      A.append(v_out);
+      CandidDeserialize(candid_out, A);
+      if (err_text.size() > 0) {
+        std::cout << "ERROR returned by inference function.";
+        exit(1);
+      }
+      story += generated_tokens;
+      // std::cout << story;
+
+      if (i == 0) {
+        prompt = "the beach this morning. ";
+        steps = 0;
+      } else if (i == 1) {
+        prompt = "She saw a little boat";
+        steps = 0;
+      } else if (i == 2) {
+        prompt = " with her friend Billy";
+        steps = 0;
+      } else {
+        prompt = "";
+        steps = 10;
+      }
     }
-    story += generated_tokens;
-
-    prompt = "";
-    steps += 10;
+    std::cout << story;
   }
-  std::cout << story;
+
+  // -----------------------------------------------------------------------------------------
+  { // A new chat, starting with an empty prompt
+    // '()' -> '(variant { ok = 200 : nat16 })'
+    mockIC.run_test("new_chat", new_chat, "4449444c0000",
+                    "4449444c016b019cc2017a010000c800", silent_on_trap,
+                    my_principal);
+
+    // Loop to create 1000 token long story, 10 tokens at a time
+    // With temperature=0.0: greedy argmax sampling -> the story will be the same every time
+    std::string prompt = "";
+    uint64_t steps = 10;
+    float temperature = 0.0;
+    float topp = 0.9;
+    uint64_t rng_seed = 0;
+
+    std::string generated_tokens = "";
+    std::string story = "";
+    for (int i = 0; i < 100; i++) {
+      CandidTypeRecord r_in;
+      r_in.append("prompt", CandidTypeText(prompt));
+      r_in.append("steps", CandidTypeNat64(steps));
+      r_in.append("temperature", CandidTypeFloat32(temperature));
+      r_in.append("topp", CandidTypeFloat32(topp));
+      r_in.append("rng_seed", CandidTypeNat64(uint64_t(rng_seed)));
+      candid_in = CandidSerialize(r_in).as_hex_string();
+
+      std::string candid_out;
+      mockIC.run_test("inference 0b", inference, candid_in, "", silent_on_trap,
+                      my_principal, &candid_out);
+
+      std::string err_text;
+      CandidTypeVariant v_out;
+      v_out.append("ok", CandidTypeText(&generated_tokens));
+      v_out.append("err", CandidTypeText(&err_text));
+
+      CandidArgs A;
+      A.append(v_out);
+      CandidDeserialize(candid_out, A);
+      if (err_text.size() > 0) {
+        std::cout << "ERROR returned by inference function.";
+        exit(1);
+      }
+      story += generated_tokens;
+
+      prompt = "";
+    }
+    std::cout << story;
+  }
 
   // -----------------------------------------------------------------------------------------
   // A new chat

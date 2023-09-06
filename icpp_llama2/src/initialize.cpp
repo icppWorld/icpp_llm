@@ -152,32 +152,32 @@ void read_checkpoint(Config *config, TransformerWeights *weights) {
   memory_map_weights(weights, config, weights_ptr, shared_weights);
 }
 
+void reset_tokens(Transformer *t) {
+  //initialize the next token predicted on pos 0 to the BOS token (1)
+  t->next = 1;
+  t->pos = 0;
+
+  //icpp: initialize to add begin-of-sentence
+  t->bos = 1; // We no longer use this...
+  t->eos = 0;
+
+  //icpp: initialize total_steps
+  t->total_steps = 0;
+}
 void build_transformer(Transformer *t) {
   // read in the Config and the Weights from the checkpoint
   read_checkpoint(&t->config, &t->weights);
   // allocate the RunState buffers
   malloc_run_state(&t->state, &t->config);
 
-  //icpp: initialize the next token predicted on pos 0 to the BOS token (1)
-  t->next = 1;
-  t->pos = 0;
-
-  //icpp: initialize to add begin-of-sentence
-  t->bos = 1;
-  t->eos = 0;
+  //icpp: initialize the token generation settings
+  reset_tokens(t);
 }
 
 void reset_run_state(Transformer *t) {
   free_run_state(&t->state);
   malloc_run_state(&t->state, &t->config);
-
-  //initialize the next token predicted on pos 0 to the BOS token (1)
-  t->next = 1;
-  t->pos = 0;
-
-  //icpp: initialize to add begin-of-sentence
-  t->bos = 1;
-  t->eos = 0;
+  reset_tokens(t);
 }
 
 void initialize() {

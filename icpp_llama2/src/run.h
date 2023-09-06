@@ -73,6 +73,8 @@ typedef struct {
   int next;   // next token that was predicted
   int8_t bos; // add begin-of-sentence token or not
   int8_t eos; // add end-of-sentence token or not
+  unsigned long long
+      total_steps; // total steps to generate, including previous calls
 } Transformer;
 
 typedef struct {
