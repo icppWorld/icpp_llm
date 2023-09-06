@@ -66,6 +66,6 @@ Overall Total Memory | 1.76 | 96.62 | 253.71 | 583.78
 
 Canister Metrics | 260K<br>(MB) | 15M<br>(MB) | 42M<br>(MB) | 110M<br>(MB)
 --- | --- | --- | --- | ---
-Max number of concurrent users | 4760 | 847 | 88 | 35
+Max number of concurrent users | 6347 | 1138 | 120 | 49
 
 

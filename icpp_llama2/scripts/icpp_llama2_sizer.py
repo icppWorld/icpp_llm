@@ -46,12 +46,29 @@ def calculate_memory(config: dict[str, int]) -> dict[str, dict[str, float]]:
     head_size = config["dim"] / config["n_heads"]
     n_layers = config["n_layers"]
 
-    token_embedding_table = config["vocab_size"] * config["dim"] * SIZE_OF_FLOAT
+    token_embedding_table = (
+        config["vocab_size"] * config["dim"] * SIZE_OF_FLOAT
+    )
     rms_att_weight = n_layers * config["dim"] * SIZE_OF_FLOAT
-    wq = n_layers * config["dim"] * (config["n_heads"] * head_size) * SIZE_OF_FLOAT
-    wk = n_layers * config["dim"] * (config["n_kv_heads"] * head_size) * SIZE_OF_FLOAT
+    wq = (
+        n_layers
+        * config["dim"]
+        * (config["n_heads"] * head_size)
+        * SIZE_OF_FLOAT
+    )
+    wk = (
+        n_layers
+        * config["dim"]
+        * (config["n_kv_heads"] * head_size)
+        * SIZE_OF_FLOAT
+    )
     wv = wk  # Same as wk
-    wo = n_layers * (config["n_heads"] * head_size) * config["dim"] * SIZE_OF_FLOAT
+    wo = (
+        n_layers
+        * (config["n_heads"] * head_size)
+        * config["dim"]
+        * SIZE_OF_FLOAT
+    )
     rms_ffn_weight = n_layers * config["dim"] * SIZE_OF_FLOAT
     w1 = n_layers * config["dim"] * config["hidden_dim"] * SIZE_OF_FLOAT
     w2 = n_layers * config["hidden_dim"] * config["dim"] * SIZE_OF_FLOAT
@@ -75,7 +92,9 @@ def calculate_memory(config: dict[str, int]) -> dict[str, dict[str, float]]:
     value_cache = key_cache  # Same as key_cache
 
     # Calculate total memory usage for Tokenizer, TransformerWeights and RunState
-    total_tokenizer = vocab_memory + vocab_scores_memory + SIZE_OF_BYTE_PIECES
+    total_tokenizer = (
+        vocab_memory + vocab_scores_memory + SIZE_OF_BYTE_PIECES
+    )
 
     total_transformer_weights = sum(
         [
@@ -132,18 +151,24 @@ def calculate_memory(config: dict[str, int]) -> dict[str, dict[str, float]]:
             "value_cache": value_cache / (1024 * 1024),
         },
         "Total Memory": {
-            "Total Tokenizer Memory (per model)": total_tokenizer / (1024 * 1024),
+            "Total Tokenizer Memory (per model)": total_tokenizer
+            / (1024 * 1024),
             "Total TransformerWeights Memory (per model)": total_transformer_weights
             / (1024 * 1024),
-            "Total RunState Memory (per user)": total_run_state / (1024 * 1024),
-            "Overall Total Memory": (total_transformer_weights + total_run_state)
+            "Total RunState Memory (per user)": total_run_state
+            / (1024 * 1024),
+            "Overall Total Memory": (
+                total_transformer_weights + total_run_state
+            )
             / (1024 * 1024),
         },
     }
     return data
 
 
-def write_data(file: TextIO, title: str, data: dict[str, dict[str, float]]) -> None:
+def write_data(
+    file: TextIO, title: str, data: dict[str, dict[str, float]]
+) -> None:
     """Writes it all to a Markdown file"""
     # Get the models for headers
     headers = ["Memory Type"] + [f"{model}<br>(MB)" for model in data.keys()]
@@ -185,19 +210,27 @@ def write_data(file: TextIO, title: str, data: dict[str, dict[str, float]]) -> N
         "RunState Memory (per user)",
     ]:
         # Add the totals to the table
-        total_row = ["Total"] + [f"{totals[model]:.2f}" for model in data.keys()]
+        total_row = ["Total"] + [
+            f"{totals[model]:.2f}" for model in data.keys()
+        ]
         file.write(" | ".join(total_row) + "\n")
     else:
         # Calculate max users for each model
         # Calculate number of users for each model and add it to the data
         number_of_users = {}
         for model, values in data.items():
-            total_available_memory = 3 * 1024  # Available canister memory in MB
-            total_tokenizer_memory = values["Total Tokenizer Memory (per model)"]
+            total_available_memory = (
+                4 * 1024
+            )  # Available canister memory in MB
+            total_tokenizer_memory = values[
+                "Total Tokenizer Memory (per model)"
+            ]
             total_transformer_weights_memory = values[
                 "Total TransformerWeights Memory (per model)"
             ]
-            total_runstate_memory = values["Total RunState Memory (per user)"]
+            total_runstate_memory = values[
+                "Total RunState Memory (per user)"
+            ]
 
             number_of_users[model] = int(
                 (
@@ -211,7 +244,9 @@ def write_data(file: TextIO, title: str, data: dict[str, dict[str, float]]) -> N
         # Write the markdown table for number of users
         file.write("\n\n")
         # Get the models for headers
-        headers = ["Canister Metrics"] + [f"{model}<br>(MB)" for model in data.keys()]
+        headers = ["Canister Metrics"] + [
+            f"{model}<br>(MB)" for model in data.keys()
+        ]
 
         # Write the table name
         file.write("### Canister Metrics\n\n")
@@ -246,7 +281,9 @@ def main() -> int:
     with open(output_path, "w") as file:
         file.write("# Canister resource requirements for icpp_llama2.")
         file.write("\n")
-        file.write("\nDo not edit this file. It is created with the command: ")
+        file.write(
+            "\nDo not edit this file. It is created with the command: "
+        )
         file.write("\n```bash")
         file.write("\npython -m scripts.icpp_llama2_sizer")
         file.write("\n```\n\n")
