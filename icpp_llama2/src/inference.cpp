@@ -217,7 +217,7 @@ void inference() {
   // memory and file handles cleanup
   free_sampler(&sampler);
 
-  IC_API::debug_print(output);
+  // IC_API::debug_print(output);
 
   // Return the generated response
   ic_api.to_wire(CandidTypeVariant{"ok", CandidTypeText{output}});

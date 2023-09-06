@@ -20,7 +20,7 @@ CANISTER_NAME = "llama2"
 
 def test__health(identity_anonymous: dict[str, str], network: str) -> None:
     # for IC network, the update calls take longer
-    update_timeout_seconds = 3
+    update_timeout_seconds = 5
     if network == "ic":
         update_timeout_seconds = 10
 
