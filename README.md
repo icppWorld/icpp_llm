@@ -4,8 +4,6 @@
 
 ![icpp-llm logo](./assets/icpp-llm-logo.png)
 
-Video: [How to run llama2.c on the Internet Computer](https://www.loom.com/share/a065b678df63462fb2f637d1b550b5d2?sid=1aeee693-25c0-4d1f-be0c-8231b53eb742)
-
 # The Benefits of Running LLMs On-Chain
 
 The canisters within the Internet Computer have certain constraints. They come with memory restrictions, and there's a cap on the number of instructions one can execute per message, as discussed [here](https://forum.dfinity.org/t/instruction-limit-is-crushing-me/22070/10?u=icpp).
@@ -22,21 +20,6 @@ With such user-friendliness, the IC canister runtime serves as an ideal environm
 Coherent English?](https://arxiv.org/pdf/2305.07759.pdf)
 
 Besides the ease of use and the enhanced security, running LLMs directly on-chain also facilitates a seamless integration of tokenomics, eliminating the need to juggle between a complex blend of web3 and web2 components, and I believe it will lead to a new category of Generative AI based dApps.
-
-# Try it
-
-`icpp_llama2` with the stories15M.bin is running on-chain in canister `4c4bn-daaaa-aaaag-abvcq-cai`. 
-
-You can call it's inference endpoint with:
-
-```bash
-dfx canister call --network ic 4c4bn-daaaa-aaaag-abvcq-cai inference '(record {prompt = "" : text; steps = 20 : nat64; temperature = 0.8 : float32; topp = 1.0 : float32;})'
-(
-  variant {
-    ok = "Once upon a time, there was a little boat named Bob. Bob loved to float on the water"
-  },
-)
-```
 
 
 ## Instructions
