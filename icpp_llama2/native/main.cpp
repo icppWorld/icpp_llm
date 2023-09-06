@@ -63,7 +63,7 @@ int main() {
   bool silent_on_trap = true;
 
   // The model & tokenizer to use
-  int model_to_use = 2;
+  int model_to_use = 1;
 
   // Use this during final QA
   std::string model_path = "models/stories15M.bin";
@@ -274,6 +274,11 @@ int main() {
                   "4449444c016b019cc2017a010000c800", silent_on_trap,
                   my_principal);
 
+  // '()' -> '(variant { ok = 200 : nat16 })'
+  mockIC.run_test("new_chat", new_chat, "4449444c0000",
+                  "4449444c016b019cc2017a010000c800", silent_on_trap,
+                  my_principal);
+
   /*
   '()' -> 
   '(
@@ -311,21 +316,145 @@ int main() {
   mockIC.run_test("get_model_config", get_model_config, "4449444c0000",
                   expected_response, silent_on_trap, my_principal);
 
+  // -----------------------------------------------------------------------------------------
+  { // A new chat, using a prompt built in multiple steps
+    // '()' -> '(variant { ok = 200 : nat16 })'
+    mockIC.run_test("new_chat", new_chat, "4449444c0000",
+                    "4449444c016b019cc2017a010000c800", silent_on_trap,
+                    my_principal);
+
+    // Loop to create 1000 token long story, 10 tokens at a time
+    // With temperature=0.0: greedy argmax sampling -> the story will be the same every time
+    std::string prompt = "Lilly went to";
+    uint64_t steps = 0;
+    float temperature = 0.0;
+    float topp = 0.9;
+    uint64_t rng_seed = 0;
+
+    std::string generated_tokens = "";
+    std::string story = "";
+    for (int i = 0; i < 100; i++) {
+      CandidTypeRecord r_in;
+      r_in.append("prompt", CandidTypeText(prompt));
+      r_in.append("steps", CandidTypeNat64(steps));
+      r_in.append("temperature", CandidTypeFloat32(temperature));
+      r_in.append("topp", CandidTypeFloat32(topp));
+      r_in.append("rng_seed", CandidTypeNat64(uint64_t(rng_seed)));
+      candid_in = CandidSerialize(r_in).as_hex_string();
+
+      std::string candid_out;
+      mockIC.run_test("inference 0a", inference, candid_in, "", silent_on_trap,
+                      my_principal, &candid_out);
+
+      std::string err_text;
+      CandidTypeVariant v_out;
+      v_out.append("ok", CandidTypeText(&generated_tokens));
+      v_out.append("err", CandidTypeText(&err_text));
+
+      CandidArgs A;
+      A.append(v_out);
+      CandidDeserialize(candid_out, A);
+      if (err_text.size() > 0) {
+        std::cout << "ERROR returned by inference function.";
+        exit(1);
+      }
+      story += generated_tokens;
+      // std::cout << story;
+
+      if (i == 0) {
+        prompt = "the beach this morning. ";
+        steps = 0;
+      } else if (i == 1) {
+        prompt = "She saw a little boat";
+        steps = 0;
+      } else if (i == 2) {
+        prompt = " with her friend Billy";
+        steps = 0;
+      } else {
+        prompt = "";
+        steps = 10;
+      }
+    }
+    std::cout << story;
+  }
+
+  // -----------------------------------------------------------------------------------------
+  { // A new chat, starting with an empty prompt
+    // '()' -> '(variant { ok = 200 : nat16 })'
+    mockIC.run_test("new_chat", new_chat, "4449444c0000",
+                    "4449444c016b019cc2017a010000c800", silent_on_trap,
+                    my_principal);
+
+    // Loop to create 1000 token long story, 10 tokens at a time
+    // With temperature=0.0: greedy argmax sampling -> the story will be the same every time
+    std::string prompt = "";
+    uint64_t steps = 10;
+    float temperature = 0.0;
+    float topp = 0.9;
+    uint64_t rng_seed = 0;
+
+    std::string generated_tokens = "";
+    std::string story = "";
+    for (int i = 0; i < 100; i++) {
+      CandidTypeRecord r_in;
+      r_in.append("prompt", CandidTypeText(prompt));
+      r_in.append("steps", CandidTypeNat64(steps));
+      r_in.append("temperature", CandidTypeFloat32(temperature));
+      r_in.append("topp", CandidTypeFloat32(topp));
+      r_in.append("rng_seed", CandidTypeNat64(uint64_t(rng_seed)));
+      candid_in = CandidSerialize(r_in).as_hex_string();
+
+      std::string candid_out;
+      mockIC.run_test("inference 0b", inference, candid_in, "", silent_on_trap,
+                      my_principal, &candid_out);
+
+      std::string err_text;
+      CandidTypeVariant v_out;
+      v_out.append("ok", CandidTypeText(&generated_tokens));
+      v_out.append("err", CandidTypeText(&err_text));
+
+      CandidArgs A;
+      A.append(v_out);
+      CandidDeserialize(candid_out, A);
+      if (err_text.size() > 0) {
+        std::cout << "ERROR returned by inference function.";
+        exit(1);
+      }
+      story += generated_tokens;
+
+      prompt = "";
+    }
+    std::cout << story;
+  }
+
+  // -----------------------------------------------------------------------------------------
+  // A new chat
+  // '()' -> '(variant { ok = 200 : nat16 })'
+  mockIC.run_test("new_chat", new_chat, "4449444c0000",
+                  "4449444c016b019cc2017a010000c800", silent_on_trap,
+                  my_principal);
+
   // With temperature=0.0: greedy argmax sampling -> the story will be the same every time
   // '(record {prompt = "" : text; steps = 100 : nat64; temperature = 0.0 : float32; topp = 1.0 : float32; rng_seed = 0 : nat64;})'
-  // -> '(variant { ok = "Once upon a time, there was a little girl named Lily. She loved to play outside in the sunshine. One day, she saw a big, red ball in the sky. It was the sun! She thought it was so pretty.\nLily wanted to play with the ball, but it was too high up in the sky. She tried to jump and reach it, but she couldn\'t. Then, she had an idea. She would use a stick to knock the\n" : text })'
+  // -> '(variant { ok = "Once upon a time, there was a little girl named Lily. She loved to play outside in the sunshine. One day, she saw a big, red ball in the sky. It was the sun! She thought it was so pretty.\nLily wanted to play with the ball, but it was too high up in the sky. She tried to jump and reach it, but she couldn\'t. Then, she had an idea. She would use a stick to knock the" : text })'
   expected_response =
-      "4449444c016b019cc20171010000ee024f6e63652075706f6e20612074696d652c207468657265207761732061206c6974746c65206769726c206e616d6564204c696c792e20536865206c6f76656420746f20706c6179206f75747369646520696e207468652073756e7368696e652e204f6e65206461792c20736865207361772061206269672c207265642062616c6c20696e2074686520736b792e20497420776173207468652073756e21205368652074686f756768742069742077617320736f207072657474792e0a4c696c792077616e74656420746f20706c61792077697468207468652062616c6c2c206275742069742077617320746f6f206869676820757020696e2074686520736b792e2053686520747269656420746f206a756d7020616e642072656163682069742c206275742073686520636f756c646e27742e205468656e2c207368652068616420616e20696465612e2053686520776f756c6420757365206120737469636b20746f206b6e6f636b207468650a";
+      "4449444c016b019cc20171010000ed024f6e63652075706f6e20612074696d652c207468657265207761732061206c6974746c65206769726c206e616d6564204c696c792e20536865206c6f76656420746f20706c6179206f75747369646520696e207468652073756e7368696e652e204f6e65206461792c20736865207361772061206269672c207265642062616c6c20696e2074686520736b792e20497420776173207468652073756e21205368652074686f756768742069742077617320736f207072657474792e0a4c696c792077616e74656420746f20706c61792077697468207468652062616c6c2c206275742069742077617320746f6f206869676820757020696e2074686520736b792e2053686520747269656420746f206a756d7020616e642072656163682069742c206275742073686520636f756c646e27742e205468656e2c207368652068616420616e20696465612e2053686520776f756c6420757365206120737469636b20746f206b6e6f636b20746865";
   if (model_to_use == 2) {
     // -> '(variant { ok = ""Once upon a time, there was a little girl named Lily. She loved to play outside in the park. One day, she saw a big, red ball. She wanted to play with it, but it was too high.\nLily\'s mom said, \"Lily, let\'s go to the park.\" Lily was sad and didn\'t know w\n"" : text })'
     expected_response =
-        "4449444c016b019cc20171010000fe014f6e63652075706f6e20612074696d652c207468657265207761732061206c6974746c65206769726c206e616d6564204c696c792e20536865206c6f76656420746f20706c6179206f75747369646520696e20746865207061726b2e204f6e65206461792c20736865207361772061206269672c207265642062616c6c2e205368652077616e74656420746f20706c617920776974682069742c206275742069742077617320746f6f20686967682e0a4c696c792773206d6f6d20736169642c20224c696c792c206c6574277320676f20746f20746865207061726b2e22204c696c79207761732073616420616e64206469646e2774206b6e6f7720770a";
+        "4449444c016b019cc20171010000fd014f6e63652075706f6e20612074696d652c207468657265207761732061206c6974746c65206769726c206e616d6564204c696c792e20536865206c6f76656420746f20706c6179206f75747369646520696e20746865207061726b2e204f6e65206461792c20736865207361772061206269672c207265642062616c6c2e205368652077616e74656420746f20706c617920776974682069742c206275742069742077617320746f6f20686967682e0a4c696c792773206d6f6d20736169642c20224c696c792c206c6574277320676f20746f20746865207061726b2e22204c696c79207761732073616420616e64206469646e2774206b6e6f772077";
   }
   mockIC.run_test(
       "inference 1", inference,
       "4449444c016c05b4e8c2e40373bbb885e80473a7f7b9a00878c5c8cea60878a4a3e1aa0b710100000000000000803f6400000000000000000000000000000000",
       expected_response, silent_on_trap, my_principal);
 
+  // -----------------------------------------------------------------------------------------
+  // A new chat
+  // '()' -> '(variant { ok = 200 : nat16 })'
+  mockIC.run_test("new_chat", new_chat, "4449444c0000",
+                  "4449444c016b019cc2017a010000c800", silent_on_trap,
+                  my_principal);
   // With temperature=0.0 & topp=0.9, still greedy argmax sampling -> the story will be the same every time
   // '(record {prompt = "" : text; steps = 100 : nat64; temperature = 0.0 : float32; topp = 0.9 : float32; rng_seed = 0 : nat64;})'
   mockIC.run_test(
@@ -333,6 +462,12 @@ int main() {
       "4449444c016c05b4e8c2e40373bbb885e80473a7f7b9a00878c5c8cea60878a4a3e1aa0b710100000000006666663f6400000000000000000000000000000000",
       expected_response, silent_on_trap, my_principal);
 
+  // -----------------------------------------------------------------------------------------
+  // A new chat
+  // '()' -> '(variant { ok = 200 : nat16 })'
+  mockIC.run_test("new_chat", new_chat, "4449444c0000",
+                  "4449444c016b019cc2017a010000c800", silent_on_trap,
+                  my_principal);
   // With temperature>0.0 & topp=1.0: regular sampling
   // '(record {prompt = "" : text; steps = 100 : nat64; temperature = 0.9 : float32; topp = 1.0 : float32; rng_seed = 0 : nat64;})'
   // -> --can not check on story--
@@ -341,6 +476,12 @@ int main() {
       "4449444c016c05b4e8c2e40373bbb885e80473a7f7b9a00878c5c8cea60878a4a3e1aa0b7101006666663f0000803f6400000000000000000000000000000000",
       "", silent_on_trap, my_principal);
 
+  // -----------------------------------------------------------------------------------------
+  // A new chat
+  // '()' -> '(variant { ok = 200 : nat16 })'
+  mockIC.run_test("new_chat", new_chat, "4449444c0000",
+                  "4449444c016b019cc2017a010000c800", silent_on_trap,
+                  my_principal);
   // With temperature>0.0 & topp<1.0: top-pp (nucleus) sampling
   // '(record {prompt = "" : text; steps = 100 : nat64; temperature = 0.9 : float32; topp = 0.9 : float32; rng_seed = 0 : nat64;})'
   // -> --can not check on story--
@@ -349,6 +490,12 @@ int main() {
       "4449444c016c05b4e8c2e40373bbb885e80473a7f7b9a00878c5c8cea60878a4a3e1aa0b7101006666663f6666663f6400000000000000000000000000000000",
       "", silent_on_trap, my_principal);
 
+  // -----------------------------------------------------------------------------------------
+  // A new chat
+  // '()' -> '(variant { ok = 200 : nat16 })'
+  mockIC.run_test("new_chat", new_chat, "4449444c0000",
+                  "4449444c016b019cc2017a010000c800", silent_on_trap,
+                  my_principal);
   // With temperature=0.0: greedy argmax sampling -> the story will be the same every time
   // '(record {prompt = "Yesterday I went for a walk" : text; steps = 100 : nat64; temperature = 0.0 : float32; topp = 1.0 : float32; rng_seed = 0 : nat64;})'
   // -> '(variant { ok = "..." : text })'
@@ -357,6 +504,12 @@ int main() {
       "4449444c016c05b4e8c2e40373bbb885e80473a7f7b9a00878c5c8cea60878a4a3e1aa0b710100000000000000803f640000000000000000000000000000001b59657374657264617920492077656e7420666f7220612077616c6b",
       "", silent_on_trap, my_principal);
 
+  // -----------------------------------------------------------------------------------------
+  // A new chat
+  // '()' -> '(variant { ok = 200 : nat16 })'
+  mockIC.run_test("new_chat", new_chat, "4449444c0000",
+                  "4449444c016b019cc2017a010000c800", silent_on_trap,
+                  my_principal);
   // With temperature=0.0 & topp=0.9, still greedy argmax sampling -> the story will be the same every time
   // '(record {prompt = "Yesterday I went for a walk" : text; steps = 100 : nat64; temperature = 0.0 : float32; topp = 0.9 : float32; rng_seed = 0 : nat64;})'
   // -> '(variant { ok = "..." : text })'
@@ -365,6 +518,12 @@ int main() {
       "4449444c016c05b4e8c2e40373bbb885e80473a7f7b9a00878c5c8cea60878a4a3e1aa0b710100000000006666663f640000000000000000000000000000001b59657374657264617920492077656e7420666f7220612077616c6b",
       "", silent_on_trap, my_principal);
 
+  // -----------------------------------------------------------------------------------------
+  // A new chat
+  // '()' -> '(variant { ok = 200 : nat16 })'
+  mockIC.run_test("new_chat", new_chat, "4449444c0000",
+                  "4449444c016b019cc2017a010000c800", silent_on_trap,
+                  my_principal);
   // With temperature>0.0 & topp=1.0: regular sampling
   // '(record {prompt = "Yesterday I went for a walk" : text; steps = 100 : nat64; temperature = 0.9 : float32; topp = 1.0 : float32; rng_seed = 0 : nat64;})'
   // -> --can not check on story--
@@ -373,6 +532,12 @@ int main() {
       "4449444c016c05b4e8c2e40373bbb885e80473a7f7b9a00878c5c8cea60878a4a3e1aa0b7101006666663f0000803f640000000000000000000000000000001b59657374657264617920492077656e7420666f7220612077616c6b",
       "", silent_on_trap, my_principal);
 
+  // -----------------------------------------------------------------------------------------
+  // A new chat
+  // '()' -> '(variant { ok = 200 : nat16 })'
+  mockIC.run_test("new_chat", new_chat, "4449444c0000",
+                  "4449444c016b019cc2017a010000c800", silent_on_trap,
+                  my_principal);
   // With temperature>0.0 & topp<1.0: top-pp (nucleus) sampling
   // '(record {prompt = "Yesterday I went for a walk" : text; steps = 100 : nat64; temperature = 0.9 : float32; topp = 0.9 : float32; rng_seed = 0 : nat64;})'
   // -> --can not check on story--

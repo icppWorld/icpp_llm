@@ -121,18 +121,18 @@ bool malloc_run_state(RunState* s, Config* p) {
 }
 
 void free_run_state(RunState* s) {
-    free(s->x);
-    free(s->xb);
-    free(s->xb2);
-    free(s->hb);
-    free(s->hb2);
-    free(s->q);
-    free(s->k);
-    free(s->v);
-    free(s->att);
-    free(s->logits);
-    free(s->key_cache);
-    free(s->value_cache);
+    if(s->x) { free(s->x); s->x = NULL; }
+    if(s->xb) { free(s->xb); s->xb = NULL; }
+    if(s->xb2) { free(s->xb2); s->xb2 = NULL; }
+    if(s->hb) { free(s->hb); s->hb = NULL; }
+    if(s->hb2) { free(s->hb2); s->hb2 = NULL; }
+    if(s->q) { free(s->q); s->q = NULL; }
+    if(s->k) { free(s->k); s->k = NULL; }
+    if(s->v) { free(s->v); s->v = NULL; }
+    if(s->att) { free(s->att); s->att = NULL; }
+    if(s->logits) { free(s->logits); s->logits = NULL; }
+    if(s->key_cache) { free(s->key_cache); s->key_cache = NULL; }
+    if(s->value_cache) { free(s->value_cache); s->value_cache = NULL; }
 }
 
 void memory_map_weights(TransformerWeights *w, Config* p, float* ptr, int shared_weights) {
@@ -486,6 +486,9 @@ void encode(Tokenizer* t, const char *text, int8_t bos, int8_t eos, int *tokens,
     // encode the string text (input) into an upper-bound preallocated tokens[] array
     // bos != 0 means prepend the BOS token (=1), eos != 0 means append the EOS token (=2)
 
+    // start at 0 tokens
+    *n_tokens = 0;
+
     // ICPP: We made sure this does not happen when calling encode.
     if (text == NULL) { 
         return;
@@ -507,13 +510,13 @@ void encode(Tokenizer* t, const char *text, int8_t bos, int8_t eos, int *tokens,
     // create a temporary buffer that will store merge candidates of always two consecutive tokens
     // *2 for concat, +1 for null terminator +2 for UTF8 (in case max_token_length is 1)
     char* str_buffer = malloc((t->max_token_length*2 +1 +2) * sizeof(char));
+    if (!str_buffer)
+        return; // ICPP: allocation failed. Just return and it will trap
     size_t str_len = 0;
 
-    // start at 0 tokens
-    *n_tokens = 0;
-
     // add optional BOS (=1) token, if desired
-    if (bos) tokens[(*n_tokens)++] = 1;
+    // if (bos) tokens[(*n_tokens)++] = 1;
+    tokens[(*n_tokens)++] = bos; // icpp: 1 or last of previous call
 
     // add_dummy_prefix is true by default
     // so prepend a dummy prefix token to the input string, but only if text != ""

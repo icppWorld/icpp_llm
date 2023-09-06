@@ -64,9 +64,17 @@ typedef struct {
   TransformerWeights weights; // the weights of the model
   RunState state; // buffers for the "wave" of activations in the forward pass
   // some more state needed to properly clean up the memory mapping (sigh)
+  // icpp: we do not use these, because we do not read from file, but leave them in for now
   int fd;            // file descriptor for memory mapping
   float *data;       // memory mapped data pointer
   ssize_t file_size; // size of the checkpoint file in bytes
+  // icpp: to support generation across endpoint calls, we need to save the next token predicted
+  int pos;    // position in the sequence
+  int next;   // next token that was predicted
+  int8_t bos; // add begin-of-sentence token or not
+  int8_t eos; // add end-of-sentence token or not
+  unsigned long long
+      total_steps; // total steps to generate, including previous calls
 } Transformer;
 
 typedef struct {
