@@ -120,6 +120,7 @@ bool malloc_run_state(RunState* s, Config* p) {
     return true; // ICPP: all is ok
 }
 
+// icpp: Make it robust against not freeing twice
 void free_run_state(RunState* s) {
     if(s->x) { free(s->x); s->x = NULL; }
     if(s->xb) { free(s->xb); s->xb = NULL; }
@@ -197,13 +198,14 @@ void memory_map_weights(TransformerWeights *w, Config* p, float* ptr, int shared
 //     malloc_run_state(&t->state, &t->config);
 // }
 
-void free_transformer(Transformer* t) {
+// icpp: no file, and we track runstate in p_chats
+// void free_transformer(Transformer* t) {
     // close the memory mapping
     // if (t->data != MAP_FAILED) { munmap(t->data, t->file_size); }
     // if (t->fd != -1) { close(t->fd); }
     // free the RunState buffers
-    free_run_state(&t->state);
-}
+    // free_run_state(&t->state);
+// }
 
 // ----------------------------------------------------------------------------
 // neural net blocks; the dynamics of the Transformer
@@ -257,12 +259,12 @@ void matmul(float* xout, float* x, float* w, int n, int d) {
     }
 }
 
-float* forward(Transformer* transformer, int token, int pos) {
+float* forward(Chat *chat, Transformer* transformer, int token, int pos) {
 
     // a few convenience variables
     Config* p = &transformer->config;
     TransformerWeights* w = &transformer->weights;
-    RunState* s = &transformer->state;
+    RunState* s = &chat->state;
     float *x = s->x;
     int dim = p->dim;
     int kv_dim = (p->dim * p->n_kv_heads) / p->n_heads;

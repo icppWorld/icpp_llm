@@ -62,12 +62,17 @@ typedef struct {
 typedef struct {
   Config config; // the hyperparameters of the architecture (the blueprint)
   TransformerWeights weights; // the weights of the model
-  RunState state; // buffers for the "wave" of activations in the forward pass
+  // icpp: we are storing RunState per user, not per model
+  // RunState state; // buffers for the "wave" of activations in the forward pass
   // some more state needed to properly clean up the memory mapping (sigh)
-  // icpp: we do not use these, because we do not read from file, but leave them in for now
-  int fd;            // file descriptor for memory mapping
-  float *data;       // memory mapped data pointer
-  ssize_t file_size; // size of the checkpoint file in bytes
+  // icpp: we do not use these, because we do not read from file
+  // int fd;            // file descriptor for memory mapping
+  // float *data;       // memory mapped data pointer
+  // ssize_t file_size; // size of the checkpoint file in bytes
+} Transformer;
+
+typedef struct {
+  RunState state; // buffers for the "wave" of activations in the forward pass
   // icpp: to support generation across endpoint calls, we need to save the next token predicted
   int pos;    // position in the sequence
   int next;   // next token that was predicted
@@ -75,7 +80,7 @@ typedef struct {
   int8_t eos; // add end-of-sentence token or not
   unsigned long long
       total_steps; // total steps to generate, including previous calls
-} Transformer;
+} Chat;
 
 typedef struct {
   char *str;
@@ -118,7 +123,7 @@ void memory_map_weights(TransformerWeights *w, Config *p, float *ptr,
                         int shared_weights);
 void encode(Tokenizer *t, const char *text, int8_t bos, int8_t eos, int *tokens,
             int *n_tokens);
-float *forward(Transformer *transformer, int token, int pos);
+float *forward(Chat *chat, Transformer *transformer, int token, int pos);
 char *decode(Tokenizer *t, int prev_token, int token);
 void build_sampler(Sampler *sampler, int vocab_size, float temperature,
                    float topp, unsigned long long rng_seed);
@@ -129,7 +134,7 @@ int sample_topp(float *probabilities, int n, float topp, ProbIndex *probindex,
 void free_run_state(RunState *s);
 void free_sampler(Sampler *sampler);
 void free_tokenizer(Tokenizer *t);
-void free_transformer(Transformer *t);
+// void free_transformer(Transformer *t);
 
 #ifdef __cplusplus
 }

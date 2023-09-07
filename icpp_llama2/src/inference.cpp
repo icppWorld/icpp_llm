@@ -7,6 +7,7 @@
 #include <variant>
 
 #include "canister.h"
+#include "chats.h"
 #include "http.h"
 #include "initialize.h"
 #include "run.h"
@@ -60,7 +61,7 @@ std::string safe_stringify(const char *piece) {
 }
 
 // Copied from run.c and modified slightly
-std::string generate(IC_API ic_api, Transformer *transformer,
+std::string generate(IC_API ic_api, Chat *chat, Transformer *transformer,
                      Tokenizer *tokenizer, Sampler *sampler, std::string prompt,
                      int steps) {
   std::string output;
@@ -73,25 +74,25 @@ std::string generate(IC_API ic_api, Transformer *transformer,
   if (!prompt_tokens)
     IC_API::trap("Failed to allocate memory for prompt_tokens.");
   // We do not pass bos, but next, which is 1 after new_chat, else last token of previous call
-  encode(tokenizer, prompt.c_str(), transformer->next, transformer->eos,
-         prompt_tokens, &num_prompt_tokens);
+  encode(tokenizer, prompt.c_str(), chat->next, chat->eos, prompt_tokens,
+         &num_prompt_tokens);
 
   // icpp: make sure we do not re-add bos next time, unless reset by new_chat
-  transformer->bos = 0;
-  transformer->eos = 0;
+  chat->bos = 0;
+  chat->eos = 0;
 
-  int token = transformer->next; // token that was predicted last, or BOS
-  int pos = transformer->pos;    // position in the total sequence
-  int prompt_pos = 0;            // position in the current prompt
+  int token = chat->next; // token that was predicted last, or BOS
+  int pos = chat->pos;    // position in the total sequence
+  int prompt_pos = 0;     // position in the current prompt
   // if (num_prompt_tokens > 0) {
   //   token = prompt_tokens
   //       [prompt_pos]; // kick off with the first token in the prompt
   // }
 
-  transformer->total_steps += num_prompt_tokens + steps;
+  chat->total_steps += num_prompt_tokens + steps;
   // override to ~max length
-  if (transformer->total_steps > transformer->config.seq_len)
-    transformer->total_steps = transformer->config.seq_len;
+  if (chat->total_steps > transformer->config.seq_len)
+    chat->total_steps = transformer->config.seq_len;
 
   // start the main loop
   long start =
@@ -99,10 +100,10 @@ std::string generate(IC_API ic_api, Transformer *transformer,
   int next; // will store the next token in the sequence
   // icpp: use -1, so the exact prompt will be returned when steps is 0
   //       this is critical when building the prompt in multiple calls
-  while (pos < transformer->total_steps - 1) {
+  while (pos < chat->total_steps - 1) {
 
     // forward the transformer to get logits for the next token
-    float *logits = forward(transformer, token, pos);
+    float *logits = forward(chat, transformer, token, pos);
 
     // advance the state state machine
     if (prompt_pos < num_prompt_tokens - 1) {
@@ -133,9 +134,9 @@ std::string generate(IC_API ic_api, Transformer *transformer,
     // fflush(stdout);
     token = next;
 
-    // safe state in the transformer, used in follow-up calls to the endpoint
-    transformer->next = next;
-    transformer->pos = pos;
+    // safe state in the chat, used in follow-up calls to the endpoint
+    chat->next = next;
+    chat->pos = pos;
 
     // init the timer here because the first iteration can be slower
     // if (start == 0) { start = time_in_ms(); }
@@ -157,14 +158,16 @@ std::string generate(IC_API ic_api, Transformer *transformer,
 // Based on a given prompt, llama2 will generate a token string
 void inference() {
   IC_API ic_api(CanisterUpdate{std::string(__func__)}, false);
-  // IC_API::debug_print("ready_for_inference =" +
-  //                     std::to_string(ready_for_inference));
-  if (!ready_for_inference) {
-    ic_api.to_wire(CandidTypeVariant{
-        "err", CandidTypeText{
-                   "The Llama2 canister is not (yet) ready for inference."}});
-    return;
+  if (!is_ready_and_authorized(ic_api)) return;
+
+  CandidTypePrincipal caller = ic_api.get_caller();
+  std::string principal = caller.get_text();
+
+  if (p_chats && p_chats->umap.find(principal) == p_chats->umap.end()) {
+    // Does not yet exist
+    build_new_chat(principal);
   }
+  Chat chat = p_chats->umap[principal];
 
   // Get the Prompt from the wire
   Prompt wire_prompt;
@@ -206,7 +209,7 @@ void inference() {
   // run!
   std::string output;
   // if (mode == "generate") {
-  output += generate(ic_api, &transformer, &tokenizer, &sampler,
+  output += generate(ic_api, &chat, &transformer, &tokenizer, &sampler,
                      wire_prompt.prompt, wire_prompt.steps);
   // } else if (mode =="chat") {
   // chat(&transformer, &tokenizer, &sampler, prompt, system_prompt, steps);

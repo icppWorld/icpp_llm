@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <variant>
 
+#include "chats.h"
 #include "http.h"
 #include "ic_api.h"
 
@@ -53,6 +54,9 @@ void print_canister_metadata() {
 void canister_init() {
   IC_API ic_api(CanisterInit{std::string(__func__)}, false);
   set_owner(ic_api);
+
+  // Create a p_chats instance
+  new_p_chats();
 }
 
 // --------------------------------------------------------------------------------------------------

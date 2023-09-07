@@ -20,6 +20,7 @@
 #endif
 
 #include "../src/canister.h"
+#include "../src/chats.h"
 #include "../src/inference.h"
 #include "../src/initialize.h"
 #include "../src/upload.h"
@@ -58,26 +59,34 @@ int main() {
   // The pretend principals of the caller
   std::string my_principal{
       "expmt-gtxsw-inftj-ttabj-qhp5s-nozup-n3bbo-k7zvn-dg4he-knac3-lae"};
+  std::string your_principal{"2ibo7-dia"};
   std::string anonymous_principal{"2vxsx-fae"};
 
   bool silent_on_trap = true;
 
   // The model & tokenizer to use
-  int model_to_use = 1;
+  int model_to_use = 2; // 1=260K, 2=15M
 
   // Use this during final QA
   std::string model_path = "models/stories15M.bin";
   std::string tokenizer_path = "tokenizers/tokenizer.bin";
-  if (model_to_use == 2) {
+  if (model_to_use == 1) {
     // Use this really small model during development
     model_path = "stories260K/stories260K.bin";
     tokenizer_path = "stories260K/tok512.bin";
+  } else if (model_to_use == 2) {
+    // Use this really small model during development
+    model_path = "stories260K/stories260K.bin";
+    tokenizer_path = "stories260K/tok512.bin";
+  } else {
+    std::cout << "ERROR: Uknown value of 'model_to_use'";
+    exit(1);
   }
   std::cout << "model_path = " << model_path << "\n";
   std::cout << "tokenizer_path = " << tokenizer_path << "\n";
 
   // -----------------------------------------------------------------------------
-  // Read the models/stories15M.bin file into a bytes vector
+  // Read the models file into a bytes vector
 
   std::streamsize file_size;        // file size bytes
   std::vector<uint8_t> model_bytes; // bytes to upload
@@ -113,7 +122,7 @@ int main() {
   }
 
   // -----------------------------------------------------------------------------
-  // Read the tokenizers/tokenizer.bin file into a bytes vector
+  // Read the tokenizer file into a bytes vector
 
   // std::streamsize file_size;       // file size bytes
   std::vector<uint8_t> tokenizer_bytes; // bytes to upload
@@ -268,6 +277,7 @@ int main() {
   }
 
   // ==========================================================================
+  // Mimic two principals at once are building a story...
 
   // '()' -> '(variant { ok = 200 : nat16 })'
   mockIC.run_test("initialize", initialize, "4449444c0000",
@@ -278,7 +288,16 @@ int main() {
   mockIC.run_test("new_chat", new_chat, "4449444c0000",
                   "4449444c016b019cc2017a010000c800", silent_on_trap,
                   my_principal);
+  // '()' -> '(variant { ok = 200 : nat16 })'
+  mockIC.run_test("new_chat", new_chat, "4449444c0000",
+                  "4449444c016b019cc2017a010000c800", silent_on_trap,
+                  your_principal);
 
+  // '()' -> '(variant { err =  "The Llama2 canister does not allow calling with anonymous principal." : text })'
+  mockIC.run_test(
+      "new_chat", new_chat, "4449444c0000",
+      "4449444c016b01e58eb4027101000044546865204c6c616d61322063616e697374657220646f6573206e6f7420616c6c6f772063616c6c696e67207769746820616e6f6e796d6f7573207072696e636970616c2e",
+      silent_on_trap, anonymous_principal);
   /*
   '()' -> 
   '(
