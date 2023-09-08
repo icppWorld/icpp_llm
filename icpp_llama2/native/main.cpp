@@ -336,65 +336,81 @@ int main() {
                   expected_response, silent_on_trap, my_principal);
 
   // -----------------------------------------------------------------------------------------
-  { // A new chat, using a prompt built in multiple steps
-    // '()' -> '(variant { ok = 200 : nat16 })'
-    mockIC.run_test("new_chat", new_chat, "4449444c0000",
-                    "4449444c016b019cc2017a010000c800", silent_on_trap,
-                    my_principal);
+  std::array<std::string, 2> principals = {my_principal, your_principal};
 
-    // Loop to create 1000 token long story, 10 tokens at a time
+  // Repeat it two times, for two principals intermittently
+  for (int k = 0; k < 2; k++) {
+    for (const auto &principal : principals) {
+
+      // A new chat, using a prompt built in multiple steps
+      // '()' -> '(variant { ok = 200 : nat16 })'
+      mockIC.run_test("new_chat", new_chat, "4449444c0000",
+                      "4449444c016b019cc2017a010000c800", silent_on_trap,
+                      principal);
+    }
+
+    // Loop to create a long story, 10 tokens at a time
     // With temperature=0.0: greedy argmax sampling -> the story will be the same every time
-    std::string prompt = "Lilly went to";
-    uint64_t steps = 0;
-    float temperature = 0.0;
-    float topp = 0.9;
-    uint64_t rng_seed = 0;
+    std::array<std::string, 2> prompt = {"Lilly went to", "Billy came from"};
+    std::array<uint64_t, 2> steps = {0, 0};
+    std::array<float, 2> temperature = {0.0, 0.0};
+    std::array<float, 2> topp = {0.9, 0.9};
+    std::array<uint64_t, 2> rng_seed = {0, 0};
 
-    std::string generated_tokens = "";
-    std::string story = "";
-    for (int i = 0; i < 100; i++) {
-      CandidTypeRecord r_in;
-      r_in.append("prompt", CandidTypeText(prompt));
-      r_in.append("steps", CandidTypeNat64(steps));
-      r_in.append("temperature", CandidTypeFloat32(temperature));
-      r_in.append("topp", CandidTypeFloat32(topp));
-      r_in.append("rng_seed", CandidTypeNat64(uint64_t(rng_seed)));
-      candid_in = CandidSerialize(r_in).as_hex_string();
+    std::array<std::string, 2> generated_tokens = {"", ""};
+    std::array<std::string, 2> story = {"", ""};
+    for (int i = 0; i < 10; i++) {
+      for (int j = 0; j < 2; j++) {
 
-      std::string candid_out;
-      mockIC.run_test("inference 0a", inference, candid_in, "", silent_on_trap,
-                      my_principal, &candid_out);
+        CandidTypeRecord r_in;
+        r_in.append("prompt", CandidTypeText(prompt[j]));
+        r_in.append("steps", CandidTypeNat64(steps[j]));
+        r_in.append("temperature", CandidTypeFloat32(temperature[j]));
+        r_in.append("topp", CandidTypeFloat32(topp[j]));
+        r_in.append("rng_seed", CandidTypeNat64(uint64_t(rng_seed[j])));
+        candid_in = CandidSerialize(r_in).as_hex_string();
 
-      std::string err_text;
-      CandidTypeVariant v_out;
-      v_out.append("ok", CandidTypeText(&generated_tokens));
-      v_out.append("err", CandidTypeText(&err_text));
+        std::string candid_out;
+        mockIC.run_test("inference 0a", inference, candid_in, "",
+                        silent_on_trap, principals[j], &candid_out);
 
-      CandidArgs A;
-      A.append(v_out);
-      CandidDeserialize(candid_out, A);
-      if (err_text.size() > 0) {
-        std::cout << "ERROR returned by inference function.";
-        exit(1);
+        std::string err_text;
+        CandidTypeVariant v_out;
+        v_out.append("ok", CandidTypeText(&generated_tokens[j]));
+        v_out.append("err", CandidTypeText(&err_text));
+
+        CandidArgs A;
+        A.append(v_out);
+        CandidDeserialize(candid_out, A);
+        if (err_text.size() > 0) {
+          std::cout << "ERROR returned by inference function.\n";
+          exit(1);
+        }
+        story[j] += generated_tokens[j];
+        std::cout << story[j] << "\n";
       }
-      story += generated_tokens;
-      // std::cout << story;
-
       if (i == 0) {
-        prompt = "the beach this morning. ";
-        steps = 0;
+        prompt[0] = "the beach this morning. ";
+        prompt[1] = "the pool this afternoon. ";
+        steps[0] = 0;
+        steps[1] = 0;
       } else if (i == 1) {
-        prompt = "She saw a little boat";
-        steps = 0;
+        prompt[0] = "She saw a little boat";
+        prompt[1] = "He went swimming";
+        steps[0] = 0;
+        steps[1] = 0;
       } else if (i == 2) {
-        prompt = " with her friend Billy";
-        steps = 0;
+        prompt[0] = " with her friend Billy";
+        prompt[1] = " with his friend Lilly";
+        steps[0] = 0;
+        steps[1] = 0;
       } else {
-        prompt = "";
-        steps = 10;
+        prompt[0] = "";
+        prompt[1] = "";
+        steps[0] = 10;
+        steps[1] = 10;
       }
     }
-    std::cout << story;
   }
 
   // -----------------------------------------------------------------------------------------

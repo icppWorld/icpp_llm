@@ -121,7 +121,7 @@ int compare_tokens(const void *a, const void *b);
 bool malloc_run_state(RunState *s, Config *p);
 void memory_map_weights(TransformerWeights *w, Config *p, float *ptr,
                         int shared_weights);
-void encode(Tokenizer *t, const char *text, int8_t bos, int8_t eos, int *tokens,
+void encode(Tokenizer *t, const char *text, int bos, int eos, int *tokens,
             int *n_tokens);
 float *forward(Chat *chat, Transformer *transformer, int token, int pos);
 char *decode(Tokenizer *t, int prev_token, int token);

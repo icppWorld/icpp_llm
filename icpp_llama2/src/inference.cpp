@@ -167,7 +167,7 @@ void inference() {
     // Does not yet exist
     build_new_chat(principal);
   }
-  Chat chat = p_chats->umap[principal];
+  Chat *chat = &p_chats->umap[principal];
 
   // Get the Prompt from the wire
   Prompt wire_prompt;
@@ -209,7 +209,7 @@ void inference() {
   // run!
   std::string output;
   // if (mode == "generate") {
-  output += generate(ic_api, &chat, &transformer, &tokenizer, &sampler,
+  output += generate(ic_api, chat, &transformer, &tokenizer, &sampler,
                      wire_prompt.prompt, wire_prompt.steps);
   // } else if (mode =="chat") {
   // chat(&transformer, &tokenizer, &sampler, prompt, system_prompt, steps);

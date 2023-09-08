@@ -50,27 +50,43 @@ void print_my_chat(std::string calling_function, std::string principal) {
   }
 }
 
+void init_run_state(RunState *s) {
+  s->x = nullptr;
+  s->xb = nullptr;
+  s->xb2 = nullptr;
+  s->hb = nullptr;
+  s->hb2 = nullptr;
+  s->q = nullptr;
+  s->k = nullptr;
+  s->v = nullptr;
+  s->att = nullptr;
+  s->logits = nullptr;
+  s->key_cache = nullptr;
+  s->value_cache = nullptr;
+}
+
 void build_new_chat(std::string principal) {
   if (p_chats && p_chats->umap.find(principal) == p_chats->umap.end()) {
     // Does not yet exist
     Chat chat;
+    init_run_state(&chat.state);
     p_chats->umap[principal] = chat;
   }
 
-  Chat chat = p_chats->umap[principal];
-  free_run_state(&chat.state);
-  malloc_run_state(&chat.state, &transformer.config);
+  Chat *chat = &p_chats->umap[principal];
+  free_run_state(&chat->state);
+  malloc_run_state(&chat->state, &transformer.config);
 
   //initialize the next token predicted on pos 0 to the BOS token (1)
-  chat.next = 1;
-  chat.pos = 0;
+  chat->next = 1;
+  chat->pos = 0;
 
   //icpp: initialize to add begin-of-sentence
-  chat.bos = 1; // We no longer use this...
-  chat.eos = 0;
+  chat->bos = 1; // We no longer use this...
+  chat->eos = 0;
 
   //icpp: initialize total_steps
-  chat.total_steps = 0;
+  chat->total_steps = 0;
 
   print_my_chat(std::string(__func__), principal);
 }

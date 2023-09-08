@@ -6,6 +6,7 @@ paths.txt
 .*.swp
 .DS_Store
 models
+secret
 
 # Windows
 .vs
