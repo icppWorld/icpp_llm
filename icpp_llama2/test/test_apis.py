@@ -57,7 +57,45 @@ def test__reset_model_err(identity_anonymous: dict[str, str], network: str) -> N
     assert response == expected_response
 
 
-def test__inference_1(identity_anonymous: dict[str, str], network: str) -> None:
+def test__new_chat_anonymous(identity_anonymous: dict[str, str], network: str) -> None:
+    response = call_canister_api(
+        dfx_json_path=DFX_JSON_PATH,
+        canister_name=CANISTER_NAME,
+        canister_method="new_chat",
+        canister_argument="()",
+        network=network,
+        timeout_seconds=10,
+    )
+    assert "err" in response
+
+
+def test__new_chat(identity_default: dict[str, str], network: str) -> None:
+    response = call_canister_api(
+        dfx_json_path=DFX_JSON_PATH,
+        canister_name=CANISTER_NAME,
+        canister_method="new_chat",
+        canister_argument="()",
+        network=network,
+        timeout_seconds=10,
+    )
+    assert "ok" in response
+
+
+def test__inference_1_anonymous(
+    identity_anonymous: dict[str, str], network: str
+) -> None:
+    response = call_canister_api(
+        dfx_json_path=DFX_JSON_PATH,
+        canister_name=CANISTER_NAME,
+        canister_method="inference",
+        canister_argument='(record {prompt = "" : text; steps = 19 : nat64; temperature = 0.9 : float32; topp = 0.9 : float32; rng_seed = 0 : nat64;})',
+        network=network,
+        timeout_seconds=10,
+    )
+    assert "err" in response
+
+
+def test__inference_1(identity_default: dict[str, str], network: str) -> None:
     response = call_canister_api(
         dfx_json_path=DFX_JSON_PATH,
         canister_name=CANISTER_NAME,
@@ -69,7 +107,7 @@ def test__inference_1(identity_anonymous: dict[str, str], network: str) -> None:
     assert "ok" in response
 
 
-def test__inference_2(identity_anonymous: dict[str, str], network: str) -> None:
+def test__inference_2(identity_default: dict[str, str], network: str) -> None:
     response = call_canister_api(
         dfx_json_path=DFX_JSON_PATH,
         canister_name=CANISTER_NAME,
