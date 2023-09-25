@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "canisters": {
+    "llama2": {
+      "type": "custom",
+      "candid": "src/llama2.did",
+      "wasm": "build/llama2.wasm"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  }
+}

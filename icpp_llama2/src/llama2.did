@@ -1,0 +1,56 @@
+// Candid interface of the canister endpoints
+// https://internetcomputer.org/docs/current/references/candid-ref/
+
+type Prompt = 
+  record {
+    prompt         : text; 
+    steps          : nat64;  
+    temperature    : float32;
+    topp           : float32;
+    rng_seed       : nat64;
+  };
+
+type Inference = 
+  variant {
+    err: text;
+    ok: text;
+  };
+
+type Config = 
+  record {
+    dim            : int; 
+    hidden_dim     : int; 
+    n_layers       : int; 
+    n_heads        : int; 
+    n_kv_heads     : int; 
+    vocab_size     : int; 
+    seq_len        : int;  
+  };
+
+type StatusCode = nat16;
+
+type Result = 
+  variant {
+    err: StatusCode;
+    ok: StatusCode;
+  };
+
+type ChatStartTime = nat64;
+type ChatTotalSteps = nat64;
+
+service : {
+  canister_init: () -> ();
+  health: ()                               -> (bool);
+  ready: ()                                -> (bool);
+  reset_model: ()                          -> (Result);
+  reset_tokenizer: ()                      -> (Result);
+  upload_model_bytes_chunk: (vec nat8)     -> (Result);
+  upload_tokenizer_bytes_chunk: (vec nat8) -> (Result);
+  initialize: ()                           -> (Result);
+  new_chat: ()                             -> (Result);
+  get_model_config: ()                     -> (Config)            query;
+  inference: (Prompt)                      -> (Inference);
+  get_user_count: ()                       -> (nat64)             query;
+  get_user_ids: ()                         -> (vec text)          query;
+  get_user_metadata: (text)                -> (vec ChatStartTime, vec ChatTotalSteps)  query;
+}
