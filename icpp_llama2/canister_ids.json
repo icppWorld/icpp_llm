@@ -1,5 +1,14 @@
 {
   "llama2": {
     "ic": "4c4bn-daaaa-aaaag-abvcq-cai"
+  },
+  "llama2_110M": {
+    "ic": "obk3p-xiaaa-aaaag-ab2oa-cai"
+  },
+  "llama2_260K": {
+    "ic": "otmmw-3yaaa-aaaag-ab2na-cai"
+  },
+  "llama2_42M": {
+    "ic": "ounkc-waaaa-aaaag-ab2nq-cai"
   }
 }

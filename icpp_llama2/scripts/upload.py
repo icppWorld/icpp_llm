@@ -42,7 +42,7 @@ def generate_chunks(data: bytes, chunk_size: int) -> Generator[bytes, None, None
 
 
 def main() -> int:
-    """Uploads the model."""
+    """Uploads the tokenizer & model."""
 
     args = parse_args()
 
@@ -85,6 +85,59 @@ def main() -> int:
     else:
         print("Not OK, response is:")
         print(response)
+
+    # ---------------------------------------------------------------------------
+    # THE TOKENIZER FILE
+
+    # Read the tokenizer from disk
+    print(f"--\nReading the tokenizer file into a bytes object: {tokenizer_path}")
+    tokenizer_bytes = read_file_bytes(tokenizer_path)
+
+    # Reset the tokenizer
+    print("--\nResetting the tokenizer in canister")
+    response = canister_llama2.reset_tokenizer()  # pylint: disable=no-member
+    if "ok" in response[0].keys():
+        if DEBUG_VERBOSE >= 2:
+            print("OK!")
+    else:
+        print("Something went wrong:")
+        print(response)
+        sys.exit()
+
+    # Upload tokenizer_bytes to the canister
+    print("--\nUploading the tokenizer bytes")
+
+    # converting MB to bytes
+    chunk_size = int(chunk_size_mb * 1024 * 1024)
+
+    # Iterate over all chunks
+    count_bytes = 0
+    for i, chunk in enumerate(generate_chunks(tokenizer_bytes, chunk_size)):
+        count_bytes += len(chunk)
+        if DEBUG_VERBOSE == 0:
+            pass
+        elif DEBUG_VERBOSE == 1:
+            print(
+                f"chunk size = {len(chunk)} bytes "
+                f"({count_bytes / len(tokenizer_bytes) * 100:.1f}%)"
+            )
+        else:
+            print("+++++++++++++++++++++++++++++++++++++++++++++++++++++")
+            print(f"Sending candid for {len(chunk)} bytes :")
+            print(f"- i         = {i}")
+            print(f"- progress  = {count_bytes / len(tokenizer_bytes) * 100:.1f} % ")
+            print(f"- chunk[0]  = {chunk[0]}")
+            print(f"- chunk[-1] = {chunk[-1]}")
+
+        response = canister_llama2.upload_tokenizer_bytes_chunk(
+            chunk
+        )  # pylint: disable=no-member
+        if "ok" in response[0].keys():
+            print("OK!")
+        else:
+            print("Something went wrong:")
+            print(response)
+            sys.exit()
 
     # ---------------------------------------------------------------------------
     # THE MODEL FILE
@@ -141,59 +194,6 @@ def main() -> int:
             sys.exit()
 
     # ---------------------------------------------------------------------------
-    # THE TOKENIZER FILE
-
-    # Read the tokenizer from disk
-    print(f"--\nReading the tokenizer file into a bytes object: {tokenizer_path}")
-    tokenizer_bytes = read_file_bytes(tokenizer_path)
-
-    # Reset the tokenizer
-    print("--\nResetting the tokenizer in canister")
-    response = canister_llama2.reset_tokenizer()  # pylint: disable=no-member
-    if "ok" in response[0].keys():
-        if DEBUG_VERBOSE >= 2:
-            print("OK!")
-    else:
-        print("Something went wrong:")
-        print(response)
-        sys.exit()
-
-    # Upload tokenizer_bytes to the canister
-    print("--\nUploading the tokenizer bytes")
-
-    # converting MB to bytes
-    chunk_size = int(chunk_size_mb * 1024 * 1024)
-
-    # Iterate over all chunks
-    count_bytes = 0
-    for i, chunk in enumerate(generate_chunks(tokenizer_bytes, chunk_size)):
-        count_bytes += len(chunk)
-        if DEBUG_VERBOSE == 0:
-            pass
-        elif DEBUG_VERBOSE == 1:
-            print(
-                f"chunk size = {len(chunk)} bytes "
-                f"({count_bytes / len(tokenizer_bytes) * 100:.1f}%)"
-            )
-        else:
-            print("+++++++++++++++++++++++++++++++++++++++++++++++++++++")
-            print(f"Sending candid for {len(chunk)} bytes :")
-            print(f"- i         = {i}")
-            print(f"- progress  = {count_bytes / len(tokenizer_bytes) * 100:.1f} % ")
-            print(f"- chunk[0]  = {chunk[0]}")
-            print(f"- chunk[-1] = {chunk[-1]}")
-
-        response = canister_llama2.upload_tokenizer_bytes_chunk(
-            chunk
-        )  # pylint: disable=no-member
-        if "ok" in response[0].keys():
-            print("OK!")
-        else:
-            print("Something went wrong:")
-            print(response)
-            sys.exit()
-
-    # ---------------------------------------------------------------------------
     # Initialize the canister
     print("--\nInitializing the canister, getting it ready for inference.")
     response = canister_llama2.initialize()
@@ -217,7 +217,7 @@ def main() -> int:
         print(response)
         sys.exit()
     # ---------------------------------------------------------------------------
-    print("--\nCongratulations, your llama2 canister is ready for inference!")
+    print(f"--\nCongratulations, canister {canister_name} is ready for inference!")
     try:
         print("💯 🎉 🏁")
     except UnicodeEncodeError:

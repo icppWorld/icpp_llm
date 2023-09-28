@@ -66,7 +66,7 @@ int main() {
   bool silent_on_trap = true;
 
   // The model & tokenizer to use
-  int model_to_use = 1; // 1=260K, 2=15M
+  int model_to_use = 2; // 1=260K, 2=15M, 3=42M, 4=110M (TinyStories)
 
   std::string model_path;
   std::string tokenizer_path;
@@ -76,8 +76,14 @@ int main() {
     tokenizer_path = "stories260K/tok512.bin";
   } else if (model_to_use == 2) {
     // Use this during final QA
-    std::string model_path = "models/stories15M.bin";
-    std::string tokenizer_path = "tokenizers/tokenizer.bin";
+    model_path = "models/stories15M.bin";
+    tokenizer_path = "tokenizers/tokenizer.bin";
+  } else if (model_to_use == 3) {
+    model_path = "models/stories42M.bin";
+    tokenizer_path = "tokenizers/tokenizer.bin";
+  } else if (model_to_use == 4) {
+    model_path = "models/stories110M.bin";
+    tokenizer_path = "tokenizers/tokenizer.bin";
   } else {
     std::cout << "ERROR: Uknown value of 'model_to_use'";
     exit(1);
@@ -298,22 +304,8 @@ int main() {
       "new_chat", new_chat, "4449444c0000",
       "4449444c016b01e58eb4027101000044546865204c6c616d61322063616e697374657220646f6573206e6f7420616c6c6f772063616c6c696e67207769746820616e6f6e796d6f7573207072696e636970616c2e",
       silent_on_trap, anonymous_principal);
-  /*
-  '()' -> 
-  '(
-    record {
-      dim = 288 : int;
-      hidden_dim = 768 : int;
-      n_layers = 6 : int;
-      n_heads = 6 : int;
-      n_kv_heads = 6 : int;
-      vocab_size = 32_000 : int;
-      seq_len = 256 : int;
-    },
-  )'
-  */
-  std::string expected_response =
-      "4449444c016c07c8fab0027cb087c0d9017cd58488bc027cb3fdc984037cf3e0d4d6057cf5cfd3fc057c82c3e4f60f7c0100a0020680fa01800606800206";
+
+  std::string expected_response = "-to-do-";
   if (model_to_use == 1) {
     /*
   '()' -> 
@@ -331,6 +323,57 @@ int main() {
   */
     expected_response =
         "4449444c016c07c8fab0027cb087c0d9017cd58488bc027cb3fdc984037cf3e0d4d6057cf5cfd3fc057c82c3e4f60f7c0100c000048004ac0105800408";
+  } else if (model_to_use == 2) {
+    /*
+  '()' -> 
+  '(
+    record {
+      dim = 288 : int;
+      hidden_dim = 768 : int;
+      n_layers = 6 : int;
+      n_heads = 6 : int;
+      n_kv_heads = 6 : int;
+      vocab_size = 32_000 : int;
+      seq_len = 256 : int;
+    },
+  )'
+  */
+    expected_response =
+        "4449444c016c07c8fab0027cb087c0d9017cd58488bc027cb3fdc984037cf3e0d4d6057cf5cfd3fc057c82c3e4f60f7c0100a0020680fa01800606800206";
+  } else if (model_to_use == 3) {
+    /*
+  '()' -> 
+  '(
+    record {
+      dim = 512 : int;
+      hidden_dim = 1_376 : int;
+      n_layers = 8 : int;
+      n_heads = 8 : int;
+      n_kv_heads = 8 : int;
+      vocab_size = 32_000 : int;
+      seq_len = 1024 : int;
+    },
+  )'
+  */
+    expected_response =
+        "4449444c016c07c8fab0027cb087c0d9017cd58488bc027cb3fdc984037cf3e0d4d6057cf5cfd3fc057c82c3e4f60f7c010080040880fa01e00a08800808";
+  } else if (model_to_use == 4) {
+    /*
+  '()' -> 
+  '(
+    record {
+      dim = 768 : int;
+      hidden_dim = 2_048 : int;
+      n_layers = 12 : int;
+      n_heads = 12 : int;
+      n_kv_heads = 12 : int;
+      vocab_size = 32_000 : int;
+      seq_len = 1024 : int;
+    },
+  )'
+  */
+    expected_response =
+        "4449444c016c07c8fab0027cb087c0d9017cd58488bc027cb3fdc984037cf3e0d4d6057cf5cfd3fc057c82c3e4f60f7c010080060c80fa0180100c80080c";
   }
   mockIC.run_test("get_model_config", get_model_config, "4449444c0000",
                   expected_response, silent_on_trap, my_principal);
@@ -471,13 +514,23 @@ int main() {
 
   // With temperature=0.0: greedy argmax sampling -> the story will be the same every time
   // '(record {prompt = "" : text; steps = 100 : nat64; temperature = 0.0 : float32; topp = 1.0 : float32; rng_seed = 0 : nat64;})'
-  // -> '(variant { ok = "Once upon a time, there was a little girl named Lily. She loved to play outside in the sunshine. One day, she saw a big, red ball in the sky. It was the sun! She thought it was so pretty.\nLily wanted to play with the ball, but it was too high up in the sky. She tried to jump and reach it, but she couldn\'t. Then, she had an idea. She would use a stick to knock the" : text })'
-  expected_response =
-      "4449444c016b019cc20171010000ed024f6e63652075706f6e20612074696d652c207468657265207761732061206c6974746c65206769726c206e616d6564204c696c792e20536865206c6f76656420746f20706c6179206f75747369646520696e207468652073756e7368696e652e204f6e65206461792c20736865207361772061206269672c207265642062616c6c20696e2074686520736b792e20497420776173207468652073756e21205368652074686f756768742069742077617320736f207072657474792e0a4c696c792077616e74656420746f20706c61792077697468207468652062616c6c2c206275742069742077617320746f6f206869676820757020696e2074686520736b792e2053686520747269656420746f206a756d7020616e642072656163682069742c206275742073686520636f756c646e27742e205468656e2c207368652068616420616e20696465612e2053686520776f756c6420757365206120737469636b20746f206b6e6f636b20746865";
+  expected_response = "-to-do-B-";
   if (model_to_use == 1) {
     // -> '(variant { ok = ""Once upon a time, there was a little girl named Lily. She loved to play outside in the park. One day, she saw a big, red ball. She wanted to play with it, but it was too high.\nLily\'s mom said, \"Lily, let\'s go to the park.\" Lily was sad and didn\'t know w\n"" : text })'
     expected_response =
         "4449444c016b019cc20171010000fd014f6e63652075706f6e20612074696d652c207468657265207761732061206c6974746c65206769726c206e616d6564204c696c792e20536865206c6f76656420746f20706c6179206f75747369646520696e20746865207061726b2e204f6e65206461792c20736865207361772061206269672c207265642062616c6c2e205368652077616e74656420746f20706c617920776974682069742c206275742069742077617320746f6f20686967682e0a4c696c792773206d6f6d20736169642c20224c696c792c206c6574277320676f20746f20746865207061726b2e22204c696c79207761732073616420616e64206469646e2774206b6e6f772077";
+  } else if (model_to_use == 2) {
+    // -> '(variant { ok = "Once upon a time, there was a little girl named Lily. She loved to play outside in the sunshine. One day, she saw a big, red ball in the sky. It was the sun! She thought it was so pretty.\nLily wanted to play with the ball, but it was too high up in the sky. She tried to jump and reach it, but she couldn\'t. Then, she had an idea. She would use a stick to knock the" : text })'
+    expected_response =
+        "4449444c016b019cc20171010000ed024f6e63652075706f6e20612074696d652c207468657265207761732061206c6974746c65206769726c206e616d6564204c696c792e20536865206c6f76656420746f20706c6179206f75747369646520696e207468652073756e7368696e652e204f6e65206461792c20736865207361772061206269672c207265642062616c6c20696e2074686520736b792e20497420776173207468652073756e21205368652074686f756768742069742077617320736f207072657474792e0a4c696c792077616e74656420746f20706c61792077697468207468652062616c6c2c206275742069742077617320746f6f206869676820757020696e2074686520736b792e2053686520747269656420746f206a756d7020616e642072656163682069742c206275742073686520636f756c646e27742e205468656e2c207368652068616420616e20696465612e2053686520776f756c6420757365206120737469636b20746f206b6e6f636b20746865";
+  } else if (model_to_use == 3) {
+    // -> '(variant { ok = "Once upon a time, there was a little girl named Lily. She loved to play outside in the sunshine. One day, she saw a big, yellow flower in the garden. It was a sunflower! Lily thought it was the most beautiful flower she had ever seen.\nLily\'s mom came outside and saw the sunflower too. \"Wow, that\'s a big flower!\" she said. \"Let\'s pick it and put it in" : text })'
+    expected_response =
+        "4449444c016b019cc20171010000e0024f6e63652075706f6e20612074696d652c207468657265207761732061206c6974746c65206769726c206e616d6564204c696c792e20536865206c6f76656420746f20706c6179206f75747369646520696e207468652073756e7368696e652e204f6e65206461792c20736865207361772061206269672c2079656c6c6f7720666c6f77657220696e207468652067617264656e2e2049742077617320612073756e666c6f77657221204c696c792074686f756768742069742077617320746865206d6f73742062656175746966756c20666c6f77657220736865206861642065766572207365656e2e0a4c696c792773206d6f6d2063616d65206f75747369646520616e6420736177207468652073756e666c6f77657220746f6f2e2022576f772c2074686174277320612062696720666c6f77657221222073686520736169642e20224c65742773207069636b20697420616e642070757420697420696e";
+  } else if (model_to_use == 4) {
+    // -> '(variant { ok = "Once upon a time, there was a little girl named Lily. She loved to play outside in the sunshine. One day, she saw a big, red apple on a tree. She wanted to eat it, but it was too high up.\nLily asked her friend, a little bird, \"Can you help me get the apple?\"\nThe bird said, \"Sure, I can fly up and get it for you.\"\nThe bird flew up to the apple" : text })'
+    expected_response =
+        "4449444c016b019cc20171010000d8024f6e63652075706f6e20612074696d652c207468657265207761732061206c6974746c65206769726c206e616d6564204c696c792e20536865206c6f76656420746f20706c6179206f75747369646520696e207468652073756e7368696e652e204f6e65206461792c20736865207361772061206269672c20726564206170706c65206f6e206120747265652e205368652077616e74656420746f206561742069742c206275742069742077617320746f6f20686967682075702e0a4c696c792061736b65642068657220667269656e642c2061206c6974746c6520626972642c202243616e20796f752068656c70206d652067657420746865206170706c653f220a546865206269726420736169642c2022537572652c20492063616e20666c7920757020616e642067657420697420666f7220796f752e220a546865206269726420666c657720757020746f20746865206170706c65";
   }
   mockIC.run_test(
       "inference 1", inference,
