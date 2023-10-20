@@ -3,7 +3,7 @@
 # LLMs for the Internet Computer
 <img src="./assets/icpp-llm-logo.png" alt="icpp-llm logo" width="200">
 
-  Try it out in [ICGPT Labs](https://icgpt.icpp.world) !
+  Try it out in [ICGPT](https://icgpt.icpp.world) !
 
 *The LLMs of this repo run in it's back-end canisters.*
 
