@@ -44,10 +44,68 @@
 
 ![icpp_llama2_without_limits](../assets/icpp_llama2_without_limits.png)
 
+- To deploy all the LLM canisters and upload their models + tokenizers:
+  ```bash
+  # ---------------------------------------------------------------
+  # Build WASM & deploy 
+  icpp build-wasm
+  dfx deploy charles
+  # or, all the canisters listed in dfx.json
+  dfx deploy
+
+  # Set the canister mode to either 'chat-principal' or 'nft-ordinal'
+  dfx canister call charles     set_canister_mode nft-ordinal
+  dfx canister call llama2_260K set_canister_mode chat-principal
+  dfx canister call llama2      set_canister_mode chat-principal
+  dfx canister call llama2_42M  set_canister_mode chat-principal
+  dfx canister call llama2_110M set_canister_mode chat-principal
+
+  # ---------------------------------------------------------------
+  # For the CHARLES canister: Initialize the NFT Collection
+  python -m scripts.nft_init --network local --canister charles --nft-supply-cap 25 --nft-symbol CHARLES --nft-name "Sir Charles The 3rd" --nft-description "A Bitcoin Ordinal Collection powered by a C++ LLM running on the Internet Computer"
+
+  # For the ICGPT backend canisters, minting is not supported:
+  python -m scripts.nft_init --network local --canister llama2_260K --nft-supply-cap 0 --nft-symbol "" --nft-name "" --nft-description ""
+  python -m scripts.nft_init --network local --canister llama2      --nft-supply-cap 0 --nft-symbol "" --nft-name "" --nft-description ""
+  python -m scripts.nft_init --network local --canister llama2_42M  --nft-supply-cap 0 --nft-symbol "" --nft-name "" --nft-description ""
+  python -m scripts.nft_init --network local --canister llama2_110M --nft-supply-cap 0 --nft-symbol "" --nft-name "" --nft-description ""
+
+  # ---------------------------------------------------------------
+  # Upload the models & tokenizers to the canisters
+  # Notes:
+  # (-) The storiesXX.bin files are not included in the github repo
+  # (-) See `Get a model checkpoint` above
+  # (-) The default tokenizer.bin is included in the github repo
+  # (-) See `stories260k` below how to build the tok512.bin for the stories260K model
+  # (-) Use `--network ic` when deploying to mainnet
+  #
+  # The CHARLES canister
+  python -m scripts.upload --network local --canister charles --model models/stories15M.bin --tokenizer tokenizer/tokenizer.bin
+  # or, for testing
+  python -m scripts.upload --network local --canister charles --model stories260K/stories260K.bin --tokenizer stories260K/tok512.bin
+
+  # The ICGPT backend canisters
+  python -m scripts.upload --network local --canister llama2_260K --model stories260K/stories260K.bin --tokenizer stories260K/tok512.bin
+
+  python -m scripts.upload --network local --canister llama2 --model models/stories15M.bin --tokenizer tokenizer/tokenizer.bin
+
+  python -m scripts.upload --network local --canister llama2_42M --model models/stories42M.bin --tokenizer tokenizer/tokenizer.bin
+
+  python -m scripts.upload --network local --canister llama2_110M --model models/stories110M.bin --tokenizer tokenizer/tokenizer.bin
+
+  # ---------------------------------------------------------------
+  # For the CHARLES canister: mint the NFTs
+  python -m scripts.nft_mint --network local --canister charles --nft-config <path-to-your-nft-config-toml-file>
+  
+
+  # For the ICGPT backend canisters:
+  # -> Nothing. The ICGPT dApp does not support NFT minting. You just talk to it.
+
+  ```
 
 # stories260K
 
-The default model is`stories15M.bin`, with `tokenizer.bin`, which contains the default llama2 tokenizer using 32000 tokens. 
+The default model is `stories15M.bin`, with `tokenizer.bin`, which contains the default llama2 tokenizer using 32000 tokens. 
 
 For testing, it is nice to be able to work with a smaller model & tokenizer:
 - Download the model & tokenizer from [huggingface stories260K](https://huggingface.co/karpathy/tinyllamas/tree/main/stories260K) and store them in:
@@ -61,16 +119,35 @@ For testing, it is nice to be able to work with a smaller model & tokenizer:
   ```
 - Upload the model & tokenizer:
   ```bash
-  python -m scripts.upload --model stories260K/stories260K.bin --tokenizer stories260K/tok512.bin
+  python -m scripts.upload --canister llama2_260K --model stories260K/stories260K.bin --tokenizer stories260K/tok512.bin
   ```
 - Inference is now possible with many more tokens before hitting the instruction limit, but off course, the stories are not as good:
   ```bash
-  $ dfx canister call llama2 inference '(record {prompt = "Lilly went swimming yesterday  " : text; steps = 100 : nat64; temperature = 0.9 : float32; topp = 0.9 : float32; rng_seed = 0 : nat64;})'
+  # Create a new chat
+  $ dfx canister call llama2_260K new_chat '()'
+
+  # Start the chat by providing the starting prompt
+  $ dfx canister call llama2_260K inference '(record {prompt = "Lilly went swimming yesterday  " : text; steps = 100 : nat64; temperature = 0.9 : float32; topp = 0.9 : float32; rng_seed = 0 : nat64;})'
   (
     variant {
       ok = "Lilly went swimming yesterday  order. She had a great eyes that was closed. One day, she asked her mom why the cloud was close to the pond. \n\"Mommy, I will take clothes away,\" Lila said. \"Th\n"
     },
   )
+
+  # Continue the current chat by calling again, with an empty prompt
+  $ dfx canister call llama2_260K inference '(record {prompt = "" : text; steps = 100 : nat64; temperature = 0.9 : float32; topp = 0.9 : float32; rng_seed = 0 : nat64;})'
+  (
+    variant {
+      ok = "eone replace it.\nThe fox agreed to go as fast as they set on the other birds. They searched, and it didn\'t give up. They started to scared the bird. The forest was so careful and jumped up."
+    },
+  )
+
+  # Retrieve your full story, by calling with curl, passing the principal by which the LLM knows you in the body
+  $ dfx canister call llama2_260K whoami
+  '("<your-principal>")'
+
+  $ curl -X GET -d '{"principal":"<your-principal>"}' http://localhost:$(dfx info webserver-port)?canisterId=$(dfx canister id llama2_260K)
+
   ```
 
 # Fine tuning

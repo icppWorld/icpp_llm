@@ -101,7 +101,7 @@ void print_upload_tokenizer_bytes_summary(std::string calling_function,
 
 void reset_model() {
   IC_API ic_api(CanisterUpdate{std::string(__func__)}, false);
-  if (!is_owner(ic_api)) return;
+  if (!is_canister_owner(ic_api)) return;
 
   ready_for_inference = false;
 
@@ -113,7 +113,7 @@ void reset_model() {
 
 void reset_tokenizer() {
   IC_API ic_api(CanisterUpdate{std::string(__func__)}, false);
-  if (!is_owner(ic_api)) return;
+  if (!is_canister_owner(ic_api)) return;
 
   ready_for_inference = false;
 
@@ -126,7 +126,7 @@ void reset_tokenizer() {
 // Endpoint for uploading the stories15M.bin file as bytes
 void upload_model_bytes_chunk() {
   IC_API ic_api(CanisterUpdate{std::string(__func__)}, false);
-  if (!is_owner(ic_api)) return;
+  if (!is_canister_owner(ic_api)) return;
 
   std::vector<uint8_t> v;
   ic_api.from_wire(CandidTypeVecNat8{&v});
@@ -143,7 +143,7 @@ void upload_model_bytes_chunk() {
 // Endpoint for uploading the tokenizer.bin file as bytes
 void upload_tokenizer_bytes_chunk() {
   IC_API ic_api(CanisterUpdate{std::string(__func__)}, false);
-  if (!is_owner(ic_api)) return;
+  if (!is_canister_owner(ic_api)) return;
 
   std::vector<uint8_t> v;
   ic_api.from_wire(CandidTypeVecNat8{&v});

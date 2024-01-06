@@ -11,9 +11,15 @@
 
 #include "run.h"
 
+void whoami() {
+  IC_API ic_api(CanisterQuery{std::string(__func__)}, false);
+  CandidTypePrincipal caller = ic_api.get_caller();
+  ic_api.to_wire(CandidTypeText{caller.get_text()});
+}
+
 void get_user_count() {
   IC_API ic_api(CanisterQuery{std::string(__func__)}, false);
-  if (!is_owner(ic_api, false)) IC_API::trap("Access Denied");
+  if (!is_canister_owner(ic_api, false)) IC_API::trap("Access Denied");
 
   uint64_t user_count = 0;
   if (p_metadata_users) {
@@ -25,7 +31,7 @@ void get_user_count() {
 
 void get_user_ids() {
   IC_API ic_api(CanisterQuery{std::string(__func__)}, false);
-  if (!is_owner(ic_api, false)) IC_API::trap("Access Denied");
+  if (!is_canister_owner(ic_api, false)) IC_API::trap("Access Denied");
 
   std::vector<std::string> user_ids;
 
@@ -40,7 +46,7 @@ void get_user_ids() {
 
 void get_user_metadata() {
   IC_API ic_api(CanisterQuery{std::string(__func__)}, false);
-  if (!is_owner(ic_api, false)) IC_API::trap("Access Denied");
+  if (!is_canister_owner(ic_api, false)) IC_API::trap("Access Denied");
 
   std::string in_principal;
   ic_api.from_wire(CandidTypeText{&in_principal});

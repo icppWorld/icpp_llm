@@ -170,7 +170,7 @@ void build_transformer(Transformer *t) {
 
 void initialize() {
   IC_API ic_api(CanisterUpdate{std::string(__func__)}, false);
-  if (!is_owner(ic_api)) return;
+  if (!is_canister_owner(ic_api, true)) return;
 
   build_transformer(&transformer);
   build_tokenizer(&tokenizer, transformer.config.vocab_size);

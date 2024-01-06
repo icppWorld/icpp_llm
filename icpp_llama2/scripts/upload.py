@@ -1,4 +1,4 @@
-"""Uploads stories15M.bin & tokenizer.bin to the canister.
+"""Uploads model & tokenizer.
 
 Run with:
 
@@ -11,7 +11,7 @@ import sys
 from pathlib import Path
 from typing import Generator
 from .ic_py_canister import get_canister
-from .parse_args import parse_args
+from .parse_args_upload import parse_args
 
 ROOT_PATH = Path(__file__).parent.parent
 
@@ -42,7 +42,7 @@ def generate_chunks(data: bytes, chunk_size: int) -> Generator[bytes, None, None
 
 
 def main() -> int:
-    """Uploads the tokenizer & model."""
+    """Uploads the tokenizer & model, and initializes NFT Collection."""
 
     args = parse_args()
 
@@ -52,25 +52,17 @@ def main() -> int:
     model_path = ROOT_PATH / args.model
     tokenizer_path = ROOT_PATH / args.tokenizer
     chunk_size_mb = args.chunksize
-    temperature = args.temperature
-    topp = args.topp
-    steps = args.steps
-    rng_seed = args.rng_seed
 
     dfx_json_path = ROOT_PATH / "dfx.json"
 
     print(
-        f"Summary of upload task:"
-        f"\n - network        = {network}"
-        f"\n - canister       = {canister_name}"
-        f"\n - dfx_json_path  = {dfx_json_path}"
-        f"\n - candid_path    = {candid_path}"
-        f"\n - model_path     = {model_path}"
-        f"\n - tokenizer_path = {tokenizer_path}"
-        f"\n - temperature    = {temperature}"
-        f"\n - topp           = {topp}"
-        f"\n - steps          = {steps}"
-        f"\n - rng_seed       = {rng_seed}"
+        f"Summary of model & NFT Collection:"
+        f"\n - network         = {network}"
+        f"\n - canister        = {canister_name}"
+        f"\n - dfx_json_path   = {dfx_json_path}"
+        f"\n - candid_path     = {candid_path}"
+        f"\n - model_path      = {model_path}"
+        f"\n - tokenizer_path  = {tokenizer_path}"
     )
 
     # ---------------------------------------------------------------------------

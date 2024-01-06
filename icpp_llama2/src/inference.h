@@ -2,5 +2,11 @@
 
 #include "wasm_symbol.h"
 #include <string>
+#include "ic_api.h"
+#include "chats.h"
+#include "prompt.h"
 
 void inference() WASM_SYMBOL_EXPORTED("canister_update inference");
+
+void do_inference(IC_API &ic_api, Prompt wire_prompt, Chat *chat,
+                  std::string *output_history, MetadataUser *metadata_user);
