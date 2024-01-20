@@ -23,6 +23,14 @@ Tokenizer tokenizer;
 // This is an exact copy of code in this method run.c,
 // Modified to read the data from the uploaded tokenizer.bin bytes
 void build_tokenizer(Tokenizer *t, int vocab_size) {
+  if (!p_tokenizer_bytes or
+      (p_tokenizer_bytes && p_tokenizer_bytes->vec.size() == 0)) {
+    std::string msg;
+    msg.append("ERROR: " + std::string(__func__) +
+               " tokenizer bytes were not yet uploaded!");
+    IC_API::debug_print(msg);
+    IC_API::trap(msg);
+  }
   // i should have written the vocab_size into the tokenizer file... sigh
   t->vocab_size = vocab_size;
   // malloc space to hold the scores and the strings
@@ -52,6 +60,8 @@ void build_tokenizer(Tokenizer *t, int vocab_size) {
   // read max_token_length from data
   memcpy(&t->max_token_length, data_ptr, sizeof(int));
   data_ptr += sizeof(int);
+  IC_API::debug_print("max_token_length = " +
+                      std::to_string(t->max_token_length));
 
   int len;
   for (int i = 0; i < vocab_size; i++) {
@@ -69,10 +79,22 @@ void build_tokenizer(Tokenizer *t, int vocab_size) {
     memcpy(&len, data_ptr, sizeof(int));
     data_ptr += sizeof(int);
 
+    if (len <= 0 or len > t->max_token_length) {
+      std::string msg;
+      msg.append("ERROR: Memory for tokenizer is messed up.");
+      msg.append("\nlen for token " + std::to_string(i) + " is " +
+                 std::to_string(len));
+      msg.append(
+          "\nIt must be larger than 0 or less than max_token_length of " +
+          std::to_string(t->max_token_length));
+      IC_API::debug_print(msg);
+      IC_API::trap(msg);
+    }
+
     t->vocab[i] = (char *)malloc(len + 1);
     if (!t->vocab[i])
       IC_API::trap("Failed to allocate memory for vocab[" + std::to_string(i) +
-                   "].");
+                   "] with len = " + std::to_string(len));
     // if (fread(t->vocab[i], len, 1, file) != 1) {
     //   fprintf(stderr, "failed read\n");
     //   exit(EXIT_FAILURE);
@@ -170,7 +192,7 @@ void build_transformer(Transformer *t) {
 
 void initialize() {
   IC_API ic_api(CanisterUpdate{std::string(__func__)}, false);
-  if (!is_owner(ic_api)) return;
+  if (!is_canister_owner(ic_api, true)) return;
 
   build_transformer(&transformer);
   build_tokenizer(&tokenizer, transformer.config.vocab_size);

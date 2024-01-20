@@ -56,8 +56,9 @@ wsl --% dfx canister call llama2 health
 #######################################################################
 Write-Host " "
 Write-Host "--------------------------------------------------"
-Write-Host "Upload the model & tokenizer"
-python -m scripts.upload
+Write-Host "Upload the model & tokenizer for 260K and 15M"
+python -m scripts.upload --canister llama2_260K --model stories260K/stories260K.bin --tokenizer stories260K/tok512.bin
+python -m scripts.upload --canister llama2 --model models/stories15M.bin --tokenizer tokenizers/tokenizer.bin
 
 #######################################################################
 Write-Host " "

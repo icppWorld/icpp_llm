@@ -8,32 +8,13 @@
 
 #include "canister.h"
 #include "chats.h"
+#include "prompt.h"
 #include "http.h"
 #include "initialize.h"
 #include "run.h"
 #include "upload.h"
 
 #include "ic_api.h"
-
-class Prompt {
-public:
-  std::string prompt{""};
-  uint64_t steps{256};
-  float temperature{1.0};
-  float topp{0.9};
-  uint64_t rng_seed{0};
-};
-
-void print_prompt(const Prompt &wire_prompt) {
-  std::string msg = std::string(__func__) + "- model config:";
-  msg += "\nwire_prompt.prompt       = " + wire_prompt.prompt;
-  msg += "\nwire_prompt.steps        = " + std::to_string(wire_prompt.steps);
-  msg +=
-      "\nwire_prompt.temperature  = " + std::to_string(wire_prompt.temperature);
-  msg += "\nwire_prompt.topp         = " + std::to_string(wire_prompt.topp);
-  msg += "\nwire_prompt.rng_seed     = " + std::to_string(wire_prompt.rng_seed);
-  IC_API::debug_print(msg);
-}
 
 // Replacement for run.c safe_printf
 std::string safe_stringify(const char *piece) {
@@ -89,6 +70,11 @@ std::string generate(IC_API ic_api, Chat *chat, Transformer *transformer,
   //       [prompt_pos]; // kick off with the first token in the prompt
   // }
 
+  // chat->total_steps += num_prompt_tokens + steps;
+  // When we have a prompt, we do NOT take additional steps
+  if (prompt.length() > 0) {
+    steps = 0;
+  }
   chat->total_steps += num_prompt_tokens + steps;
   // override to ~max length
   if (chat->total_steps > transformer->config.seq_len)
@@ -155,19 +141,11 @@ std::string generate(IC_API ic_api, Chat *chat, Transformer *transformer,
   return output;
 }
 
-// Based on a given prompt, llama2 will generate a token string
+// Inference endpoint for ICGPT, with story ownership based on principal of caller
 void inference() {
   IC_API ic_api(CanisterUpdate{std::string(__func__)}, false);
+  if (!is_canister_mode_chat_principal()) IC_API::trap("Access Denied");
   if (!is_ready_and_authorized(ic_api)) return;
-
-  CandidTypePrincipal caller = ic_api.get_caller();
-  std::string principal = caller.get_text();
-
-  if (p_chats && p_chats->umap.find(principal) == p_chats->umap.end()) {
-    // Does not yet exist
-    build_new_chat(principal);
-  }
-  Chat *chat = &p_chats->umap[principal];
 
   // Get the Prompt from the wire
   Prompt wire_prompt;
@@ -179,6 +157,27 @@ void inference() {
   r_in.append("rng_seed", CandidTypeNat64{&wire_prompt.rng_seed});
   ic_api.from_wire(r_in);
   // print_prompt(wire_prompt);
+
+  CandidTypePrincipal caller = ic_api.get_caller();
+  std::string principal = caller.get_text();
+
+  if (p_chats && p_chats->umap.find(principal) == p_chats->umap.end()) {
+    build_new_chat(principal);
+  }
+  if (!p_chats || !p_chats_output_history) {
+    IC_API::trap("ERROR: null pointers that should not be null in function " +
+                 std::string(__func__));
+  }
+
+  Chat *chat = &p_chats->umap[principal];
+  std::string *output_history = &p_chats_output_history->umap[principal];
+  MetadataUser *metadata_user = &p_metadata_users->umap[principal];
+
+  do_inference(ic_api, wire_prompt, chat, output_history, metadata_user);
+}
+
+void do_inference(IC_API &ic_api, Prompt wire_prompt, Chat *chat,
+                  std::string *output_history, MetadataUser *metadata_user) {
 
   // parameter validation/overrides
   if (wire_prompt.rng_seed <= 0)
@@ -217,9 +216,11 @@ void inference() {
   //   IC_API::trap("unsupported mode: " + mode);
   // }
 
+  // Update & persist full output using Orthogonal Persistence
+  *output_history += output;
+
   // Now we have the total_steps, stored with the chat
   // And we can update the metadata_user
-  MetadataUser *metadata_user = &p_metadata_users->umap[principal];
   if (!metadata_user->metadata_chats.empty()) {
     MetadataChat &metadata_chat = metadata_user->metadata_chats.back();
     metadata_chat.total_steps += chat->total_steps;
@@ -230,6 +231,6 @@ void inference() {
 
   // IC_API::debug_print(output);
 
-  // Return the generated response
+  // Send the generated response to the wire
   ic_api.to_wire(CandidTypeVariant{"ok", CandidTypeText{output}});
 }

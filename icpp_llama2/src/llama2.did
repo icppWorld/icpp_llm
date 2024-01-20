@@ -38,19 +38,110 @@ type Result =
 type ChatStartTime = nat64;
 type ChatTotalSteps = nat64;
 
+type NFTWhitelistItem =
+  record {
+    id: principal; 
+    description: text;
+  };
+
+type NFT =
+  record {
+    bitcoin_ordinal_id: nat64;
+  };
+
+type NFTCollection = 
+  record {
+    nft_supply_cap: nat64; 
+    nft_total_supply: nat64; 
+    nft_symbol: text; 
+    nft_name: text; 
+    nft_description: text;
+  };
+
+// --------------------------------------------------------------------------------
+// HTTP Gateway Protocol
+// https://internetcomputer.org/docs/current/references/http-gateway-protocol-spec#canister-http-interface
+// https://internetcomputer.org/docs/current/references/http-gateway-protocol-spec
+// https://internetcomputer.org/docs/current/references/ic-interface-spec/#ic-candid
+
+type HeaderField = record { text; text; };
+
+type HttpRequest = record {
+    method: text;
+    url: text;
+    headers: vec HeaderField;
+    body: blob;
+    certificate_version: opt nat16;
+};
+
+// type HttpUpdateRequest = record {
+//     method: text;
+//     url: text;
+//     headers: vec HeaderField;
+//     body: blob;
+// };
+
+type HttpResponse = record {
+    status_code: nat16;
+    headers: vec HeaderField;
+    body: blob;
+    upgrade : opt bool;
+    // streaming_strategy: opt StreamingStrategy;
+};
+
+/* StreamingStrategy is NOT YET SUPPORTED
+// Each canister that uses the streaming feature gets to choose their concrete
+// type; the HTTP Gateway will treat it as an opaque value that is only fed to
+// the callback method
+
+type StreamingToken = === application-specific type ===
+
+type StreamingCallbackHttpResponse = record {
+    body: blob;
+    token: opt StreamingToken;
+};
+
+type StreamingStrategy = variant {
+    Callback: record {
+        callback: func (StreamingToken) -> (opt StreamingCallbackHttpResponse) query;
+        token: StreamingToken;
+    };
+};
+*/
+
 service : {
-  canister_init: () -> ();
-  health: ()                               -> (bool);
-  ready: ()                                -> (bool);
+  // canister endpoints
+  canister_init: ()                        -> ();
+  set_canister_mode: (text)                -> ();
+  health: ()                               -> (bool)              query;
+  ready: ()                                -> (bool)              query;
+
+  // LLM initialization endpoints
   reset_model: ()                          -> (Result);
   reset_tokenizer: ()                      -> (Result);
   upload_model_bytes_chunk: (vec nat8)     -> (Result);
   upload_tokenizer_bytes_chunk: (vec nat8) -> (Result);
   initialize: ()                           -> (Result);
-  new_chat: ()                             -> (Result);
   get_model_config: ()                     -> (Config)            query;
+
+  // Chat endpoints for canister_mode=chat-principal 
+  new_chat: ()                             -> (Result);
   inference: (Prompt)                      -> (Inference);
+
+  // admin endpoints
+  whoami: ()                               -> (text)              query;
   get_user_count: ()                       -> (nat64)             query;
   get_user_ids: ()                         -> (vec text)          query;
   get_user_metadata: (text)                -> (vec ChatStartTime, vec ChatTotalSteps)  query;
+
+  // http endpoints
+  http_request: (request: HttpRequest)     -> (HttpResponse) query;
+
+  // nft endpoints (for canister_mode=nft-ordinal)
+  nft_whitelist:      (NFTWhitelistItem) -> (Result);
+  nft_init:           (NFTCollection)    -> (Result);
+  nft_metadata:       ()                 -> (NFTCollection);
+  nft_mint:           (NFT)              -> (Result);
+  nft_story_start:    (NFT, Prompt)      -> (Inference);
+  nft_story_continue: (NFT, Prompt)      -> (Inference);
 }

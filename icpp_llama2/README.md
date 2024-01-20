@@ -44,10 +44,79 @@
 
 ![icpp_llama2_without_limits](../assets/icpp_llama2_without_limits.png)
 
+- To deploy all the LLM canisters and upload their models + tokenizers:
+  ```bash
+  # ---------------------------------------------------------------
+  # Build WASM & deploy 
+  icpp build-wasm
+  dfx deploy
+
+  # Set the canister mode to either 'chat-principal' or 'nft-ordinal'
+  # for normal LLMs
+  dfx canister call llama2_260K set_canister_mode chat-principal
+  dfx canister call llama2      set_canister_mode chat-principal
+  dfx canister call llama2_42M  set_canister_mode chat-principal
+  dfx canister call llama2_110M set_canister_mode chat-principal
+
+  # for NFT LLMs controlled by bitcoin ordinals
+  dfx canister call <...>     set_canister_mode nft-ordinal
+
+  # ---------------------------------------------------------------
+  # Call `nft_init`
+  
+  # For the ICGPT backend canisters, minting is not supported:
+  python -m scripts.nft_init --network local --canister llama2_260K --nft-supply-cap 0 --nft-symbol "" --nft-name "" --nft-description ""
+  python -m scripts.nft_init --network local --canister llama2      --nft-supply-cap 0 --nft-symbol "" --nft-name "" --nft-description ""
+  python -m scripts.nft_init --network local --canister llama2_42M  --nft-supply-cap 0 --nft-symbol "" --nft-name "" --nft-description ""
+  python -m scripts.nft_init --network local --canister llama2_110M --nft-supply-cap 0 --nft-symbol "" --nft-name "" --nft-description ""
+
+  # For an NFT canister: Initialize the NFT Collection
+  python -m scripts.nft_init --network local --canister <...> --nft-supply-cap <...> --nft-symbol "..." --nft-name "..." --nft-description "..." 
+
+  # ---------------------------------------------------------------
+  # Upload the models & tokenizers to the canisters
+  # Notes:
+  # (-) The storiesXX.bin files are not included in the github repo
+  # (-) See `Get a model checkpoint` above
+  # (-) The default tokenizer.bin is included in the github repo
+  # (-) See `stories260k` below how to build the tok512.bin for the stories260K model
+  # (-) Use `--network ic` when deploying to mainnet
+  #
+  # IMPORTANT: ic-py will through a timeout => patch it here:
+  # /home/arjaan/miniconda3/envs/icpp-pro-w-llama2/lib/python3.11/site-packages/httpx/_config.py
+  # # DEFAULT_TIMEOUT_CONFIG = Timeout(timeout=5.0)
+  # DEFAULT_TIMEOUT_CONFIG = Timeout(timeout=99999999.0)
+  # And perhaps here:
+  # /home/arjaan/miniconda3/envs/<your-env>/lib/python3.11/site-packages/httpcore/_backends/sync.py#L28-L29
+  with map_exceptions(exc_map):
+            # PATCH AB
+            timeout = 999999999
+            # ENDPATCH
+            self._sock.settimeout(timeout)
+            return self._sock.recv(max_bytes)
+  
+  # The ICGPT backend canisters
+  python -m scripts.upload --network local --canister llama2_260K --model stories260K/stories260K.bin --tokenizer stories260K/tok512.bin
+
+  python -m scripts.upload --network local --canister llama2 --model models/stories15M.bin --tokenizer tokenizers/tokenizer.bin
+
+  python -m scripts.upload --network local --canister llama2_42M --model models/stories42M.bin --tokenizer tokenizers/tokenizer.bin
+
+  python -m scripts.upload --network local --canister llama2_110M --model models/stories110M.bin --tokenizer tokenizers/tokenizer.bin
+
+  #
+  # The NFT canister
+  python -m scripts.upload --network local --canister <...> --model <...> --tokenizer <...>
+
+  # ---------------------------------------------------------------
+  # For an NFT canister: mint the NFTs
+  => TODO
+  
+  ```
 
 # stories260K
 
-The default model is`stories15M.bin`, with `tokenizer.bin`, which contains the default llama2 tokenizer using 32000 tokens. 
+The default model is `stories15M.bin`, with `tokenizer.bin`, which contains the default llama2 tokenizer using 32000 tokens. 
 
 For testing, it is nice to be able to work with a smaller model & tokenizer:
 - Download the model & tokenizer from [huggingface stories260K](https://huggingface.co/karpathy/tinyllamas/tree/main/stories260K) and store them in:
@@ -61,17 +130,54 @@ For testing, it is nice to be able to work with a smaller model & tokenizer:
   ```
 - Upload the model & tokenizer:
   ```bash
-  python -m scripts.upload --model stories260K/stories260K.bin --tokenizer stories260K/tok512.bin
+  python -m scripts.upload --canister llama2_260K --model stories260K/stories260K.bin --tokenizer stories260K/tok512.bin
   ```
 - Inference is now possible with many more tokens before hitting the instruction limit, but off course, the stories are not as good:
   ```bash
-  $ dfx canister call llama2 inference '(record {prompt = "Lilly went swimming yesterday  " : text; steps = 100 : nat64; temperature = 0.9 : float32; topp = 0.9 : float32; rng_seed = 0 : nat64;})'
+  # Create a new chat
+  $ dfx canister call llama2_260K new_chat '()'
+
+  # Start the chat by providing the starting prompt
+  $ dfx canister call llama2_260K inference '(record {prompt = "Lilly went swimming yesterday  " : text; steps = 100 : nat64; temperature = 0.9 : float32; topp = 0.9 : float32; rng_seed = 0 : nat64;})'
   (
     variant {
       ok = "Lilly went swimming yesterday  order. She had a great eyes that was closed. One day, she asked her mom why the cloud was close to the pond. \n\"Mommy, I will take clothes away,\" Lila said. \"Th\n"
     },
   )
+
+  # Continue the current chat by calling again, with an empty prompt
+  $ dfx canister call llama2_260K inference '(record {prompt = "" : text; steps = 100 : nat64; temperature = 0.9 : float32; topp = 0.9 : float32; rng_seed = 0 : nat64;})'
+  (
+    variant {
+      ok = "eone replace it.\nThe fox agreed to go as fast as they set on the other birds. They searched, and it didn\'t give up. They started to scared the bird. The forest was so careful and jumped up."
+    },
+  )
+
+  # Retrieve your full story, by calling with curl, passing the principal by which the LLM knows you in the body
+  $ dfx canister call llama2_260K whoami
+  '("<your-principal>")'
+
+  $ curl -X GET -d '{"principal":"<your-principal>"}' http://localhost:$(dfx info webserver-port)?canisterId=$(dfx canister id llama2_260K)
+
   ```
+
+# Run llama2.c natively
+
+To do some prompt testing, it is nice to run llama2.c directly from the llama2.c github repo.
+
+```bash
+git clone https://github.com/icppWorld/llama2.c
+cd llama2.c
+
+conda create --name llama2-c python=3.10
+conda activate llama2-c
+pip install -r requirements.txt
+
+make run
+
+# Example command
+./run models/stories15Mtok4096.bin -z tokenizers/tok4096.bin -t 0.1 -p 0.9 -i "Tony went swimming on the beach"
+```
 
 # Fine tuning
 

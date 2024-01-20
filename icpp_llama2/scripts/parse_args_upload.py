@@ -15,8 +15,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--canister",
         type=str,
-        default="llama2",
-        help="canister name",
+        default="no-default",
+        help="canister name in dfx.json",
     )
     parser.add_argument(
         "--candid",
@@ -43,7 +43,10 @@ def parse_args() -> argparse.Namespace:
         help="Chunk Size for upload, in Mb",
     )
     parser.add_argument(
-        "--temperature", type=float, default=0.9, help="Temperature (e.g. 1.0, or 0.0)"
+        "--temperature",
+        type=float,
+        default=0.9,
+        help="Temperature (e.g. 1.0, or 0.0)",
     )
     parser.add_argument(
         "--topp",
@@ -63,6 +66,5 @@ def parse_args() -> argparse.Namespace:
         default=0,
         help="seed, 0: use random seed based on time",
     )
-
     args = parser.parse_args()
     return args

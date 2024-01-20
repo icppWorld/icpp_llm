@@ -21,8 +21,10 @@
 
 #include "../src/canister.h"
 #include "../src/chats.h"
+#include "../src/http.h"
 #include "../src/inference.h"
 #include "../src/initialize.h"
+#include "../src/nft_collection.h"
 #include "../src/upload.h"
 #include "../src/users.h"
 
@@ -57,16 +59,24 @@ int main() {
   // -----------------------------------------------------------------------------
   // Configs for the tests:
 
-  // The pretend principals of the caller
+  // The pretend principals used for the tests
+  // Owner of canister
   std::string my_principal{
       "expmt-gtxsw-inftj-ttabj-qhp5s-nozup-n3bbo-k7zvn-dg4he-knac3-lae"};
+  // Whitelisted principals for NFT minting (user or canister principal id)
+  std::string nft_whitelist_principal_id_user{
+      "nfxu4-cn7qt-x7r3c-5dhnk-dcrct-gmgoz-67gcg-5glvc-2krhv-gcmsr-qqe"};
+  std::string nft_whitelist_principal_id_canister{
+      "bd3sg-teaaa-aaaaa-qaaba-cai"};
+  // Authenticated user
   std::string your_principal{"2ibo7-dia"};
+  // Anonymous
   std::string anonymous_principal{"2vxsx-fae"};
 
   bool silent_on_trap = true;
 
   // The model & tokenizer to use
-  int model_to_use = 2; // 1=260K, 2=15M, 3=42M, 4=110M (TinyStories)
+  int model_to_use = 1; // 1=260K, 2=15M, 3=42M, 4=110M (TinyStories)
 
   std::string model_path;
   std::string tokenizer_path;
@@ -165,10 +175,22 @@ int main() {
   }
 
   // -----------------------------------------------------------------------------
+  // During deployment to IC, this is called automatically. It allocates OP memory
   // '()' -> canister_init does not return directly, so skip validation check
   mockIC.run_test("canister_init", canister_init, "4449444c0000", "",
                   silent_on_trap, my_principal);
 
+  // ####################################
+  // # canister_mode = 'chat-principal' #
+  // ####################################
+
+  // '("chat-principal": text)' -> '()'
+  mockIC.run_test("set_canister_mode to chat-principal", set_canister_mode,
+                  "4449444c0001710e636861742d7072696e636970616c",
+                  "4449444c0000", silent_on_trap, my_principal);
+
+  // -----------------------------------------------------------------------------
+  // The canister health & readiness checks
   // '()' -> '(true)'
   mockIC.run_test("health", health, "4449444c0000", "4449444c00017e01",
                   silent_on_trap, anonymous_principal);
@@ -176,6 +198,14 @@ int main() {
   // '()' -> '(false)'
   mockIC.run_test("ready", ready, "4449444c0000", "4449444c00017e00",
                   silent_on_trap, anonymous_principal);
+
+  // -----------------------------------------------------------------------------
+
+  // '()' -> '("expmt-gtxsw-inftj-ttabj-qhp5s-nozup-n3bbo-k7zvn-dg4he-knac3-lae")'
+  mockIC.run_test(
+      "whoami", whoami, "4449444c0000",
+      "4449444c0001713f6578706d742d67747873772d696e66746a2d747461626a2d71687035732d6e6f7a75702d6e3362626f2d6b377a766e2d64673468652d6b6e6163332d6c6165",
+      silent_on_trap, my_principal);
 
   // '()' -> '(variant { err = 401 : nat16 })'
   // Call with non owner principal must be denied
@@ -461,7 +491,7 @@ int main() {
     // '()' -> '(variant { ok = 200 : nat16 })'
     mockIC.run_test("new_chat", new_chat, "4449444c0000",
                     "4449444c016b019cc2017a010000c800", silent_on_trap,
-                    my_principal);
+                    your_principal);
 
     // Loop to create 1000 token long story, 10 tokens at a time
     // With temperature=0.0: greedy argmax sampling -> the story will be the same every time
@@ -484,7 +514,7 @@ int main() {
 
       std::string candid_out;
       mockIC.run_test("inference 0b", inference, candid_in, "", silent_on_trap,
-                      my_principal, &candid_out);
+                      your_principal, &candid_out);
 
       std::string err_text;
       CandidTypeVariant v_out;
@@ -634,6 +664,227 @@ int main() {
       "4449444c016c05b4e8c2e40373bbb885e80473a7f7b9a00878c5c8cea60878a4a3e1aa0b7101006666663f6666663f640000000000000000000000000000001b59657374657264617920492077656e7420666f7220612077616c6b",
       "", silent_on_trap, my_principal);
 
+  // #################################
+  // # canister_mode = 'nft-ordinal' #
+  // #################################
+
+  // '("nft-ordinal": text)' -> '()'
+  mockIC.run_test("set_canister_mode to nft-ordinal", set_canister_mode,
+                  "4449444c0001710b6e66742d6f7264696e616c", "4449444c0000",
+                  silent_on_trap, my_principal);
+
+  // -----------------------------------------------------------------------------
+  // Whitelist principals that can mint NFTs
+
+  // '(record { id = principal "nfxu4-cn7qt-x7r3c-5dhnk-dcrct-gmgoz-67gcg-5glvc-2krhv-gcmsr-qqe"; description = "A whitelisted user"; })'
+  // -> '(variant { err = 401 : nat16 })'
+  // Call with non owner principal must be denied
+  mockIC.run_trap_test(
+      "nft_whitelist a user as non-owner", nft_whitelist,
+      "4449444c016c02dbb70168fc91f4f805710100011dbf84eff8ec5d19daa18a2299986767df308dd32ea2d2a27a984c94610212412077686974656c69737465642075736572",
+      silent_on_trap, your_principal);
+
+  // '(record { id = principal "nfxu4-cn7qt-x7r3c-5dhnk-dcrct-gmgoz-67gcg-5glvc-2krhv-gcmsr-qqe"; description = "A whitelisted user"; })'
+  // -> '(variant { ok = 200 : nat16 })'
+  mockIC.run_test(
+      "nft_whitelist a user", nft_whitelist,
+      "4449444c016c02dbb70168fc91f4f805710100011dbf84eff8ec5d19daa18a2299986767df308dd32ea2d2a27a984c94610212412077686974656c69737465642075736572",
+      "4449444c016b019cc2017a010000c800", silent_on_trap, my_principal);
+
+  // '(record { id = principal "bd3sg-teaaa-aaaaa-qaaba-cai"; description = "A whitelisted canister"; })'
+  // -> '(variant { ok = 200 : nat16 })'
+  mockIC.run_test(
+      "nft_whitelist a canister", nft_whitelist,
+      "4449444c016c02dbb70168fc91f4f805710100010a8000000000100002010116412077686974656c69737465642063616e6973746572",
+      "4449444c016b019cc2017a010000c800", silent_on_trap, my_principal);
+
+  // -----------------------------------------------------------------------------
+  // Initialize the NFT Collection
+
+  // '(record { nft_supply_cap = 2 : nat64; nft_total_supply = 0 : nat64; nft_symbol = "CHARLES"; nft_name = "Sir Charles The 3rd"; nft_description = "A Bitcoin Ordinal Collection powered by a C++ LLM running on the Internet Computer"})'
+  // -> '(variant { err = 401 : nat16 })'
+  // Call with non owner principal must be denied
+  mockIC.run_trap_test(
+      "nft_init as non-owner", nft_init,
+      "4449444c016c05a5d0bfc60278ee86c3950871bb9effa20f71b9e4b5ac0f71ad91e7ca0f78010002000000000000001353697220436861726c6573205468652033726407434841524c4553524120426974636f696e204f7264696e616c20436f6c6c656374696f6e20706f7765726564206279206120432b2b204c4c4d2072756e6e696e67206f6e2074686520496e7465726e657420436f6d70757465720000000000000000",
+      silent_on_trap, your_principal);
+
+  // -> '(variant { ok = 200 : nat16 })'
+  mockIC.run_test(
+      "nft_init", nft_init,
+      "4449444c016c05a5d0bfc60278ee86c3950871bb9effa20f71b9e4b5ac0f71ad91e7ca0f78010002000000000000001353697220436861726c6573205468652033726407434841524c4553524120426974636f696e204f7264696e616c20436f6c6c656374696f6e20706f7765726564206279206120432b2b204c4c4d2072756e6e696e67206f6e2074686520496e7465726e657420436f6d70757465720000000000000000",
+      "4449444c016b019cc2017a010000c800", silent_on_trap, my_principal);
+
+  // -> '(variant { err = 401 : nat16 })'
+  // Re-initialization must be denied
+  mockIC.run_trap_test(
+      "nft_init again", nft_init,
+      "4449444c016c05a5d0bfc60278ee86c3950871bb9effa20f71b9e4b5ac0f71ad91e7ca0f78010002000000000000001353697220436861726c6573205468652033726407434841524c4553524120426974636f696e204f7264696e616c20436f6c6c656374696f6e20706f7765726564206279206120432b2b204c4c4d2072756e6e696e67206f6e2074686520496e7465726e657420436f6d70757465720000000000000000",
+      silent_on_trap, my_principal);
+
+  // '()' -> '(record { nft_supply_cap = 2 : nat64; nft_total_supply = 0 : nat64; nft_symbol = "CHARLES"; nft_name = "Sir Charles The 3rd"; nft_description = "A Bitcoin Ordinal Collection powered by a C++ LLM running on the Internet Computer"})'
+  mockIC.run_test(
+      "nft_metadata", nft_metadata, "4449444c0000",
+      "4449444c016c05a5d0bfc60278ee86c3950871bb9effa20f71b9e4b5ac0f71ad91e7ca0f78010002000000000000001353697220436861726c6573205468652033726407434841524c4553524120426974636f696e204f7264696e616c20436f6c6c656374696f6e20706f7765726564206279206120432b2b204c4c4d2072756e6e696e67206f6e2074686520496e7465726e657420436f6d70757465720000000000000000",
+      silent_on_trap, anonymous_principal);
+
+  // ------------------------------------------------------------------------
+  // Mint some NFTs, which simply sets their bitcoin ordinal
+  // Note: There is no story yet
+
+  // Ownership is given to a bitcoin ordinal id
+  // A Bitcoin Ordinal ID is a numerical value that uniquely identifies each
+  // satoshi, the smallest unit of Bitcoin. Since the total supply of Bitcoin
+  // is capped at 21 million BTC, and each Bitcoin is divisible into 100 million
+  // satoshis, the highest ordinal number possible would be
+  // 2,100,000,000,000,000 (2.1 quadrillion).
+  // We will use this in all our tests, ensuring that it will fit.
+
+  // Verify it traps when not owner of the canister
+  // A regular user cannot mint NFTs
+  // '(record {bitcoin_ordinal_id = 2_100_000_000_000_000 : nat64})' -> trap
+  mockIC.run_trap_test("nft_mint trap test", nft_mint,
+                       "4449444c016c01aafa87cf087801000040075af0750700",
+                       silent_on_trap, your_principal);
+
+  // A whitelisted principal can NOT mint NFTs, they can only create new stories
+  mockIC.run_trap_test("nft_mint trap test", nft_mint,
+                       "4449444c016c01aafa87cf087801000040075af0750700",
+                       silent_on_trap, nft_whitelist_principal_id_user);
+
+  // -----------
+  // Mint one
+  // '(record {bitcoin_ordinal_id = 2_100_000_000_000_000 : nat64})'
+  // -> '(variant { ok = 200 : nat16 })'
+  mockIC.run_test(
+      "nft_mint", nft_mint, "4449444c016c01aafa87cf087801000040075af0750700",
+      "4449444c016b019cc2017a010000c800", silent_on_trap, my_principal);
+  // Summarize NFT collection metadata
+  // '()' -> '(record { nft_supply_cap = 2 : nat64; nft_total_supply = 1 : nat64; nft_symbol = "CHARLES"; nft_name = "Sir Charles The 3rd"; nft_description = "A Bitcoin Ordinal Collection powered by a C++ LLM running on the Internet Computer"})'
+  mockIC.run_test(
+      "nft_metadata - total_supply = 1", nft_metadata, "4449444c0000",
+      "4449444c016c05a5d0bfc60278ee86c3950871bb9effa20f71b9e4b5ac0f71ad91e7ca0f78010002000000000000001353697220436861726c6573205468652033726407434841524c4553524120426974636f696e204f7264696e616c20436f6c6c656374696f6e20706f7765726564206279206120432b2b204c4c4d2072756e6e696e67206f6e2074686520496e7465726e657420436f6d70757465720100000000000000",
+      silent_on_trap, anonymous_principal);
+
+  // -----------
+  // Minting it again for the same ordinal must trap.
+  // '(record {bitcoin_ordinal_id = 2_100_000_000_000_000 : nat64})'
+  // -> TRAP
+  mockIC.run_trap_test("nft_mint only one per ordinal", nft_mint,
+                       "4449444c016c01aafa87cf087801000040075af0750700",
+                       silent_on_trap, my_principal);
+
+  // -----------
+  // Mint another NFT with different ordinal ID
+  // '(record {bitcoin_ordinal_id = 2_000_000_000_000_000 : nat64})'
+  // -> '(variant { ok = 200 : nat16 })'
+  mockIC.run_test("nft_mint again", nft_mint,
+                  "4449444c016c01aafa87cf0878010000008d49fd1a0700",
+                  "4449444c016b019cc2017a010000c800", silent_on_trap,
+                  my_principal);
+  // Summarize NFT collection metadata
+  // '()' -> '(record { nft_supply_cap = 2 : nat64; nft_total_supply = 2 : nat64; nft_symbol = "CHARLES"; nft_name = "Sir Charles The 3rd"; nft_description = "A Bitcoin Ordinal Collection powered by a C++ LLM running on the Internet Computer"})'
+  mockIC.run_test(
+      "nft_metadata - total_supply = 2", nft_metadata, "4449444c0000",
+      "4449444c016c05a5d0bfc60278ee86c3950871bb9effa20f71b9e4b5ac0f71ad91e7ca0f78010002000000000000001353697220436861726c6573205468652033726407434841524c4553524120426974636f696e204f7264696e616c20436f6c6c656374696f6e20706f7765726564206279206120432b2b204c4c4d2072756e6e696e67206f6e2074686520496e7465726e657420436f6d70757465720200000000000000",
+      silent_on_trap, anonymous_principal);
+
+  // -----------
+  // Minting another NFT for another ordinal must trap, because we reached supply_cap
+  // '(record {bitcoin_ordinal_id = 1_000_000_000_000_000 : nat64})'
+  // -> TRAP
+  mockIC.run_trap_test("nft_mint hit supply_cap", nft_mint,
+                       "4449444c016c01aafa87cf087801000080c6a47e8d0300",
+                       silent_on_trap, my_principal);
+
+  // ------------------------------------------------------------------------
+  // Create the stories
+
+  // With temperature=0.0: greedy argmax sampling -> the story will be the same every time
+  // '(record {bitcoin_ordinal_id = 2_100_000_000_000_000 : nat64;}, record{ prompt = "It was a bright sunny day and Charles went to the beach with his fishing pole." : text; steps = 100 : nat64; temperature = 0.0 : float32; topp = 1.0 : float32; rng_seed = 0 : nat64;})'
+  expected_response = "-to-do-B-";
+  if (model_to_use == 1) {
+    // -> '(variant { ok = "...some story..." : text })'
+    expected_response =
+        "4449444c016b019cc201710100004e4974207761732061206272696768742073756e6e792064617920616e6420436861726c65732077656e7420746f207468652062656163682077697468206869732066697368696e6720706f6c652e";
+  } else if (model_to_use == 2) {
+  } else if (model_to_use == 3) {
+  } else if (model_to_use == 4) {
+  }
+  // Verify it traps when caller is not whitelisted
+  // A regular user cannot create new stories for NFTs
+  mockIC.run_trap_test("nft_story_start trap test", nft_story_start,
+                       "4449444c016c01aafa87cf087801000040075af0750700",
+                       silent_on_trap, your_principal);
+  mockIC.run_test(
+      "nft_story_start 1", nft_story_start,
+      "4449444c026c01aafa87cf08786c05b4e8c2e40373bbb885e80473a7f7b9a00878c5c8cea60878a4a3e1aa0b710200010040075af0750700000000000000803f640000000000000000000000000000004e4974207761732061206272696768742073756e6e792064617920616e6420436861726c65732077656e7420746f207468652062656163682077697468206869732066697368696e6720706f6c652e",
+      expected_response, silent_on_trap, my_principal);
+
+  // With temperature=0.0: greedy argmax sampling -> the story will be the same every time
+  // '(record {bitcoin_ordinal_id = 2_100_000_000_000_000 : nat64;}, record{ prompt = "" : text; steps = 100 : nat64; temperature = 0.0 : float32; topp = 1.0 : float32; rng_seed = 0 : nat64;})'
+  expected_response = "-to-do-B-";
+  if (model_to_use == 1) {
+    // -> '(variant { ok = "...some story..." : text })'
+    expected_response =
+        "4449444c016b019cc201710100004f204974207761732061206272696768742073756e6e792064617920616e6420436861726c65732077656e7420746f207468652062656163682077697468206869732066697368696e6720706f6c652e";
+  } else if (model_to_use == 2) {
+  } else if (model_to_use == 3) {
+  } else if (model_to_use == 4) {
+  }
+  // Verify it traps when caller is not whitelisted
+  // A regular user cannot create new stories for NFTs
+  mockIC.run_trap_test("nft_story_continue trap test", nft_story_continue,
+                       "4449444c016c01aafa87cf087801000040075af0750700",
+                       silent_on_trap, your_principal);
+  mockIC.run_test(
+      "nft_story_continue 1", nft_story_continue,
+      "4449444c026c01aafa87cf08786c05b4e8c2e40373bbb885e80473a7f7b9a00878c5c8cea60878a4a3e1aa0b710200010040075af0750700000000000000803f640000000000000000000000000000004e4974207761732061206272696768742073756e6e792064617920616e6420436861726c65732077656e7420746f207468652062656163682077697468206869732066697368696e6720706f6c652e",
+      expected_response, silent_on_trap, my_principal);
+
+  // ------------------------------------------------------------------------
+  // Call to the http_request endpoint, to get the story of nft_id 1
+  // (
+  //   record {                                       // IC_HttpRequest
+  //     5_843_823 = "/api/nft/1";                    // url
+  //     156_956_385 = "GET";                         // method
+  //     1_092_319_906 = vec {};                      // body
+  //     1_661_489_734 = vec { record {...} };        // headers
+  //     1_661_892_784 = opt (2 : nat16);             // certificate_version
+  //   },
+  // )
+  // I encoded the anonimized version of an actual request to MAINNET:
+  // '(record { 5_843_823 = "/api/nft/1"; 156_956_385 = "GET"; 1_092_319_906 = blob "{}"; 1_661_489_734 = vec { record { "host"; "xxxxx-xxxxx-xxxxx-xxxxx-cai.icp0.io";}; record { "x-real-ip"; "xx.xx.xxx.xxx";}; record { "x-forwarded-for"; "xx.xx.xxx.xxx";}; record { "x-forwarded-proto"; "https";}; record { "x-request-id"; "15aad0a6-e422-26e5-8992-c3fe477ffedd";}; record { "x-icx-require-certification"; "1";}; record { "pragma"; "no-cache";}; record { "cache-control"; "no-cache";}; record { "sec-ch-ua"; "\"Not_A Brand\";v=\"8\", \"Chromium\";v=\"120\", \"Brave\";v=\"120\"";}; record { "sec-ch-ua-mobile"; "?0";}; record { "user-agent"; "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";}; record { "sec-ch-ua-platform"; "\"Linux\"";}; record { "accept"; "*/*";}; record { "sec-gpc"; "1";}; record { "origin"; "null";}; record { "sec-fetch-site"; "cross-site";}; record { "sec-fetch-mode"; "cors";}; record { "sec-fetch-dest"; "empty";}; record { "accept-encoding"; "gzip, deflate, br, identity";}; record { "accept-language"; "en-US,en;q=0.9";};}; 1_661_892_784 = opt (2 : nat16); }, )'
+  //
+  // Note: Encoding this gives an error on the empty vec, not sure yet why:
+  // '(record { 5_843_823 = "/api/nft/1"; 156_956_385 = "GET"; 1_092_319_906 = vec {}; 1_661_489_734 = vec { record { "host"; "xxxxx-xxxxx-xxxxx-xxxxx-cai.icp0.io";}; record { "x-real-ip"; "xx.xx.xxx.xxx";}; record { "x-forwarded-for"; "xx.xx.xxx.xxx";}; record { "x-forwarded-proto"; "https";}; record { "x-request-id"; "15aad0a6-e422-26e5-8992-c3fe477ffedd";}; record { "x-icx-require-certification"; "1";}; record { "pragma"; "no-cache";}; record { "cache-control"; "no-cache";}; record { "sec-ch-ua"; "\"Not_A Brand\";v=\"8\", \"Chromium\";v=\"120\", \"Brave\";v=\"120\"";}; record { "sec-ch-ua-mobile"; "?0";}; record { "user-agent"; "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";}; record { "sec-ch-ua-platform"; "\"Linux\"";}; record { "accept"; "*/*";}; record { "sec-gpc"; "1";}; record { "origin"; "null";}; record { "sec-fetch-site"; "cross-site";}; record { "sec-fetch-mode"; "cors";}; record { "sec-fetch-dest"; "empty";}; record { "accept-encoding"; "gzip, deflate, br, identity";}; record { "accept-language"; "en-US,en;q=0.9";};}; 1_661_892_784 = opt (2 : nat16); }, )'
+  //
+  // -> Returns an IC_HttpResponse
+  // (
+  //   record {                                                                     // IC_HttpResponse
+  //     1_092_319_906 = blob "{\22story\22:\22Once upon a time, ...\5c\22\22}";    // body
+  //     1_661_489_734 = vec {                                                      // headers
+  //       record { "Content-Type"; "application/json" };
+  //       record { "Content-Length"; "803" };
+  //     };
+  //     1_664_201_884 = opt false;                                                 // upgrade
+  //     3_475_804_314 = 200 : nat16;                                               // status_code
+  //   },
+  // )
+  expected_response = "-to-do-";
+  if (model_to_use == 1) {
+    expected_response =
+        "4449444c0a6c02000101016d716c006c02007101716d036c02007101716c02007101716c04a2f5ed880408c6a4a19806049ce9c69906099aa1b2f90c7a6d7b6e7e0107f0037b2273746f7279223a224974207761732061206272696768742073756e6e792064617920616e6420436861726c65732077656e7420746f207468652062656163682077697468206869732066697368696e6720706f6c652e204865207761732076657279206578636974656420746f2073656520776861742077617320696e736964652e204865207761732076657279206578636974656420746f2073656520776861742077617320696e736964652e5c6e5c2248656c6c6f2c20436861726c6965215c22207361696420436861726c69652e5c6e5c2249276d20736f7272792c5c22207361696420436861726c69652e5c6e5c2249276d20736f7272792c5c22207361696420204974207761732061206272696768742073756e6e792064617920616e6420436861726c65732077656e7420746f207468652062656163682077697468206869732066697368696e6720706f6c652e5c6e5c225768617420697320746861743f5c222061736b656420436861726c69652e5c6e5c2249276d20736f7272792c5c2220436861726c696520736169642e5c6e5c2249276d20736f7272792c5c2220436861726c696520736169642e5c6e5c2249276d20736f7272792c5c2220436861726c696520736169642e205c2249276d20736f7272792c20436861726c69652e204920646964227d020c436f6e74656e742d54797065106170706c69636174696f6e2f6a736f6e0e436f6e74656e742d4c656e677468033439360100c800";
+  } else if (model_to_use == 2) {
+  } else if (model_to_use == 3) {
+  } else if (model_to_use == 4) {
+  }
+  mockIC.run_test(
+      "http_request anonimized with blob body", http_request,
+      "4449444c056c05efd6e40271e1edeb4a71a2f5ed880401c6a4a1980602b0f1b99806046d7b6d036c02007101716e7a01000a2f6170692f6e66742f3103474554027b7d1404686f73742378787878782d78787878782d78787878782d78787878782d6361692e696370302e696f09782d7265616c2d69700d78782e78782e7878782e7878780f782d666f727761726465642d666f720d78782e78782e7878782e78787811782d666f727761726465642d70726f746f0568747470730c782d726571756573742d69642431356161643061362d653432322d323665352d383939322d6333666534373766666564641b782d6963782d726571756972652d63657274696669636174696f6e013106707261676d61086e6f2d63616368650d63616368652d636f6e74726f6c086e6f2d6361636865097365632d63682d756138224e6f745f41204272616e64223b763d2238222c20224368726f6d69756d223b763d22313230222c20224272617665223b763d2231323022107365632d63682d75612d6d6f62696c65023f300a757365722d6167656e74654d6f7a696c6c612f352e3020285831313b204c696e7578207838365f363429204170706c655765624b69742f3533372e333620284b48544d4c2c206c696b65204765636b6f29204368726f6d652f3132302e302e302e30205361666172692f3533372e3336127365632d63682d75612d706c6174666f726d07224c696e75782206616363657074032a2f2a077365632d6770630131066f726967696e046e756c6c0e7365632d66657463682d736974650a63726f73732d736974650e7365632d66657463682d6d6f646504636f72730e7365632d66657463682d6465737405656d7074790f6163636570742d656e636f64696e671b677a69702c206465666c6174652c2062722c206964656e746974790f6163636570742d6c616e67756167650e656e2d55532c656e3b713d302e39010200",
+      expected_response, silent_on_trap, my_principal);
+
+  // #########################################################################################
   // -----------------------------------------------------------------------------------------
   // Users data
 
@@ -648,9 +899,9 @@ int main() {
                        "4449444c000171093269626f372d646961", silent_on_trap,
                        your_principal);
 
-  // '()' -> '(2 : nat64)'
+  // '()' -> '(3 : nat64)'
   mockIC.run_test("get_user_count", get_user_count, "4449444c0000",
-                  "4449444c0001780200000000000000", silent_on_trap,
+                  "4449444c0001780300000000000000", silent_on_trap,
                   my_principal);
 
   /*
@@ -658,13 +909,14 @@ int main() {
   (
     vec {
       "2ibo7-dia";
+      "2100000000000000";
       "expmt-gtxsw-inftj-ttabj-qhp5s-nozup-n3bbo-k7zvn-dg4he-knac3-lae";
     },
   )
   */
   mockIC.run_test(
       "get_user_ids", get_user_ids, "4449444c0000",
-      "4449444c016d71010002093269626f372d6469613f6578706d742d67747873772d696e66746a2d747461626a2d71687035732d6e6f7a75702d6e3362626f2d6b377a766e2d64673468652d6b6e6163332d6c6165",
+      "4449444c016d71010003093269626f372d64696110323130303030303030303030303030303f6578706d742d67747873772d696e66746a2d747461626a2d71687035732d6e6f7a75702d6e3362626f2d6b377a766e2d64673468652d6b6e6163332d6c6165",
       silent_on_trap, my_principal);
 
   // '("2ibo7-dia")' -> ... two vectors of nat64 ... but we can not check time-stamp!

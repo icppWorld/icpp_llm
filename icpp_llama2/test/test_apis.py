@@ -15,7 +15,10 @@ from icpp.smoketest import call_canister_api
 DFX_JSON_PATH = Path(__file__).parent / "../dfx.json"
 
 # Canister in the dfx.json file we want to test
-CANISTER_NAME = "llama2"
+CANISTER_NAME = "llama2_260K"
+# CANISTER_NAME = "llama2" # 15M
+# CANISTER_NAME = "llama2_42M"
+# CANISTER_NAME = "llama2_110M"
 
 
 def test__health(identity_anonymous: dict[str, str], network: str) -> None:
@@ -41,6 +44,19 @@ def test__ready(identity_anonymous: dict[str, str], network: str) -> None:
         timeout_seconds=10,
     )
     expected_response = "(true)"
+    assert response == expected_response
+
+
+def test__whoami(identity_default: dict[str, str], network: str) -> None:
+    response = call_canister_api(
+        dfx_json_path=DFX_JSON_PATH,
+        canister_name=CANISTER_NAME,
+        canister_method="whoami",
+        canister_argument="()",
+        network=network,
+        timeout_seconds=10,
+    )
+    expected_response = f'("{identity_default["principal"]}")'
     assert response == expected_response
 
 
