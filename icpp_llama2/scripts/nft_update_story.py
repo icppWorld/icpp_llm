@@ -2,7 +2,7 @@
 
 Run with:
 
-    python -m scripts.nft_update_story --network local --canister <canister-name> --nft-config <path-to-your-nft-config-toml-file>   # pylint: disable=line-too-long
+    python -m scripts.nft_update_story --network ic --canister <canister-name> --nft-config <path-to-your-nft-config-toml-file> --bitcoin-ordinal-ids <path-to-the-ordinal-ids-toml-file>   # pylint: disable=line-too-long
 """
 
 # pylint: disable=invalid-name, too-few-public-methods, no-member, too-many-statements, broad-except
