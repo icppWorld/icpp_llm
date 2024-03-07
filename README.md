@@ -7,7 +7,9 @@
 
 *The LLMs of this repo run in it's back-end canisters.*
 
+# Getting Started
 
+A step-by-step guide to deploy your first LLM to the internet computer is provided in [icpp_llama2/README.md](https://github.com/icppWorld/icpp_llm/blob/main/icpp_llama2/README.md).
 
 # The Benefits of Running LLMs On-Chain
 
@@ -26,10 +28,6 @@ Coherent English?](https://arxiv.org/pdf/2305.07759.pdf)
 
 Besides the ease of use and the enhanced security, running LLMs directly on-chain also facilitates a seamless integration of tokenomics, eliminating the need to juggle between a complex blend of web3 and web2 components, and I believe it will lead to a new category of Generative AI based dApps.
 
-
-## Instructions
-
-See the README in the icpp_llama2 folder
 
 
 ## Support

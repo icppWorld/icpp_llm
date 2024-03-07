@@ -1,16 +1,16 @@
 requests
-pandas
-pandas-stubs
-jupyterlab
-jupyterlab-lsp
-jupyter-black
-python-lsp-server[all]
+# pandas
+# pandas-stubs
+# jupyterlab
+# jupyterlab-lsp
+# jupyter-black
+# python-lsp-server[all]
 python-dotenv
-tabulate
+# tabulate
 black
 mypy
 pylint==2.13.9
-matplotlib
-fastparquet
-openpyxl
-seaborn
+# matplotlib
+# fastparquet
+# openpyxl
+# seaborn

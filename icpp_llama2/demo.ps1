@@ -37,7 +37,7 @@ Write-Host $output -ForegroundColor Green
 #######################################################################
 Write-Host " "
 Write-Host "--------------------------------------------------"
-Write-Host "Building the wasm with wasi-sdk"
+Write-Host "Building the wasm with wasi-sdk, as defined in icpp.toml"
 icpp build-wasm --to-compile all
 # icpp build-wasm --to-compile mine
 
