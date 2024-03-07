@@ -9,7 +9,7 @@ secret
 
 # llama2 models
 models
-stories260K
+#stories260K
 
 # llama2 metrics
 etl
