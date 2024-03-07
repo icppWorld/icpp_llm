@@ -41,11 +41,12 @@
     ```
   - Deploy the wasm to a canister on the local network:
     ```bash
-    $ dfx deploy llama2_260K
+    dfx deploy llama2_260K
     ```
   - Check the health endpoint of the `llama2_260K` canister:
     ```bash
     $ dfx canister call llama2_260K health
+    (true)
     ```
   - Upload the 260k parameter model & tokenizer:
     ```bash
@@ -53,30 +54,43 @@
     ```
   - Check the readiness endpoint, indicating it can be used for inference:
     ```bash
-    dfx canister call llama2_260K ready
+    $ dfx canister call llama2_260K ready
+    (true)
     ```
-
+  
 - Test it with dfx:  
   - Generate a new story, 10 tokens at a time, starting with an empty prompt:
     ```bash
-    dfx canister call llama2_260K new_chat '()'
-    dfx canister call llama2_260K inference '(record {prompt = "" : text; steps = 10 : nat64; temperature = 0.9 : float32; topp = 0.9 : float32; rng_seed = 0 : nat64;})'
-    dfx canister call llama2_260K inference '(record {prompt = "" : text; steps = 10 : nat64; temperature = 0.9 : float32; topp = 0.9 : float32; rng_seed = 0 : nat64;})'
+    $ dfx canister call llama2_260K new_chat '()'
+    (variant { ok = 200 : nat16 })
+    
+    $ dfx canister call llama2_260K inference '(record {prompt = "" : text; steps = 10 : nat64; temperature = 0.9 : float32; topp = 0.9 : float32; rng_seed = 0 : nat64;})'
+    (variant { ok = "Once upon a time, there was a little b" })
+    
+    $ dfx canister call llama2_260K inference '(record {prompt = "" : text; steps = 10 : nat64; temperature = 0.9 : float32; topp = 0.9 : float32; rng_seed = 0 : nat64;})'
+    (variant { ok = "oy named Timmy. Timmy loved to play with" })
+    
     # etc.
     ```
   - Generate a new story, starting with a non-empty:
     ```bash
-    dfx canister call llama2_260K new_chat '()'
-    dfx canister call llama2_260K inference '(record {prompt = "Jenny climbed in a tree" : text; steps = 10 : nat64; temperature = 0.9 : float32; topp = 0.9 : float32; rng_seed = 0 : nat64;})'
-    dfx canister call llama2_260K inference '(record {prompt = "" : text; steps = 10 : nat64; temperature = 0.9 : float32; topp = 0.9 : float32; rng_seed = 0 : nat64;})'
+    $ dfx canister call llama2_260K new_chat '()'
+    (variant { ok = 200 : nat16 })
+    
+    $ dfx canister call llama2_260K inference '(record {prompt = "Timmy climbed in a tree" : text; steps = 10 : nat64; temperature = 0.9 : float32; topp = 0.9 : float32; rng_seed = 0 : nat64;})'
+    (variant { ok = "Timmy climbed in a tree. He was very pretty and" })
+    
+    $ dfx canister call llama2_260K inference '(record {prompt = "" : text; steps = 10 : nat64; temperature = 0.9 : float32; topp = 0.9 : float32; rng_seed = 0 : nat64;})'
+    (variant { ok = " cold. He was very happy and sc" })
+    
     # etc.
     ```
 
 # Next steps
 
-As you test the smallest pre-trained model, llama2_260K, you quickly realize that it is not a very good model. The stories generated are not comprehensible. This is simply because the model is not large enough. It is just for verifying that your build, deploy and test pipeline is functional.
+As you test the smallest pre-trained model, llama2_260K, you quickly realize that it is not a very good model. It only has 260K parameters, and it is actually amazing that it is generating semi-comprehensible stories, but they do not make much sense in most cases. This is simply because the model is not large enough. We use it to verify that the build, deploy and test pipeline is functional.
 
-You also will notice that using dfx to generate stories is not very user friendly. We build a little frontend to generate stories, available as an open source project: https://github.com/icppWorld/icgpt, and deployed to the IC as deployed as [ICGPT](https://icgpt.icpp.world/).
+You also will notice that using dfx to generate stories is not very user friendly. We created a little react frontend, available as an open source project: https://github.com/icppWorld/icgpt, and deployed to the IC as deployed as [ICGPT](https://icgpt.icpp.world/).
 
 As next challenges, some ideas:
 - Deploy the 15M parameter model
