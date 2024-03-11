@@ -1,4 +1,4 @@
-[![icpp-llm](https://github.com/icppWorld/icpp-llm/actions/workflows/cicd.yml/badge.svg)](https://github.com/icppWorld/icpp-llm/actions/workflows/cicd.yml)
+[![icpp_llm](https://github.com/icppWorld/icpp_llm/actions/workflows/cicd.yml/badge.svg)](https://github.com/icppWorld/icpp_llm/actions/workflows/cicd.yml)
 
 # LLMs for the Internet Computer
 <img src="./assets/icpp-llm-logo.png" alt="icpp-llm logo" width="200">
