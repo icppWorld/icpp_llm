@@ -29,9 +29,9 @@ void http_request() {
     j_out["error"] = "Method Not Allowed: " + request.method;
   } else {
 
-    // Extract the nft_id from /api/nft/<id>, where <id> is a natural number [1, ...]
+    // Extract the nft_id from /api/nft/<id>, where <id> is a 0-indexed number [0,1, ...]
     bool found_nft_id{false};
-    uint64_t nft_id;
+    int64_t nft_id;
     std::string prefix = "/api/nft/";
     if (request.url.rfind(prefix, 0) == 0) {
       std::string str = request.url.substr(prefix.length());
@@ -53,23 +53,26 @@ void http_request() {
       status_code = Http::BadRequest; // 400
       j_out["error"] =
           "Bad URL " + request.url +
-          "\nIt must be like /api/nft/<id>, with <id> a natural number.";
+          "\nIt must be like /api/nft/<id>, with <id> in [0,1,2,...].";
       nft_id_ok = false;
     } else {
       IC_API::debug_print("nft_id = " + std::to_string(nft_id));
 
       // Check if this nft_id exists
-      if (nft_id < 1) {
+      if (nft_id < 0) {
         status_code = Http::BadRequest; // 400
         j_out["error"] =
-            "nft id must be larger than 0, but found " + std::to_string(nft_id);
+            "nft id can not be negative, but found " + std::to_string(nft_id);
         nft_id_ok = false;
-      } else if (nft_id > p_nft_collection->nfts.size() + 1) {
+      } else if (p_nft_collection->nfts.size() == 0) {
+        status_code = Http::BadRequest; // 400
+        j_out["error"] = "We did not yet mint any NFTs";
+        nft_id_ok = false;
+      } else if (nft_id > p_nft_collection->nfts.size()) {
         status_code = Http::BadRequest; // 400
         j_out["error"] = "The requested nft id (" + std::to_string(nft_id) +
-                         ") is not available. We only minted" +
-                         std::to_string(p_nft_collection->nfts.size()) +
-                         " nfts.";
+                         ") is not available. We only minted up to nft id" +
+                         std::to_string(p_nft_collection->nfts.size());
         nft_id_ok = false;
       }
 
@@ -78,7 +81,7 @@ void http_request() {
         status_code = Http::OK;
         // vector index is 0 based !
         uint64_t bitcoin_ordinal_id =
-            p_nft_collection->nfts[nft_id - 1].bitcoin_ordinal_id;
+            p_nft_collection->nfts[nft_id].bitcoin_ordinal_id;
         IC_API::debug_print("bitcoin_ordinal_id = " +
                             std::to_string(bitcoin_ordinal_id));
         j_out["nft_id"] = nft_id;
