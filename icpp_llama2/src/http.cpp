@@ -68,7 +68,7 @@ void http_request() {
         status_code = Http::BadRequest; // 400
         j_out["error"] = "We did not yet mint any NFTs";
         nft_id_ok = false;
-      } else if (nft_id > p_nft_collection->nfts.size()) {
+      } else if (nft_id + 1 > p_nft_collection->nfts.size()) {
         status_code = Http::BadRequest; // 400
         j_out["error"] = "The requested nft id (" + std::to_string(nft_id) +
                          ") is not available. We only minted up to nft id" +
