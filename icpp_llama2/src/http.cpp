@@ -79,15 +79,11 @@ void http_request() {
       // If all good, we return the story
       if (nft_id_ok) {
         status_code = Http::OK;
-        // vector index is 0 based !
-        uint64_t bitcoin_ordinal_id =
-            p_nft_collection->nfts[nft_id].bitcoin_ordinal_id;
-        IC_API::debug_print("bitcoin_ordinal_id = " +
-                            std::to_string(bitcoin_ordinal_id));
+        std::string token_id = p_nft_collection->nfts[nft_id].token_id;
+        IC_API::debug_print("token_id = " + token_id);
         j_out["nft_id"] = nft_id;
-        j_out["bitcoin_ordinal_id"] = bitcoin_ordinal_id;
-        j_out["story"] =
-            p_chats_output_history->umap[std::to_string(bitcoin_ordinal_id)];
+        j_out["token_id"] = token_id;
+        j_out["story"] = p_chats_output_history->umap[token_id];
       }
     }
   }

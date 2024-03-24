@@ -1,62 +1,55 @@
 // Candid interface of the canister endpoints
 // https://internetcomputer.org/docs/current/references/candid-ref/
 
-type Prompt = 
-  record {
-    prompt         : text; 
-    steps          : nat64;  
-    temperature    : float32;
-    topp           : float32;
-    rng_seed       : nat64;
-  };
+type Prompt = record {
+  prompt : text;
+  steps : nat64;
+  temperature : float32;
+  topp : float32;
+  rng_seed : nat64;
+};
 
-type Inference = 
-  variant {
-    err: text;
-    ok: text;
-  };
+type Inference = variant {
+  err : text;
+  ok : text;
+};
 
-type Config = 
-  record {
-    dim            : int; 
-    hidden_dim     : int; 
-    n_layers       : int; 
-    n_heads        : int; 
-    n_kv_heads     : int; 
-    vocab_size     : int; 
-    seq_len        : int;  
-  };
+type Config = record {
+  dim : int;
+  hidden_dim : int;
+  n_layers : int;
+  n_heads : int;
+  n_kv_heads : int;
+  vocab_size : int;
+  seq_len : int;
+};
 
 type StatusCode = nat16;
 
-type Result = 
-  variant {
-    err: StatusCode;
-    ok: StatusCode;
-  };
+type Result = variant {
+  err : StatusCode;
+  ok : StatusCode;
+};
 
 type ChatStartTime = nat64;
 type ChatTotalSteps = nat64;
 
-type NFTWhitelistItem =
-  record {
-    id: principal; 
-    description: text;
-  };
+type NFTWhitelistItem = record {
+  id : principal;
+  description : text;
+};
 
-type NFT =
-  record {
-    bitcoin_ordinal_id: nat64;
-  };
+type NFT = record {
+  token_id : text;
+};
 
-type NFTCollection = 
-  record {
-    nft_supply_cap: nat64; 
-    nft_total_supply: nat64; 
-    nft_symbol: text; 
-    nft_name: text; 
-    nft_description: text;
-  };
+type NFTCollection = record {
+  nft_supply_cap : nat64;
+  nft_total_supply : nat64;
+  nft_symbol : text;
+  nft_name : text;
+  nft_description : text;
+};
 
 // --------------------------------------------------------------------------------
 // HTTP Gateway Protocol
@@ -64,14 +57,14 @@ type NFTCollection =
 // https://internetcomputer.org/docs/current/references/http-gateway-protocol-spec
 // https://internetcomputer.org/docs/current/references/ic-interface-spec/#ic-candid
 
-type HeaderField = record { text; text; };
+type HeaderField = record { text; text };
 
 type HttpRequest = record {
-    method: text;
-    url: text;
-    headers: vec HeaderField;
-    body: blob;
-    certificate_version: opt nat16;
+  method : text;
+  url : text;
+  headers : vec HeaderField;
+  body : blob;
+  certificate_version : opt nat16;
 };
 
 // type HttpUpdateRequest = record {
@@ -82,11 +75,11 @@ type HttpRequest = record {
 // };
 
 type HttpResponse = record {
-    status_code: nat16;
-    headers: vec HeaderField;
-    body: blob;
-    upgrade : opt bool;
-    // streaming_strategy: opt StreamingStrategy;
+  status_code : nat16;
+  headers : vec HeaderField;
+  body : blob;
+  upgrade : opt bool;
+  // streaming_strategy: opt StreamingStrategy;
 };
 
 /* StreamingStrategy is NOT YET SUPPORTED
@@ -111,37 +104,37 @@ type StreamingStrategy = variant {
 
 service : {
   // canister endpoints
-  canister_init: ()                        -> ();
-  set_canister_mode: (text)                -> ();
-  health: ()                               -> (bool)              query;
-  ready: ()                                -> (bool)              query;
+  canister_init : () -> ();
+  set_canister_mode : (text) -> ();
+  health : () -> (bool) query;
+  ready : () -> (bool) query;
 
   // LLM initialization endpoints
-  reset_model: ()                          -> (Result);
-  reset_tokenizer: ()                      -> (Result);
-  upload_model_bytes_chunk: (vec nat8)     -> (Result);
-  upload_tokenizer_bytes_chunk: (vec nat8) -> (Result);
-  initialize: ()                           -> (Result);
-  get_model_config: ()                     -> (Config)            query;
+  reset_model : () -> (Result);
+  reset_tokenizer : () -> (Result);
+  upload_model_bytes_chunk : (vec nat8) -> (Result);
+  upload_tokenizer_bytes_chunk : (vec nat8) -> (Result);
+  initialize : () -> (Result);
+  get_model_config : () -> (Config) query;
 
-  // Chat endpoints for canister_mode=chat-principal 
-  new_chat: ()                             -> (Result);
-  inference: (Prompt)                      -> (Inference);
+  // Chat endpoints for canister_mode=chat-principal
+  new_chat : () -> (Result);
+  inference : (Prompt) -> (Inference);
 
   // admin endpoints
-  whoami: ()                               -> (text)              query;
-  get_user_count: ()                       -> (nat64)             query;
-  get_user_ids: ()                         -> (vec text)          query;
-  get_user_metadata: (text)                -> (vec ChatStartTime, vec ChatTotalSteps)  query;
+  whoami : () -> (text) query;
+  get_user_count : () -> (nat64) query;
+  get_user_ids : () -> (vec text) query;
+  get_user_metadata : (text) -> (vec ChatStartTime, vec ChatTotalSteps) query;
 
   // http endpoints
-  http_request: (request: HttpRequest)     -> (HttpResponse) query;
+  http_request : (request : HttpRequest) -> (HttpResponse) query;
 
   // nft endpoints (for canister_mode=nft-ordinal)
-  nft_whitelist:      (NFTWhitelistItem) -> (Result);
-  nft_init:           (NFTCollection)    -> (Result);
-  nft_metadata:       ()                 -> (NFTCollection);
-  nft_mint:           (NFT)              -> (Result);
-  nft_story_start:    (NFT, Prompt)      -> (Inference);
-  nft_story_continue: (NFT, Prompt)      -> (Inference);
-}
+  nft_whitelist : (NFTWhitelistItem) -> (Result);
+  nft_init : (NFTCollection) -> (Result);
+  nft_metadata : () -> (NFTCollection);
+  nft_mint : (NFT) -> (Result);
+  nft_story_start : (NFT, Prompt) -> (Inference);
+  nft_story_continue : (NFT, Prompt) -> (Inference);
+};

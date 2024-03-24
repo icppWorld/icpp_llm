@@ -175,10 +175,10 @@ void nft_mint() {
   // Only the canister owner is allowed to mint NFTs
   if (!is_canister_owner(ic_api, false)) IC_API::trap("Access Denied");
 
-  // The bitcoin_ordinal_id is passed by argument
-  uint64_t bitcoin_ordinal_id;
+  // The token_id is passed by argument
+  std::string token_id;
   CandidTypeRecord r_in;
-  r_in.append("bitcoin_ordinal_id", CandidTypeNat64{&bitcoin_ordinal_id});
+  r_in.append("token_id", CandidTypeText{&token_id});
   ic_api.from_wire(r_in);
 
   // Have we reached the limit?
@@ -189,17 +189,16 @@ void nft_mint() {
 
   // Is there already an NFT for this ordinal?
   for (const auto &existing_nft : p_nft_collection->nfts) {
-    if (existing_nft.bitcoin_ordinal_id == bitcoin_ordinal_id) {
-      IC_API::trap("An NFT for the bitcoin_ordinal_id " +
-                   std::to_string(bitcoin_ordinal_id) + " already exists.");
+    if (existing_nft.token_id == token_id) {
+      IC_API::trap("An NFT for the token_id " + token_id + " already exists.");
     }
   }
 
   // Create the NFT with an empty story:
   // (-) We checked above that the caller must be the canister_owner
-  // (-) We checked above that there is no other NFT for this bitcoin_ordinal_id
+  // (-) We checked above that there is no other NFT for this token_id
   NFT nft;
-  nft.bitcoin_ordinal_id = bitcoin_ordinal_id;
+  nft.token_id = token_id;
 
   // Store the NFT in the NFTCollection
   p_nft_collection->nfts.push_back(nft);
@@ -218,10 +217,10 @@ void nft_story_(bool story_start) {
   if (!nft_is_whitelisted(ic_api, false)) IC_API::trap("Access Denied");
   if (!is_ready_and_authorized(ic_api)) return;
 
-  // Get the bitcoin_ordinal_id & Prompt from the wire
-  uint64_t bitcoin_ordinal_id;
+  // Get the token_id & Prompt from the wire
+  std::string token_id;
   CandidTypeRecord r_in1;
-  r_in1.append("bitcoin_ordinal_id", CandidTypeNat64{&bitcoin_ordinal_id});
+  r_in1.append("token_id", CandidTypeText{&token_id});
 
   Prompt wire_prompt;
   CandidTypeRecord r_in2;
@@ -239,16 +238,13 @@ void nft_story_(bool story_start) {
   print_prompt(wire_prompt);
 
   if (story_start or
-      (p_chats && p_chats->umap.find(std::to_string(bitcoin_ordinal_id)) ==
-                      p_chats->umap.end())) {
+      (p_chats && p_chats->umap.find(token_id) == p_chats->umap.end())) {
     // Does not yet exist
-    build_new_chat(std::to_string(bitcoin_ordinal_id));
+    build_new_chat(token_id);
   }
-  Chat *chat = &p_chats->umap[std::to_string(bitcoin_ordinal_id)];
-  std::string *output_history =
-      &p_chats_output_history->umap[std::to_string(bitcoin_ordinal_id)];
-  MetadataUser *metadata_user =
-      &p_metadata_users->umap[std::to_string(bitcoin_ordinal_id)];
+  Chat *chat = &p_chats->umap[token_id];
+  std::string *output_history = &p_chats_output_history->umap[token_id];
+  MetadataUser *metadata_user = &p_metadata_users->umap[token_id];
 
   do_inference(ic_api, wire_prompt, chat, output_history, metadata_user);
 }

@@ -33,7 +33,7 @@ extern NFTWhitelist *p_nft_whitelist;
 
 class NFT {
 public:
-  uint64_t bitcoin_ordinal_id;
+  std::string token_id;
 };
 
 // Chats saved as an NFT Collection
