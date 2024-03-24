@@ -2,7 +2,7 @@
 
 Run with:
 
-    python -m scripts.nft_mint --network ic --canister <canister-name> --nft-config <path-to-your-nft-config-toml-file> --bitcoin-ordinal-ids <path-to-the-ordinal-ids-toml-file>   # pylint: disable=line-too-long
+    python -m scripts.nft_mint --network ic --canister <canister-name> --nft-config <path-to-your-nft-config-toml-file> --token-ids <path-to-the-token-ids-toml-file>   # pylint: disable=line-too-long
 """
 
 # pylint: disable=invalid-name, too-few-public-methods, no-member, too-many-statements, broad-except
@@ -33,7 +33,7 @@ def main() -> int:
     candid_path = ROOT_PATH / args.candid
 
     nft_config_path = Path(args.nft_config)
-    bitcoin_ordinal_ids_path = Path(args.bitcoin_ordinal_ids)
+    token_ids_path = Path(args.token_ids)
 
     dfx_json_path = ROOT_PATH / "dfx.json"
 
@@ -44,11 +44,11 @@ def main() -> int:
         f"\n - dfx_json_path            = {dfx_json_path}"
         f"\n - candid_path              = {candid_path}"
         f"\n - nft_config_path          = {nft_config_path}"
-        f"\n - bitcoin_ordinal_ids_path = {bitcoin_ordinal_ids_path}"
+        f"\n - token_ids_path           = {token_ids_path}"
     )
 
     nft_config: Dict[Any, Any] = read_toml(nft_config_path)
-    bitcoin_ordinal_ids: Dict[Any, Any] = read_toml(bitcoin_ordinal_ids_path)
+    token_ids: Dict[Any, Any] = read_toml(token_ids_path)
 
     # ---------------------------------------------------------------------------
     # get ic-py based Canister instance
@@ -81,9 +81,9 @@ def main() -> int:
     nft_id = nft_config["nft_id"]
 
     NFT = {}
-    NFT["bitcoin_ordinal_id"] = bitcoin_ordinal_ids["bitcoin_ordinal_ids"][str(nft_id)]
+    NFT["token_id"] = token_ids["token_ids"][str(nft_id)]
 
-    print(f'--\nMinting NFT for bitcoin_ordinal_id  = {NFT["bitcoin_ordinal_id"]}')
+    print(f'--\nMinting NFT for token_id  = {NFT["token_id"]}')
     error: bool = False
     try:
         response = canister_llama2.nft_mint(NFT)

@@ -35,7 +35,7 @@ def parse_args() -> argparse.Namespace:
     )
 
     parser.add_argument(
-        "--bitcoin-ordinal-ids",
+        "--token-ids",
         type=str,
         default="no-default",
         help="A toml file with all the bitcoin ordinal ids for the collection",
