@@ -9,11 +9,12 @@
 
 void nft_whitelist() WASM_SYMBOL_EXPORTED("canister_update nft_whitelist");
 void nft_init() WASM_SYMBOL_EXPORTED("canister_update nft_init");
-void nft_metadata() WASM_SYMBOL_EXPORTED("canister_update nft_metadata");
+void nft_metadata() WASM_SYMBOL_EXPORTED("canister_query nft_metadata");
 void nft_mint() WASM_SYMBOL_EXPORTED("canister_update nft_mint");
 void nft_story_start() WASM_SYMBOL_EXPORTED("canister_update nft_story_start");
 void nft_story_continue()
     WASM_SYMBOL_EXPORTED("canister_update nft_story_continue");
+void nft_get_story() WASM_SYMBOL_EXPORTED("canister_query nft_get_story");
 
 // ------------------------------------------------
 // Orthogonal persistent data

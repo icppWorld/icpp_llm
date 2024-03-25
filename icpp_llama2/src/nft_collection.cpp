@@ -148,7 +148,7 @@ void nft_init() {
 
 // Get metadata of the NFT Collection
 void nft_metadata() {
-  IC_API ic_api(CanisterUpdate{std::string(__func__)}, false);
+  IC_API ic_api(CanisterQuery{std::string(__func__)}, false);
 
   if (!p_nft_collection)
     IC_API::trap("Memory for NFT Collection not yet allocated");
@@ -247,4 +247,27 @@ void nft_story_(bool story_start) {
   MetadataUser *metadata_user = &p_metadata_users->umap[token_id];
 
   do_inference(ic_api, wire_prompt, chat, output_history, metadata_user);
+}
+
+// For an NFT get the story
+void nft_get_story() {
+  IC_API ic_api(CanisterQuery{std::string(__func__)}, false);
+
+  // The token_id is passed by argument
+  std::string token_id;
+  CandidTypeRecord r_in;
+  r_in.append("token_id", CandidTypeText{&token_id});
+  ic_api.from_wire(r_in);
+
+  if (p_chats && p_chats->umap.find(token_id) == p_chats->umap.end()) {
+    IC_API::trap("NFT " + token_id + " does not exists.");
+  }
+
+  if (p_chats_output_history && p_chats_output_history->umap.find(token_id) ==
+                                    p_chats_output_history->umap.end()) {
+    IC_API::trap("The story for NFT " + token_id + " does not exists.");
+  }
+
+  ic_api.to_wire(CandidTypeVariant{
+      "ok", CandidTypeText{p_chats_output_history->umap[token_id]}});
 }

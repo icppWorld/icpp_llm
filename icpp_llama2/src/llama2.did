@@ -31,6 +31,11 @@ type Result = variant {
   ok : StatusCode;
 };
 
+type TextResult = variant {
+  err : StatusCode;
+  ok : text;
+};
+
 type ChatStartTime = nat64;
 type ChatTotalSteps = nat64;
 
@@ -133,8 +138,9 @@ service : {
   // nft endpoints (for canister_mode=nft-ordinal)
   nft_whitelist : (NFTWhitelistItem) -> (Result);
   nft_init : (NFTCollection) -> (Result);
-  nft_metadata : () -> (NFTCollection);
+  nft_metadata : () -> (NFTCollection) query;
   nft_mint : (NFT) -> (Result);
   nft_story_start : (NFT, Prompt) -> (Inference);
   nft_story_continue : (NFT, Prompt) -> (Inference);
+  nft_get_story : (NFT) -> (TextResult) query;
 };

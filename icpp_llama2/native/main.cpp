@@ -892,6 +892,42 @@ int main() {
       expected_response, silent_on_trap, my_principal);
 
   // ------------------------------------------------------------------------
+  // Get the story for nft_id=0, with token_id="token-A"
+
+  // '(record {token_id = "token-A" : text})'
+  // -> '(variant { ok = "...story..." : text })'
+  expected_response = "-to-do-B-";
+  if (model_to_use == 1) {
+    // -> '(variant { ok = "...some story..." : text })'
+    expected_response =
+        "4449444c016b019cc20171010000f5014974207761732061206272696768742073756e6e792064617920616e6420436861726c65732077656e7420746f207468652062656163682077697468206869732066697368696e6720706f6c652e204865207761732076657279206578636974656420746f2073656520776861742077617320696e736964652e204865207761732076657279206578636974656420746f2073656520776861742077617320696e736964652e0a2248656c6c6f2c20436861726c69652122207361696420436861726c69652e0a2249276d20736f7272792c22207361696420436861726c69652e0a2249276d20736f7272792c2220736169642043";
+  } else if (model_to_use == 2) {
+  } else if (model_to_use == 3) {
+  } else if (model_to_use == 4) {
+  }
+  mockIC.run_test("nft_get_story 0", nft_get_story,
+                  "4449444c016c01a1a1c1da0271010007746f6b656e2d41",
+                  expected_response, silent_on_trap, my_principal);
+
+  // ------------------------------------------------------------------------
+  // Get the story for nft_id=1, with token_id="token-B"
+
+  // '(record {token_id = "token-B" : text})'
+  // -> '(variant { ok = "...story..." : text })'
+  expected_response = "-to-do-B-";
+  if (model_to_use == 1) {
+    // -> '(variant { ok = "...some story..." : text })'
+    expected_response =
+        "4449444c016b019cc201710100009c02436861726c657320686164206120626f61742e204865206c696b656420746f20706c617920776974682068697320746f797320616e642072756e2061726f756e642074686520726f6f6d2e2048652077617320766572792068617070792e2048652077616e74656420746f20706c617920776974682068697320746f79732e0a4f6e65206461792c20436861726c69652073617720612062696720626f61742e2054686520626f6174207761732076657279207363617265642e2048652077616e74656420746f20706c617920776974682074686520626f61742e2048652077616e74656420746f20706c617920776974682074686520626f61742e2048652077616e74656420746f20706c617920776974682074686520626f6174";
+  } else if (model_to_use == 2) {
+  } else if (model_to_use == 3) {
+  } else if (model_to_use == 4) {
+  }
+  mockIC.run_test("nft_get_story 0", nft_get_story,
+                  "4449444c016c01a1a1c1da0271010007746f6b656e2d42",
+                  expected_response, silent_on_trap, my_principal);
+
+  // ------------------------------------------------------------------------
   // Call to the http_request endpoint, to get the story of nft_id 0
   // (
   //   record {                                       // IC_HttpRequest
