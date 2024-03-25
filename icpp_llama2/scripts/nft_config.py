@@ -1,4 +1,4 @@
-"""Reads the prompt.toml file"""
+"""Reads a toml file and returns a dictionary with the data."""
 
 import sys
 from pathlib import Path
