@@ -200,7 +200,7 @@ void initialize() {
   ready_for_inference = true;
 
   ic_api.to_wire(
-      CandidTypeVariant{"ok", CandidTypeNat16{Http::StatusCode::OK}});
+      CandidTypeVariant{"Ok", CandidTypeNat16{Http::StatusCode::OK}});
 }
 
 void print_config() {

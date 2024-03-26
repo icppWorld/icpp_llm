@@ -10,8 +10,8 @@ type Prompt = record {
 };
 
 type Inference = variant {
-  err : text;
-  ok : text;
+  Ok : text;
+  Err : text;
 };
 
 type Config = record {
@@ -27,13 +27,13 @@ type Config = record {
 type StatusCode = nat16;
 
 type Result = variant {
-  err : StatusCode;
-  ok : StatusCode;
+  Ok : StatusCode;
+  Err : StatusCode;
 };
 
 type TextResult = variant {
-  err : StatusCode;
-  ok : text;
+  Ok : text;
+  Err : StatusCode;
 };
 
 type ChatStartTime = nat64;

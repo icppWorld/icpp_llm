@@ -89,7 +89,7 @@ def main() -> int:
     # Reset the tokenizer
     print("--\nResetting the tokenizer in canister")
     response = canister_llama2.reset_tokenizer()  # pylint: disable=no-member
-    if "ok" in response[0].keys():
+    if "Ok" in response[0].keys():
         if DEBUG_VERBOSE >= 2:
             print("OK!")
     else:
@@ -125,7 +125,7 @@ def main() -> int:
         response = canister_llama2.upload_tokenizer_bytes_chunk(
             chunk
         )  # pylint: disable=no-member
-        if "ok" in response[0].keys():
+        if "Ok" in response[0].keys():
             print("OK!")
         else:
             print("Something went wrong:")
@@ -142,7 +142,7 @@ def main() -> int:
     # Reset the model
     print("--\nResetting the model in canister")
     response = canister_llama2.reset_model()  # pylint: disable=no-member
-    if "ok" in response[0].keys():
+    if "Ok" in response[0].keys():
         if DEBUG_VERBOSE >= 2:
             print("OK!")
     else:
@@ -178,7 +178,7 @@ def main() -> int:
         response = canister_llama2.upload_model_bytes_chunk(
             chunk
         )  # pylint: disable=no-member
-        if "ok" in response[0].keys():
+        if "Ok" in response[0].keys():
             if DEBUG_VERBOSE >= 2:
                 print("OK!")
         else:
@@ -190,7 +190,7 @@ def main() -> int:
     # Initialize the canister
     print("--\nInitializing the canister, getting it ready for inference.")
     response = canister_llama2.initialize()
-    if "ok" in response[0].keys():
+    if "Ok" in response[0].keys():
         if DEBUG_VERBOSE >= 2:
             print("OK!")
     else:

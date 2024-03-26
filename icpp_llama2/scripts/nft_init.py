@@ -73,7 +73,7 @@ def main() -> int:
         "nft_description": nft_description,
     }
     response = canister_llama2.nft_init(record_in)
-    if "ok" in response[0].keys():
+    if "Ok" in response[0].keys():
         if DEBUG_VERBOSE >= 2:
             print("OK!")
     else:

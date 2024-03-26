@@ -51,7 +51,7 @@ bool nft_is_whitelisted(IC_API &ic_api, bool err_to_wire) {
 
   if (err_to_wire) {
     uint16_t status_code = Http::StatusCode::Unauthorized;
-    ic_api.to_wire(CandidTypeVariant{"err", CandidTypeNat16{status_code}});
+    ic_api.to_wire(CandidTypeVariant{"Err", CandidTypeNat16{status_code}});
   }
   return false;
 }
@@ -102,7 +102,7 @@ void nft_whitelist() {
   p_nft_whitelist->whitelist.push_back(item);
 
   ic_api.to_wire(
-      CandidTypeVariant{"ok", CandidTypeNat16{Http::StatusCode::OK}});
+      CandidTypeVariant{"Ok", CandidTypeNat16{Http::StatusCode::OK}});
 }
 
 // Initialize the NFT Collection
@@ -143,7 +143,7 @@ void nft_init() {
   p_nft_collection->initialized = true;
 
   ic_api.to_wire(
-      CandidTypeVariant{"ok", CandidTypeNat16{Http::StatusCode::OK}});
+      CandidTypeVariant{"Ok", CandidTypeNat16{Http::StatusCode::OK}});
 }
 
 // Get metadata of the NFT Collection
@@ -204,7 +204,7 @@ void nft_mint() {
   p_nft_collection->nfts.push_back(nft);
 
   ic_api.to_wire(
-      CandidTypeVariant{"ok", CandidTypeNat16{Http::StatusCode::OK}});
+      CandidTypeVariant{"Ok", CandidTypeNat16{Http::StatusCode::OK}});
 }
 
 // Endpoints for the story of an NFT, callable by whitelisted principals only
@@ -269,5 +269,5 @@ void nft_get_story() {
   }
 
   ic_api.to_wire(CandidTypeVariant{
-      "ok", CandidTypeText{p_chats_output_history->umap[token_id]}});
+      "Ok", CandidTypeText{p_chats_output_history->umap[token_id]}});
 }

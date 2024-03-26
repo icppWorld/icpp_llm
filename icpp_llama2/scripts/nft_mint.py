@@ -88,7 +88,7 @@ def main() -> int:
     try:
         response = canister_llama2.nft_mint(NFT)
         print(response)
-        if "ok" in response[0].keys():
+        if "Ok" in response[0].keys():
             if DEBUG_VERBOSE >= 2:
                 print("OK!")
         else:

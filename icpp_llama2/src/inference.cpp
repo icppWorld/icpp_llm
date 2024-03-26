@@ -232,5 +232,5 @@ void do_inference(IC_API &ic_api, Prompt wire_prompt, Chat *chat,
   // IC_API::debug_print(output);
 
   // Send the generated response to the wire
-  ic_api.to_wire(CandidTypeVariant{"ok", CandidTypeText{output}});
+  ic_api.to_wire(CandidTypeVariant{"Ok", CandidTypeText{output}});
 }

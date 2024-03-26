@@ -108,7 +108,7 @@ void reset_model() {
   delete_model_bytes_memory();
 
   ic_api.to_wire(
-      CandidTypeVariant{"ok", CandidTypeNat16{Http::StatusCode::OK}});
+      CandidTypeVariant{"Ok", CandidTypeNat16{Http::StatusCode::OK}});
 }
 
 void reset_tokenizer() {
@@ -120,7 +120,7 @@ void reset_tokenizer() {
   delete_tokenizer_bytes_memory();
 
   ic_api.to_wire(
-      CandidTypeVariant{"ok", CandidTypeNat16{Http::StatusCode::OK}});
+      CandidTypeVariant{"Ok", CandidTypeNat16{Http::StatusCode::OK}});
 }
 
 // Endpoint for uploading the stories15M.bin file as bytes
@@ -137,7 +137,7 @@ void upload_model_bytes_chunk() {
   print_upload_model_bytes_summary(std::string(__func__), v);
 
   ic_api.to_wire(
-      CandidTypeVariant{"ok", CandidTypeNat16{Http::StatusCode::OK}});
+      CandidTypeVariant{"Ok", CandidTypeNat16{Http::StatusCode::OK}});
 }
 
 // Endpoint for uploading the tokenizer.bin file as bytes
@@ -155,5 +155,5 @@ void upload_tokenizer_bytes_chunk() {
   print_upload_tokenizer_bytes_summary(std::string(__func__), v);
 
   ic_api.to_wire(
-      CandidTypeVariant{"ok", CandidTypeNat16{Http::StatusCode::OK}});
+      CandidTypeVariant{"Ok", CandidTypeNat16{Http::StatusCode::OK}});
 }

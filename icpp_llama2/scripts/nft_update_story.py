@@ -98,7 +98,7 @@ def main() -> int:
     if use_full_prompt:
         response = canister_llama2.nft_story_start(NFT, prompt)
         print(response)
-        if "ok" in response[0].keys():
+        if "Ok" in response[0].keys():
             if DEBUG_VERBOSE >= 2:
                 print("OK!")
         else:
@@ -113,7 +113,7 @@ def main() -> int:
         prompt["prompt"] = first_word  # Update the prompt with the first word
         response = canister_llama2.nft_story_start(NFT, prompt)
         print(response)
-        if "ok" in response[0].keys():
+        if "Ok" in response[0].keys():
             if DEBUG_VERBOSE >= 2:
                 print("OK!")
         else:
@@ -127,7 +127,7 @@ def main() -> int:
             prompt["prompt"] = word  # Update the prompt with the current word
             response = canister_llama2.nft_story_continue(NFT, prompt)
             print(response)
-            if "ok" in response[0].keys():
+            if "Ok" in response[0].keys():
                 if DEBUG_VERBOSE >= 2:
                     print("OK!")
             else:
@@ -136,7 +136,7 @@ def main() -> int:
 
         response = canister_llama2.nft_story_start(NFT, prompt)
         print(response)
-        if "ok" in response[0].keys():
+        if "Ok" in response[0].keys():
             if DEBUG_VERBOSE >= 2:
                 print("OK!")
         else:
@@ -152,9 +152,9 @@ def main() -> int:
     while True:
         response = canister_llama2.nft_story_continue(NFT, prompt)
         print(response)
-        if "ok" in response[0].keys():
+        if "Ok" in response[0].keys():
             # Check if the response is an empty string. If it is, break out of the loop.
-            if response[0]["ok"] == "":
+            if response[0]["Ok"] == "":
                 print("The end!")
                 break
         else:

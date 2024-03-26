@@ -39,7 +39,7 @@ bool is_canister_owner(IC_API &ic_api, bool err_to_wire) {
 
     if (err_to_wire) {
       uint16_t status_code = Http::StatusCode::Unauthorized;
-      ic_api.to_wire(CandidTypeVariant{"err", CandidTypeNat16{status_code}});
+      ic_api.to_wire(CandidTypeVariant{"Err", CandidTypeNat16{status_code}});
     }
     return false;
   }

@@ -5,6 +5,7 @@
    $ pytest --network=[local/ic] test_apis.py
 
 """
+
 # pylint: disable=unused-argument, missing-function-docstring, unused-import, wildcard-import, unused-wildcard-import, line-too-long
 
 from pathlib import Path
@@ -69,7 +70,7 @@ def test__reset_model_err(identity_anonymous: dict[str, str], network: str) -> N
         network=network,
         timeout_seconds=10,
     )
-    expected_response = "(variant { err = 401 : nat16 })"
+    expected_response = "(variant { Err = 401 : nat16 })"
     assert response == expected_response
 
 
@@ -82,7 +83,7 @@ def test__new_chat_anonymous(identity_anonymous: dict[str, str], network: str) -
         network=network,
         timeout_seconds=10,
     )
-    assert "err" in response
+    assert "Err" in response
 
 
 def test__new_chat(identity_default: dict[str, str], network: str) -> None:
@@ -94,7 +95,7 @@ def test__new_chat(identity_default: dict[str, str], network: str) -> None:
         network=network,
         timeout_seconds=10,
     )
-    assert "ok" in response
+    assert "Ok" in response
 
 
 def test__inference_1_anonymous(
@@ -108,7 +109,7 @@ def test__inference_1_anonymous(
         network=network,
         timeout_seconds=10,
     )
-    assert "err" in response
+    assert "Err" in response
 
 
 def test__inference_1(identity_default: dict[str, str], network: str) -> None:
@@ -120,7 +121,7 @@ def test__inference_1(identity_default: dict[str, str], network: str) -> None:
         network=network,
         timeout_seconds=10,
     )
-    assert "ok" in response
+    assert "Ok" in response
 
 
 def test__inference_2(identity_default: dict[str, str], network: str) -> None:
@@ -132,7 +133,7 @@ def test__inference_2(identity_default: dict[str, str], network: str) -> None:
         network=network,
         timeout_seconds=10,
     )
-    assert "ok" in response
+    assert "Ok" in response
 
 
 # ----------------------------------------------------------------------------------

@@ -141,7 +141,7 @@ bool is_ready_and_authorized(IC_API ic_api) {
 
   if (!ready_for_inference) {
     uint16_t status_code = Http::StatusCode::InternalServerError;
-    ic_api.to_wire(CandidTypeVariant{"err", CandidTypeNat16{status_code}});
+    ic_api.to_wire(CandidTypeVariant{"Err", CandidTypeNat16{status_code}});
     return false;
   }
 
@@ -149,7 +149,7 @@ bool is_ready_and_authorized(IC_API ic_api) {
   CandidTypePrincipal caller = ic_api.get_caller();
   if (caller.is_anonymous()) {
     ic_api.to_wire(CandidTypeVariant{
-        "err",
+        "Err",
         CandidTypeText{
             "The Llama2 canister does not allow calling with anonymous principal."}});
     return false;
@@ -170,5 +170,5 @@ void new_chat() {
   build_new_chat(principal);
 
   ic_api.to_wire(
-      CandidTypeVariant{"ok", CandidTypeNat16{Http::StatusCode::OK}});
+      CandidTypeVariant{"Ok", CandidTypeNat16{Http::StatusCode::OK}});
 }

@@ -98,9 +98,9 @@
   # The ICGPT backend canisters
   python -m scripts.upload --network local --canister llama2_260K --model stories260K/stories260K.bin --tokenizer stories260K/tok512.bin
 
-  python -m scripts.upload --network local --canister llama2 --model models/stories15M.bin --tokenizer tokenizers/tokenizer.bin
+  python -m scripts.upload --network local --canister llama2 --model models/stories15Mtok4096.bin --tokenizer tokenizers/tok4096.bin
 
-  python -m scripts.upload --network local --canister llama2_42M --model models/stories42M.bin --tokenizer tokenizers/tokenizer.bin
+  python -m scripts.upload --network local --canister llama2_42M --model models/stories42Mtok4096.bin --tokenizer tokenizers/tok4096.bin
 
   python -m scripts.upload --network local --canister llama2_110M --model models/stories110M.bin --tokenizer tokenizers/tokenizer.bin
 
@@ -111,6 +111,10 @@
   # ---------------------------------------------------------------
   # For an NFT canister: mint the NFTs
   => TODO
+  
+  # ---------------------------------------------------------------
+  # Run tests
+  pytest
   
   ```
 
@@ -141,7 +145,7 @@ For testing, it is nice to be able to work with a smaller model & tokenizer:
   $ dfx canister call llama2_260K inference '(record {prompt = "Lilly went swimming yesterday  " : text; steps = 100 : nat64; temperature = 0.9 : float32; topp = 0.9 : float32; rng_seed = 0 : nat64;})'
   (
     variant {
-      ok = "Lilly went swimming yesterday  order. She had a great eyes that was closed. One day, she asked her mom why the cloud was close to the pond. \n\"Mommy, I will take clothes away,\" Lila said. \"Th\n"
+      Ok = "Lilly went swimming yesterday  order. She had a great eyes that was closed. One day, she asked her mom why the cloud was close to the pond. \n\"Mommy, I will take clothes away,\" Lila said. \"Th\n"
     },
   )
 
@@ -149,7 +153,7 @@ For testing, it is nice to be able to work with a smaller model & tokenizer:
   $ dfx canister call llama2_260K inference '(record {prompt = "" : text; steps = 100 : nat64; temperature = 0.9 : float32; topp = 0.9 : float32; rng_seed = 0 : nat64;})'
   (
     variant {
-      ok = "eone replace it.\nThe fox agreed to go as fast as they set on the other birds. They searched, and it didn\'t give up. They started to scared the bird. The forest was so careful and jumped up."
+      Ok = "eone replace it.\nThe fox agreed to go as fast as they set on the other birds. They searched, and it didn\'t give up. They started to scared the bird. The forest was so careful and jumped up."
     },
   )
 
