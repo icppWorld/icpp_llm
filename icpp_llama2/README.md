@@ -36,6 +36,9 @@
    Invoke-WebRequest -Uri https://huggingface.co/karpathy/tinyllamas/resolve/main/stories15M.bin -OutFile .\models\stories15M.bin
    ```
 
+- The demo_pytest.sh script starts the local network, deploys llama2_260K, uploads the model & tokenizer, and runs the QA with pytest:
+  - `./demo_pytest.sh`  , on Linux / Mac
+
 - The *demo* script starts the local network, deploys llama2, uploads the model & tokenizer, and generates two stories:
   - `./demo.sh`  , on Linux / Mac
   - `.\demo.ps1` , in Windows PowerShell (Miniconda recommended)

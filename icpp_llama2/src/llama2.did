@@ -26,7 +26,7 @@ type Config = record {
 
 type StatusCode = nat16;
 
-type Result = variant {
+type StatusCodeResult = variant {
   Ok : StatusCode;
   Err : StatusCode;
 };
@@ -115,15 +115,15 @@ service : {
   ready : () -> (bool) query;
 
   // LLM initialization endpoints
-  reset_model : () -> (Result);
-  reset_tokenizer : () -> (Result);
-  upload_model_bytes_chunk : (vec nat8) -> (Result);
-  upload_tokenizer_bytes_chunk : (vec nat8) -> (Result);
-  initialize : () -> (Result);
+  reset_model : () -> (StatusCodeResult);
+  reset_tokenizer : () -> (StatusCodeResult);
+  upload_model_bytes_chunk : (vec nat8) -> (StatusCodeResult);
+  upload_tokenizer_bytes_chunk : (vec nat8) -> (StatusCodeResult);
+  initialize : () -> (StatusCodeResult);
   get_model_config : () -> (Config) query;
 
   // Chat endpoints for canister_mode=chat-principal
-  new_chat : () -> (Result);
+  new_chat : () -> (StatusCodeResult);
   inference : (Prompt) -> (Inference);
 
   // admin endpoints
@@ -136,10 +136,10 @@ service : {
   http_request : (request : HttpRequest) -> (HttpResponse) query;
 
   // nft endpoints (for canister_mode=nft-ordinal)
-  nft_whitelist : (NFTWhitelistItem) -> (Result);
-  nft_init : (NFTCollection) -> (Result);
+  nft_whitelist : (NFTWhitelistItem) -> (StatusCodeResult);
+  nft_init : (NFTCollection) -> (StatusCodeResult);
   nft_metadata : () -> (NFTCollection) query;
-  nft_mint : (NFT) -> (Result);
+  nft_mint : (NFT) -> (StatusCodeResult);
   nft_story_start : (NFT, Prompt) -> (Inference);
   nft_story_continue : (NFT, Prompt) -> (Inference);
   nft_get_story : (NFT) -> (TextResult) query;
