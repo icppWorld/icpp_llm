@@ -31,9 +31,16 @@ type StatusCodeResult = variant {
   Err : StatusCode;
 };
 
-type TextResult = variant {
-  Ok : text;
-  Err : StatusCode;
+type StoryRecordResult = variant {
+  Err : ApiError;
+  Ok : StoryRecord;
+};
+type StoryRecord = record { story : text };
+type ApiError = variant {
+  InvalidId;
+  Other : text;
+  Unauthorized;
+  ZeroAddress;
 };
 
 type ChatStartTime = nat64;
@@ -142,5 +149,5 @@ service : {
   nft_mint : (NFT) -> (StatusCodeResult);
   nft_story_start : (NFT, Prompt) -> (Inference);
   nft_story_continue : (NFT, Prompt) -> (Inference);
-  nft_get_story : (NFT) -> (TextResult) query;
+  nft_get_story : (NFT) -> (StoryRecordResult) query;
 };

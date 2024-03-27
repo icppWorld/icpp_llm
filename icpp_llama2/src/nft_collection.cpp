@@ -168,6 +168,16 @@ void nft_metadata() {
   ic_api.to_wire(r_out);
 }
 
+// Checks if an NFT exists in the collection
+bool nft_exists_(const std::string &token_id) {
+  for (const auto &existing_nft : p_nft_collection->nfts) {
+    if (existing_nft.token_id == token_id) {
+      return true;
+    }
+  }
+  return false;
+}
+
 // Create an NFT from the user's currently active chat
 void nft_mint() {
   IC_API ic_api(CanisterUpdate{std::string(__func__)}, false);
@@ -187,11 +197,9 @@ void nft_mint() {
                  std::to_string(p_nft_collection->supply_cap));
   }
 
-  // Is there already an NFT for this ordinal?
-  for (const auto &existing_nft : p_nft_collection->nfts) {
-    if (existing_nft.token_id == token_id) {
-      IC_API::trap("An NFT for the token_id " + token_id + " already exists.");
-    }
+  // Is there already an NFT for this token_id?
+  if (nft_exists_(token_id)) {
+    IC_API::trap("An NFT for the token_id " + token_id + " already exists.");
   }
 
   // Create the NFT with an empty story:
@@ -249,6 +257,20 @@ void nft_story_(bool story_start) {
   do_inference(ic_api, wire_prompt, chat, output_history, metadata_user);
 }
 
+// Checks if a story exists for an NFT in the collection
+bool nft_story_exists_(const std::string &token_id) {
+  if (!p_chats || !p_chats_output_history ||
+      (p_chats && p_chats->umap.find(token_id) == p_chats->umap.end()) ||
+      (p_chats_output_history && p_chats_output_history->umap.find(token_id) ==
+                                     p_chats_output_history->umap.end())) {
+    std::string story = p_chats_output_history->umap[token_id];
+    if (!story.empty()) {
+      return true;
+    }
+  }
+  return false;
+}
+
 // For an NFT get the story
 void nft_get_story() {
   IC_API ic_api(CanisterQuery{std::string(__func__)}, false);
@@ -259,15 +281,20 @@ void nft_get_story() {
   r_in.append("token_id", CandidTypeText{&token_id});
   ic_api.from_wire(r_in);
 
-  if (p_chats && p_chats->umap.find(token_id) == p_chats->umap.end()) {
-    IC_API::trap("NFT " + token_id + " does not exists.");
+  std::string error_msg;
+  if (!nft_exists_(token_id)) {
+    error_msg = "NFT " + token_id + " does not exists.";
+  } else if (!nft_story_exists_(token_id)) {
+    error_msg = "The story for NFT " + token_id + " does not exists.";
+  }
+  if (!error_msg.empty()) {
+    ic_api.to_wire(CandidTypeVariant{
+        "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
+    return;
   }
 
-  if (p_chats_output_history && p_chats_output_history->umap.find(token_id) ==
-                                    p_chats_output_history->umap.end()) {
-    IC_API::trap("The story for NFT " + token_id + " does not exists.");
-  }
-
-  ic_api.to_wire(CandidTypeVariant{
-      "Ok", CandidTypeText{p_chats_output_history->umap[token_id]}});
+  CandidTypeRecord story_record;
+  story_record.append("story",
+                      CandidTypeText{p_chats_output_history->umap[token_id]});
+  ic_api.to_wire(CandidTypeVariant{"Ok", story_record});
 }
