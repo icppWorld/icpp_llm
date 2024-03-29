@@ -20,11 +20,6 @@
       "type": "custom",
       "candid": "src/llama2.did",
       "wasm": "build/llama2.wasm"
-    },
-    "charles": {
-      "type": "custom",
-      "candid": "src/llama2.did",
-      "wasm": "build/llama2.wasm"
     }
   },
   "defaults": {

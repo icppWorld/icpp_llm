@@ -49,6 +49,7 @@ def main() -> int:
 
     network = args.network
     canister_name = args.canister
+    canister_id = args.canister_id
     candid_path = ROOT_PATH / args.candid
     model_path = ROOT_PATH / args.model
     tokenizer_path = ROOT_PATH / args.tokenizer
@@ -60,6 +61,7 @@ def main() -> int:
         f"Summary of model & NFT Collection:"
         f"\n - network         = {network}"
         f"\n - canister        = {canister_name}"
+        f"\n - canister_id     = {canister_id}"
         f"\n - dfx_json_path   = {dfx_json_path}"
         f"\n - candid_path     = {candid_path}"
         f"\n - model_path      = {model_path}"
@@ -68,7 +70,7 @@ def main() -> int:
 
     # ---------------------------------------------------------------------------
     # get ic-py based Canister instance
-    canister_llama2 = get_canister(canister_name, candid_path, network)
+    canister_llama2 = get_canister(canister_name, candid_path, network, canister_id)
 
     # check health (liveness)
     print("--\nChecking liveness of canister (did we deploy it!)")

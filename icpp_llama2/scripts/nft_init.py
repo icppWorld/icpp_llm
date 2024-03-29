@@ -28,6 +28,7 @@ def main() -> int:
 
     network = args.network
     canister_name = args.canister
+    canister_id = args.canister_id
     candid_path = ROOT_PATH / args.candid
 
     nft_supply_cap = args.nft_supply_cap
@@ -41,6 +42,7 @@ def main() -> int:
         f"Summary of canister & NFT Collection:"
         f"\n - network         = {network}"
         f"\n - canister        = {canister_name}"
+        f"\n - canister_id     = {canister_id}"
         f"\n - dfx_json_path   = {dfx_json_path}"
         f"\n - candid_path     = {candid_path}"
         f"\n - nft_supply_cap  = {nft_supply_cap}"
@@ -51,7 +53,7 @@ def main() -> int:
 
     # ---------------------------------------------------------------------------
     # get ic-py based Canister instance
-    canister_llama2 = get_canister(canister_name, candid_path, network)
+    canister_llama2 = get_canister(canister_name, candid_path, network, canister_id)
 
     # check health (liveness)
     print("--\nChecking liveness of canister (did we deploy it!)")

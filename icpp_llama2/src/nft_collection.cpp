@@ -19,6 +19,7 @@ void new_p_nft_whitelist() {
                         ": Allocating memory for p_nft_whitelist.");
     p_nft_whitelist = new (std::nothrow) NFTWhitelist();
     if (p_nft_whitelist == nullptr) {
+      // called from canister_init, so trap is correct!
       IC_API::trap("Allocation of p_nft_whitelist failed");
     }
   }
@@ -63,6 +64,7 @@ void new_p_nft_collection() {
                         ": Allocating memory for p_nft_collection.");
     p_nft_collection = new (std::nothrow) NFTCollection();
     if (p_nft_collection == nullptr) {
+      // called from canister_init, so trap is correct!
       IC_API::trap("Allocation of p_nft_collection failed");
     }
   }
@@ -81,11 +83,20 @@ void nft_whitelist() {
   IC_API ic_api(CanisterUpdate{std::string(__func__)}, false);
 
   // Only the canister owner is allowed to whitelist principals
-  if (!is_canister_owner(ic_api, false)) IC_API::trap("Access Denied");
+  if (!is_canister_owner(ic_api, false)) {
+    std::string error_msg = "Access Denied";
+    ic_api.to_wire(CandidTypeVariant{
+        "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
+    return;
+  }
 
   // Do not call if static memory not yet set
-  if (!p_nft_whitelist)
-    IC_API::trap("Memory for p_nft_whitelist not yet allocated");
+  if (!p_nft_whitelist) {
+    std::string error_msg = "Memory for p_nft_whitelist not yet allocated";
+    ic_api.to_wire(CandidTypeVariant{
+        "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
+    return;
+  }
 
   // Read the whitelist items
   std::string principal_str;
@@ -101,8 +112,10 @@ void nft_whitelist() {
   item.description = description;
   p_nft_whitelist->whitelist.push_back(item);
 
-  ic_api.to_wire(
-      CandidTypeVariant{"Ok", CandidTypeNat16{Http::StatusCode::OK}});
+  CandidTypeRecord status_code_record;
+  status_code_record.append("status_code",
+                            CandidTypeNat16{Http::StatusCode::OK});
+  ic_api.to_wire(CandidTypeVariant{"Ok", status_code_record});
 }
 
 // Initialize the NFT Collection
@@ -110,15 +123,28 @@ void nft_init() {
   IC_API ic_api(CanisterUpdate{std::string(__func__)}, false);
 
   // Only the canister owner is allowed to initialize the NFT Collection
-  if (!is_canister_owner(ic_api, false)) IC_API::trap("Access Denied");
+  if (!is_canister_owner(ic_api, false)) {
+    std::string error_msg = "Access Denied";
+    ic_api.to_wire(CandidTypeVariant{
+        "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
+    return;
+  }
 
   // Do not call if static memory not yet set
-  if (!p_nft_collection)
-    IC_API::trap("Memory for NFT Collection not yet allocated");
+  if (!p_nft_collection) {
+    std::string error_msg = "Memory for NFT Collection not yet allocated";
+    ic_api.to_wire(CandidTypeVariant{
+        "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
+    return;
+  }
 
   // Protect from accidential re-initialization
-  if (p_nft_collection->initialized)
-    IC_API::trap("NFT Collection is already initialized");
+  if (p_nft_collection->initialized) {
+    std::string error_msg = "NFT Collection is already initialized";
+    ic_api.to_wire(CandidTypeVariant{
+        "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
+    return;
+  }
 
   // Read the metadata
   uint64_t nft_supply_cap{0};
@@ -142,30 +168,54 @@ void nft_init() {
 
   p_nft_collection->initialized = true;
 
-  ic_api.to_wire(
-      CandidTypeVariant{"Ok", CandidTypeNat16{Http::StatusCode::OK}});
+  CandidTypeRecord status_code_record;
+  status_code_record.append("status_code",
+                            CandidTypeNat16{Http::StatusCode::OK});
+  ic_api.to_wire(CandidTypeVariant{"Ok", status_code_record});
 }
 
 // Get metadata of the NFT Collection
 void nft_metadata() {
   IC_API ic_api(CanisterQuery{std::string(__func__)}, false);
 
-  if (!p_nft_collection)
-    IC_API::trap("Memory for NFT Collection not yet allocated");
+  if (!p_nft_collection) {
+    std::string error_msg = "Memory for NFT Collection not yet allocated";
+    ic_api.to_wire(CandidTypeVariant{
+        "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
+    return;
+  }
 
-  if (!p_nft_collection->initialized)
-    IC_API::trap("NFT Collection not yet initialized");
+  if (!p_nft_collection->initialized) {
+    std::string error_msg = "NFT Collection not yet initialized";
+    ic_api.to_wire(CandidTypeVariant{
+        "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
+    return;
+  }
 
-  // Return a record summarizing the NFTCollection
-  CandidTypeRecord r_out;
-  r_out.append("nft_supply_cap", CandidTypeNat64(p_nft_collection->supply_cap));
-  r_out.append("nft_total_supply",
-               CandidTypeNat64(p_nft_collection->nfts.size()));
-  r_out.append("nft_symbol", CandidTypeText(p_nft_collection->symbol));
-  r_out.append("nft_name", CandidTypeText(p_nft_collection->name));
-  r_out.append("nft_description",
-               CandidTypeText(p_nft_collection->description));
-  ic_api.to_wire(r_out);
+  // Return a NFTCollectionRecordResult
+  CandidTypeRecord nft_collection_record;
+  nft_collection_record.append("nft_supply_cap",
+                               CandidTypeNat64(p_nft_collection->supply_cap));
+  nft_collection_record.append("nft_total_supply",
+                               CandidTypeNat64(p_nft_collection->nfts.size()));
+  nft_collection_record.append("nft_symbol",
+                               CandidTypeText(p_nft_collection->symbol));
+  nft_collection_record.append("nft_name",
+                               CandidTypeText(p_nft_collection->name));
+  nft_collection_record.append("nft_description",
+                               CandidTypeText(p_nft_collection->description));
+  ic_api.to_wire(
+      CandidTypeVariant{"Ok", CandidTypeRecord{nft_collection_record}});
+}
+
+// Checks if an NFT exists in the collection
+bool nft_exists_(const std::string &token_id) {
+  for (const auto &existing_nft : p_nft_collection->nfts) {
+    if (existing_nft.token_id == token_id) {
+      return true;
+    }
+  }
+  return false;
 }
 
 // Create an NFT from the user's currently active chat
@@ -173,7 +223,12 @@ void nft_mint() {
   IC_API ic_api(CanisterUpdate{std::string(__func__)}, false);
 
   // Only the canister owner is allowed to mint NFTs
-  if (!is_canister_owner(ic_api, false)) IC_API::trap("Access Denied");
+  if (!is_canister_owner(ic_api, false)) {
+    std::string error_msg = "Access Denied";
+    ic_api.to_wire(CandidTypeVariant{
+        "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
+    return;
+  }
 
   // The token_id is passed by argument
   std::string token_id;
@@ -183,15 +238,20 @@ void nft_mint() {
 
   // Have we reached the limit?
   if (p_nft_collection->nfts.size() >= p_nft_collection->supply_cap) {
-    IC_API::trap("Cannot mint, reached supply_cap of " +
-                 std::to_string(p_nft_collection->supply_cap));
+    std::string error_msg = "Cannot mint, reached supply_cap of " +
+                            std::to_string(p_nft_collection->supply_cap);
+    ic_api.to_wire(CandidTypeVariant{
+        "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
+    return;
   }
 
-  // Is there already an NFT for this ordinal?
-  for (const auto &existing_nft : p_nft_collection->nfts) {
-    if (existing_nft.token_id == token_id) {
-      IC_API::trap("An NFT for the token_id " + token_id + " already exists.");
-    }
+  // Is there already an NFT for this token_id?
+  if (nft_exists_(token_id)) {
+    std::string error_msg =
+        "An NFT for the token_id " + token_id + " already exists.";
+    ic_api.to_wire(CandidTypeVariant{
+        "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
+    return;
   }
 
   // Create the NFT with an empty story:
@@ -203,8 +263,10 @@ void nft_mint() {
   // Store the NFT in the NFTCollection
   p_nft_collection->nfts.push_back(nft);
 
-  ic_api.to_wire(
-      CandidTypeVariant{"Ok", CandidTypeNat16{Http::StatusCode::OK}});
+  CandidTypeRecord status_code_record;
+  status_code_record.append("status_code",
+                            CandidTypeNat16{Http::StatusCode::OK});
+  ic_api.to_wire(CandidTypeVariant{"Ok", status_code_record});
 }
 
 // Endpoints for the story of an NFT, callable by whitelisted principals only
@@ -213,8 +275,19 @@ void nft_story_continue() { nft_story_(false); }
 
 void nft_story_(bool story_start) {
   IC_API ic_api(CanisterUpdate{std::string(__func__)}, false);
-  if (!is_canister_mode_nft_ordinal()) IC_API::trap("Access Denied");
-  if (!nft_is_whitelisted(ic_api, false)) IC_API::trap("Access Denied");
+  if (!is_canister_mode_nft_ordinal()) {
+    std::string error_msg = "Access Denied - Canister is not in NFT mode.";
+    ic_api.to_wire(CandidTypeVariant{
+        "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
+    return;
+  }
+  if (!nft_is_whitelisted(ic_api, false)) {
+    std::string error_msg =
+        "Access Denied - You are not authorized to call this function.";
+    ic_api.to_wire(CandidTypeVariant{
+        "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
+    return;
+  }
   if (!is_ready_and_authorized(ic_api)) return;
 
   // Get the token_id & Prompt from the wire
@@ -240,13 +313,40 @@ void nft_story_(bool story_start) {
   if (story_start or
       (p_chats && p_chats->umap.find(token_id) == p_chats->umap.end())) {
     // Does not yet exist
-    build_new_chat(token_id);
+    if (!build_new_chat(token_id, ic_api)) return;
   }
   Chat *chat = &p_chats->umap[token_id];
   std::string *output_history = &p_chats_output_history->umap[token_id];
   MetadataUser *metadata_user = &p_metadata_users->umap[token_id];
 
-  do_inference(ic_api, wire_prompt, chat, output_history, metadata_user);
+  bool error{false};
+  std::string output = do_inference(ic_api, wire_prompt, chat, output_history,
+                                    metadata_user, &error);
+
+  if (error) {
+    ic_api.to_wire(CandidTypeVariant{
+        "Err", CandidTypeVariant{"Other", CandidTypeText{output}}});
+    return;
+  }
+
+  // IC_API::debug_print(output);
+  // Send the generated response to the wire
+  CandidTypeRecord inference_record;
+  inference_record.append("inference", CandidTypeText{output});
+  ic_api.to_wire(CandidTypeVariant{"Ok", CandidTypeRecord{inference_record}});
+}
+
+// Checks if a story exists for an NFT in the collection
+bool nft_story_exists_(const std::string &token_id) {
+  if ((p_chats && p_chats->umap.find(token_id) != p_chats->umap.end()) &&
+      (p_chats_output_history && p_chats_output_history->umap.find(token_id) !=
+                                     p_chats_output_history->umap.end())) {
+    std::string story = p_chats_output_history->umap[token_id];
+    if (!story.empty()) {
+      return true;
+    }
+  }
+  return false;
 }
 
 // For an NFT get the story
@@ -259,15 +359,20 @@ void nft_get_story() {
   r_in.append("token_id", CandidTypeText{&token_id});
   ic_api.from_wire(r_in);
 
-  if (p_chats && p_chats->umap.find(token_id) == p_chats->umap.end()) {
-    IC_API::trap("NFT " + token_id + " does not exists.");
+  std::string error_msg;
+  if (!nft_exists_(token_id)) {
+    error_msg = "NFT " + token_id + " does not exists.";
+  } else if (!nft_story_exists_(token_id)) {
+    error_msg = "The story for NFT " + token_id + " does not exists.";
+  }
+  if (!error_msg.empty()) {
+    ic_api.to_wire(CandidTypeVariant{
+        "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
+    return;
   }
 
-  if (p_chats_output_history && p_chats_output_history->umap.find(token_id) ==
-                                    p_chats_output_history->umap.end()) {
-    IC_API::trap("The story for NFT " + token_id + " does not exists.");
-  }
-
-  ic_api.to_wire(CandidTypeVariant{
-      "Ok", CandidTypeText{p_chats_output_history->umap[token_id]}});
+  CandidTypeRecord story_record;
+  story_record.append("story",
+                      CandidTypeText{p_chats_output_history->umap[token_id]});
+  ic_api.to_wire(CandidTypeVariant{"Ok", story_record});
 }

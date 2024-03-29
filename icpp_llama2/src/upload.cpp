@@ -17,15 +17,19 @@ TokenizerBytes *p_tokenizer_bytes{nullptr};
 // 2 - a lot
 int DEBUG_VERBOSE = 1;
 
-void new_model_bytes_memory() {
+bool new_model_bytes_memory(IC_API &ic_api) {
   if (p_model_bytes == nullptr) {
     IC_API::debug_print(std::string(__func__) +
                         ": Creating ModelBytes Instance.");
     p_model_bytes = new (std::nothrow) ModelBytes();
     if (p_model_bytes == nullptr) {
-      IC_API::trap("Allocation of p_model_bytes failed");
+      std::string error_msg = "Allocation of p_model_bytes failed";
+      ic_api.to_wire(CandidTypeVariant{
+          "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
+      return false;
     }
   }
+  return true;
 }
 
 void delete_model_bytes_memory() {
@@ -35,15 +39,19 @@ void delete_model_bytes_memory() {
   }
 }
 
-void new_tokenizer_bytes_memory() {
+bool new_tokenizer_bytes_memory(IC_API &ic_api) {
   if (p_tokenizer_bytes == nullptr) {
     IC_API::debug_print(std::string(__func__) +
                         ": Creating TokenizerBytes Instance.");
     p_tokenizer_bytes = new (std::nothrow) TokenizerBytes();
     if (p_tokenizer_bytes == nullptr) {
-      IC_API::trap("Allocation of p_tokenizer_bytes failed");
+      std::string error_msg = "Allocation of p_tokenizer_bytes failed";
+      ic_api.to_wire(CandidTypeVariant{
+          "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
+      return false;
     }
   }
+  return true;
 }
 
 void delete_tokenizer_bytes_memory() {
@@ -107,8 +115,10 @@ void reset_model() {
 
   delete_model_bytes_memory();
 
-  ic_api.to_wire(
-      CandidTypeVariant{"Ok", CandidTypeNat16{Http::StatusCode::OK}});
+  CandidTypeRecord status_code_record;
+  status_code_record.append("status_code",
+                            CandidTypeNat16{Http::StatusCode::OK});
+  ic_api.to_wire(CandidTypeVariant{"Ok", status_code_record});
 }
 
 void reset_tokenizer() {
@@ -119,8 +129,10 @@ void reset_tokenizer() {
 
   delete_tokenizer_bytes_memory();
 
-  ic_api.to_wire(
-      CandidTypeVariant{"Ok", CandidTypeNat16{Http::StatusCode::OK}});
+  CandidTypeRecord status_code_record;
+  status_code_record.append("status_code",
+                            CandidTypeNat16{Http::StatusCode::OK});
+  ic_api.to_wire(CandidTypeVariant{"Ok", status_code_record});
 }
 
 // Endpoint for uploading the stories15M.bin file as bytes
@@ -131,13 +143,17 @@ void upload_model_bytes_chunk() {
   std::vector<uint8_t> v;
   ic_api.from_wire(CandidTypeVecNat8{&v});
 
-  if (p_model_bytes == nullptr) new_model_bytes_memory();
+  if (p_model_bytes == nullptr) {
+    if (!new_model_bytes_memory(ic_api)) return;
+  }
   p_model_bytes->vec.insert(p_model_bytes->vec.end(), v.begin(), v.end());
 
   print_upload_model_bytes_summary(std::string(__func__), v);
 
-  ic_api.to_wire(
-      CandidTypeVariant{"Ok", CandidTypeNat16{Http::StatusCode::OK}});
+  CandidTypeRecord status_code_record;
+  status_code_record.append("status_code",
+                            CandidTypeNat16{Http::StatusCode::OK});
+  ic_api.to_wire(CandidTypeVariant{"Ok", status_code_record});
 }
 
 // Endpoint for uploading the tokenizer.bin file as bytes
@@ -148,12 +164,16 @@ void upload_tokenizer_bytes_chunk() {
   std::vector<uint8_t> v;
   ic_api.from_wire(CandidTypeVecNat8{&v});
 
-  if (p_tokenizer_bytes == nullptr) new_tokenizer_bytes_memory();
+  if (p_tokenizer_bytes == nullptr) {
+    if (!new_tokenizer_bytes_memory(ic_api)) return;
+  }
   p_tokenizer_bytes->vec.insert(p_tokenizer_bytes->vec.end(), v.begin(),
                                 v.end());
 
   print_upload_tokenizer_bytes_summary(std::string(__func__), v);
 
-  ic_api.to_wire(
-      CandidTypeVariant{"Ok", CandidTypeNat16{Http::StatusCode::OK}});
+  CandidTypeRecord status_code_record;
+  status_code_record.append("status_code",
+                            CandidTypeNat16{Http::StatusCode::OK});
+  ic_api.to_wire(CandidTypeVariant{"Ok", status_code_record});
 }

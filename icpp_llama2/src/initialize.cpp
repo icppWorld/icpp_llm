@@ -22,23 +22,33 @@ Tokenizer tokenizer;
 
 // This is an exact copy of code in this method run.c,
 // Modified to read the data from the uploaded tokenizer.bin bytes
-void build_tokenizer(Tokenizer *t, int vocab_size) {
+bool build_tokenizer(Tokenizer *t, int vocab_size, IC_API &ic_api) {
   if (!p_tokenizer_bytes or
       (p_tokenizer_bytes && p_tokenizer_bytes->vec.size() == 0)) {
-    std::string msg;
-    msg.append("ERROR: " + std::string(__func__) +
-               " tokenizer bytes were not yet uploaded!");
-    IC_API::debug_print(msg);
-    IC_API::trap(msg);
+    std::string error_msg = "ERROR: " + std::string(__func__) +
+                            " tokenizer bytes were not yet uploaded!";
+    ic_api.to_wire(CandidTypeVariant{
+        "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
+    return false;
   }
   // i should have written the vocab_size into the tokenizer file... sigh
   t->vocab_size = vocab_size;
   // malloc space to hold the scores and the strings
   t->vocab = (char **)malloc(vocab_size * sizeof(char *));
-  if (!t->vocab) IC_API::trap("Failed to allocate memory for vocab.");
+  if (!t->vocab) {
+    std::string error_msg = "Failed to allocate memory for vocab.";
+    ic_api.to_wire(CandidTypeVariant{
+        "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
+    return false;
+  }
   t->vocab_scores = (float *)malloc(vocab_size * sizeof(float));
-  if (!t->vocab_scores)
-    IC_API::trap("Failed to allocate memory for vocab_scores.");
+  if (!t->vocab_scores) {
+    std::string error_msg = "Failed to allocate memory for vocab_scores.";
+    ic_api.to_wire(CandidTypeVariant{
+        "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
+    return false;
+  }
+
   for (int i = 0; i < 256; i++) {
     t->byte_pieces[i * 2] = (unsigned char)i;
     t->byte_pieces[i * 2 + 1] = '\0';
@@ -80,21 +90,28 @@ void build_tokenizer(Tokenizer *t, int vocab_size) {
     data_ptr += sizeof(int);
 
     if (len <= 0 or len > t->max_token_length) {
-      std::string msg;
-      msg.append("ERROR: Memory for tokenizer is messed up.");
-      msg.append("\nlen for token " + std::to_string(i) + " is " +
-                 std::to_string(len));
-      msg.append(
+      std::string error_msg;
+      error_msg.append("ERROR: Memory for tokenizer is messed up.");
+      error_msg.append("\nlen for token " + std::to_string(i) + " is " +
+                       std::to_string(len));
+      error_msg.append(
           "\nIt must be larger than 0 or less than max_token_length of " +
           std::to_string(t->max_token_length));
-      IC_API::debug_print(msg);
-      IC_API::trap(msg);
+
+      ic_api.to_wire(CandidTypeVariant{
+          "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
+      return false;
     }
 
     t->vocab[i] = (char *)malloc(len + 1);
-    if (!t->vocab[i])
-      IC_API::trap("Failed to allocate memory for vocab[" + std::to_string(i) +
-                   "] with len = " + std::to_string(len));
+    if (!t->vocab[i]) {
+      std::string error_msg = "Failed to allocate memory for vocab[" +
+                              std::to_string(i) +
+                              "] with len = " + std::to_string(len);
+      ic_api.to_wire(CandidTypeVariant{
+          "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
+      return false;
+    }
     // if (fread(t->vocab[i], len, 1, file) != 1) {
     //   fprintf(stderr, "failed read\n");
     //   exit(EXIT_FAILURE);
@@ -109,14 +126,21 @@ void build_tokenizer(Tokenizer *t, int vocab_size) {
   // Do this now, and not lazily
   // malloc and sort the vocabulary
   t->sorted_vocab = (TokenIndex *)malloc(t->vocab_size * sizeof(TokenIndex));
-  if (!t->sorted_vocab)
-    IC_API::trap("Failed to allocate memory for sorted_vocab.");
+  if (!t->sorted_vocab) {
+    std::string error_msg = "Failed to allocate memory for sorted_vocab.";
+    ic_api.to_wire(CandidTypeVariant{
+        "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
+    return false;
+  }
 
   for (int i = 0; i < t->vocab_size; i++) {
     t->sorted_vocab[i].str = t->vocab[i];
     t->sorted_vocab[i].id = i;
   }
   qsort(t->sorted_vocab, t->vocab_size, sizeof(TokenIndex), compare_tokens);
+
+  // All OK
+  return true;
 }
 
 // This is an exact copy of code in these methods of run.c
@@ -178,7 +202,7 @@ void read_checkpoint(Config *config, TransformerWeights *weights) {
   memory_map_weights(weights, config, weights_ptr, shared_weights);
 }
 
-void build_transformer(Transformer *t) {
+bool build_transformer(Transformer *t) {
   // read in the Config and the Weights from the checkpoint
   read_checkpoint(&t->config, &t->weights);
 
@@ -188,6 +212,8 @@ void build_transformer(Transformer *t) {
 
   // //icpp: initialize the token generation settings
   // reset_tokens(t);
+
+  return true;
 }
 
 void initialize() {
@@ -195,12 +221,15 @@ void initialize() {
   if (!is_canister_owner(ic_api, true)) return;
 
   build_transformer(&transformer);
-  build_tokenizer(&tokenizer, transformer.config.vocab_size);
+  if (!build_tokenizer(&tokenizer, transformer.config.vocab_size, ic_api))
+    return;
 
   ready_for_inference = true;
 
-  ic_api.to_wire(
-      CandidTypeVariant{"Ok", CandidTypeNat16{Http::StatusCode::OK}});
+  CandidTypeRecord status_code_record;
+  status_code_record.append("status_code",
+                            CandidTypeNat16{Http::StatusCode::OK});
+  ic_api.to_wire(CandidTypeVariant{"Ok", status_code_record});
 }
 
 void print_config() {

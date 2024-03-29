@@ -20,6 +20,7 @@ void set_canister_owner(IC_API &ic_api) {
   if (p_canister_owner_principal == nullptr) {
     p_canister_owner_principal = new (std::nothrow) std::string();
     if (p_canister_owner_principal == nullptr) {
+      // called from canister_init, so trap is correct!
       IC_API::trap("Allocation of p_canister_owner_principal failed");
     }
   }
@@ -38,8 +39,9 @@ bool is_canister_owner(IC_API &ic_api, bool err_to_wire) {
                         ": ERROR - caller is not the owner.");
 
     if (err_to_wire) {
-      uint16_t status_code = Http::StatusCode::Unauthorized;
-      ic_api.to_wire(CandidTypeVariant{"Err", CandidTypeNat16{status_code}});
+      std::string error_msg = "Access Denied";
+      ic_api.to_wire(CandidTypeVariant{
+          "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
     }
     return false;
   }
@@ -62,20 +64,31 @@ void set_canister_mode() {
   IC_API ic_api(CanisterUpdate{std::string(__func__)}, false);
 
   // Only the canister owner is allowed to set the canister mode
-  if (!is_canister_owner(ic_api, false)) IC_API::trap("Access Denied");
+  if (!is_canister_owner(ic_api, false)) {
+    std::string error_msg = "Access Denied";
+    ic_api.to_wire(CandidTypeVariant{
+        "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
+    return;
+  }
 
   // The canister mode is passed by argument
   std::string canister_mode;
   ic_api.from_wire(CandidTypeText(&canister_mode));
 
   if (!is_canister_mode_valid(canister_mode)) {
-    IC_API::trap("ERROR: unknown canister_mode = " + canister_mode);
+    std::string error_msg = "ERROR: unknown canister_mode = " + canister_mode;
+    ic_api.to_wire(CandidTypeVariant{
+        "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
+    return;
   }
 
   if (p_canister_mode == nullptr) {
     p_canister_mode = new (std::nothrow) std::string();
     if (p_canister_mode == nullptr) {
-      IC_API::trap("Allocation of p_canister_mode failed");
+      std::string error_msg = "Allocation of p_canister_mode failed";
+      ic_api.to_wire(CandidTypeVariant{
+          "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
+      return;
     }
   }
   *p_canister_mode = canister_mode;
@@ -83,7 +96,10 @@ void set_canister_mode() {
   IC_API::debug_print(std::string(__func__) +
                       ": p_canister_mode = " + *p_canister_mode);
 
-  ic_api.to_wire();
+  CandidTypeRecord canister_mode_record;
+  canister_mode_record.append("canister_mode",
+                              CandidTypeText{*p_canister_mode});
+  ic_api.to_wire(CandidTypeVariant{"Ok", canister_mode_record});
 }
 
 void print_canister_metadata() {

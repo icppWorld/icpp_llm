@@ -1,4 +1,5 @@
 """Returns the ic-py Canister instance, for calling the endpoints."""
+
 import sys
 import platform
 import subprocess
@@ -36,7 +37,10 @@ def run_dfx_command(cmd: str) -> Optional[str]:
 
 
 def get_canister(
-    canister_name: str, candid_path: Path, network: str = "local"
+    canister_name: str,
+    candid_path: Path,
+    network: str = "local",
+    canister_id: Optional[str] = "",
 ) -> Canister:
     """Returns an ic_py Canister instance"""
 
@@ -67,10 +71,13 @@ def get_canister(
     identity_whoami = run_dfx_command(f"{DFX} identity whoami ")
     print(f"Using identity = {identity_whoami}")
 
-    # Get the id of the canister
-    canister_id = run_dfx_command(
-        f"{DFX} canister --network {network} id {canister_name} "
-    )
+    # Try to get the id of the canister if not provided explicitly
+    # This only works from the same directory as where you deployed from.
+    # So we also provide the option to just pass in the canister_id directly
+    if canister_id == "":
+        canister_id = run_dfx_command(
+            f"{DFX} canister --network {network} id {canister_name} "
+        )
     print(f"Canister ID = {canister_id}")
 
     # Get the private key of the current identity

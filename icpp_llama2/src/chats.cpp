@@ -16,6 +16,7 @@ void new_p_chats() {
     IC_API::debug_print(std::string(__func__) + ": Creating p_chats instance.");
     p_chats = new (std::nothrow) Chats();
     if (p_chats == nullptr) {
+      // called from canister_init, so trap is correct!
       IC_API::trap("Allocation of p_chats failed");
     }
   }
@@ -25,6 +26,7 @@ void new_p_chats() {
                         ": Creating p_chats_output_history instance.");
     p_chats_output_history = new (std::nothrow) ChatsOutputHistory();
     if (p_chats_output_history == nullptr) {
+      // called from canister_init, so trap is correct!
       IC_API::trap("Allocation of p_chats_output_history failed");
     }
   }
@@ -55,6 +57,7 @@ void new_p_metadata_users() {
                         ": Creating p_metadata_users instance.");
     p_metadata_users = new (std::nothrow) MetadataUsers();
     if (p_metadata_users == nullptr) {
+      // called from canister_init, so trap is correct!
       IC_API::trap("Allocation of p_metadata_users failed");
     }
   }
@@ -84,7 +87,7 @@ void init_run_state(RunState *s) {
 }
 
 // key = principal or ordinal-id
-void build_new_chat(std::string key) {
+bool build_new_chat(std::string key, IC_API &ic_api) {
   // --------------------------------------------------------------------------
   // Create entries for this key in the persisted memory, if not yet done
   if (p_chats && p_chats->umap.find(key) == p_chats->umap.end()) {
@@ -112,7 +115,12 @@ void build_new_chat(std::string key) {
   // Reset the Chat data
   Chat *chat = &p_chats->umap[key];
   free_run_state(&chat->state);
-  malloc_run_state(&chat->state, &transformer.config);
+  if (!malloc_run_state(&chat->state, &transformer.config)) {
+    std::string error_msg = "malloc_run_state failed";
+    ic_api.to_wire(CandidTypeVariant{
+        "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
+    return false;
+  }
 
   // Reset the output data
   std::string *output_history = &p_chats_output_history->umap[key];
@@ -135,9 +143,11 @@ void build_new_chat(std::string key) {
   MetadataChat metadata_chat;
   metadata_chat.start_time = IC_API::time(); // time in ns
   metadata_user->metadata_chats.push_back(metadata_chat);
+
+  return true;
 }
 
-bool is_ready_and_authorized(IC_API ic_api) {
+bool is_ready_and_authorized(IC_API &ic_api) {
 
   if (!ready_for_inference) {
     uint16_t status_code = Http::StatusCode::InternalServerError;
@@ -161,14 +171,22 @@ bool is_ready_and_authorized(IC_API ic_api) {
 // Endpoint to be called by user when starting a new chat
 void new_chat() {
   IC_API ic_api(CanisterUpdate{std::string(__func__)}, false);
-  if (!is_canister_mode_chat_principal()) IC_API::trap("Access Denied");
+  if (!is_canister_mode_chat_principal()) {
+    std::string error_msg =
+        "Access Denied: canister_mode is not set to 'principal'.";
+    ic_api.to_wire(CandidTypeVariant{
+        "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
+    return;
+  }
   if (!is_ready_and_authorized(ic_api)) return;
 
   CandidTypePrincipal caller = ic_api.get_caller();
   std::string principal = caller.get_text();
 
-  build_new_chat(principal);
+  if (!build_new_chat(principal, ic_api)) return;
 
-  ic_api.to_wire(
-      CandidTypeVariant{"Ok", CandidTypeNat16{Http::StatusCode::OK}});
+  CandidTypeRecord status_code_record;
+  status_code_record.append("status_code",
+                            CandidTypeNat16{Http::StatusCode::OK});
+  ic_api.to_wire(CandidTypeVariant{"Ok", status_code_record});
 }

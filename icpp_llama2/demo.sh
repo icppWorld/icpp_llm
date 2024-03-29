@@ -24,13 +24,29 @@ icpp build-wasm --to-compile all
 echo " "
 echo "--------------------------------------------------"
 echo "Deploying the wasm to a canister on the local network"
-dfx deploy
+dfx deploy llama2_260K
+dfx deploy llama2
+
+#######################################################################
+echo " "
+echo "--------------------------------------------------"
+echo "Setting canister_mode to chat-principal"
+dfx canister call llama2_260K set_canister_mode chat-principal
+dfx canister call llama2 set_canister_mode chat-principal
 
 #######################################################################
 echo " "
 echo "--------------------------------------------------"
 echo "Checking health endpoint"
+dfx canister call llama2_260K health
 dfx canister call llama2 health
+
+#######################################################################
+echo " "
+echo "--------------------------------------------------"
+echo "Initializing the canister configurations"
+python -m scripts.nft_init --network local --canister llama2_260K --nft-supply-cap 0 --nft-symbol "" --nft-name "" --nft-description ""
+python -m scripts.nft_init --network local --canister llama2 --nft-supply-cap 0 --nft-symbol "" --nft-name "" --nft-description ""
 
 #######################################################################
 echo " "
@@ -43,6 +59,7 @@ python -m scripts.upload --canister llama2 --model models/stories15M.bin --token
 echo " "
 echo "--------------------------------------------------"
 echo "Checking readiness endpoint"
+dfx canister call llama2_260K ready
 dfx canister call llama2 ready
 
 #######################################################################

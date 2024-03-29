@@ -184,10 +184,21 @@ int main() {
   // # canister_mode = 'chat-principal' #
   // ####################################
 
-  // '("chat-principal": text)' -> '()'
-  mockIC.run_test("set_canister_mode to chat-principal", set_canister_mode,
-                  "4449444c0001710e636861742d7072696e636970616c",
-                  "4449444c0000", silent_on_trap, my_principal);
+  // '("wrong-mode": text)'
+  // -> '(variant { Err = "ERROR: unknown canister_mode = wrong-mode" : text})'
+  mockIC.run_test(
+      "set_canister_mode to wrong-mode", set_canister_mode,
+      "4449444c0001710a77726f6e672d6d6f6465",
+      "4449444c026b01b0ad8fcd0c716b01c5fed2010001010000294552524f523a20756e6b6e6f776e2063616e69737465725f6d6f6465203d2077726f6e672d6d6f6465",
+      silent_on_trap, my_principal);
+
+  // '("chat-principal": text)'
+  // -> '(variant { Ok = record { canister_mode = "chat-principal"} })'
+  mockIC.run_test(
+      "set_canister_mode to chat-principal", set_canister_mode,
+      "4449444c0001710e636861742d7072696e636970616c",
+      "4449444c026c01bbbff4b30c716b01bc8a01000101000e636861742d7072696e636970616c",
+      silent_on_trap, my_principal);
 
   // -----------------------------------------------------------------------------
   // The canister health & readiness checks
@@ -207,17 +218,18 @@ int main() {
       "4449444c0001713f6578706d742d67747873772d696e66746a2d747461626a2d71687035732d6e6f7a75702d6e3362626f2d6b377a766e2d64673468652d6b6e6163332d6c6165",
       silent_on_trap, my_principal);
 
-  // '()' -> '(variant { Err = 401 : nat16 })'
+  // '()' -> '(variant { Err = record { Other = "Access Denied"} })'
   // Call with non owner principal must be denied
-  mockIC.run_test("reset_model Err", reset_model, "4449444c0000",
-                  "4449444c016b01c5fed2017a0100009101", silent_on_trap,
-                  anonymous_principal);
+  mockIC.run_test(
+      "reset_model Err", reset_model, "4449444c0000",
+      "4449444c026b01b0ad8fcd0c716b01c5fed20100010100000d4163636573732044656e696564",
+      silent_on_trap, anonymous_principal);
 
   // '()' -> '(variant { Ok = 200 : nat16 })'
   // Call with owner principal
   mockIC.run_test("reset_model", reset_model, "4449444c0000",
-                  "4449444c016b01bc8a017a010000c800", silent_on_trap,
-                  my_principal);
+                  "4449444c026c019aa1b2f90c7a6b01bc8a0100010100c800",
+                  silent_on_trap, my_principal);
 
   // ==========================================================================
   std::cout << "\n+++++++++++++++++++++++++++++++++++++++++++++++++++++\n";
@@ -257,7 +269,7 @@ int main() {
                 << candid_in.substr(candid_in.size() - 10) << "\n";
 
     // candid_in -> '(variant { Ok = 200 : nat16 })'
-    candid_out_expected = "4449444c016b01bc8a017a010000c800";
+    candid_out_expected = "4449444c026c019aa1b2f90c7a6b01bc8a0100010100c800";
     mockIC.run_test("upload_model_bytes_chunk", upload_model_bytes_chunk,
                     candid_in, candid_out_expected, silent_on_trap,
                     my_principal);
@@ -304,7 +316,7 @@ int main() {
                 << candid_in.substr(candid_in.size() - 10) << "\n";
 
     // candid_in -> '(variant { Ok = 200 : nat16 })'
-    candid_out_expected = "4449444c016b01bc8a017a010000c800";
+    candid_out_expected = "4449444c026c019aa1b2f90c7a6b01bc8a0100010100c800";
     mockIC.run_test("upload_tokenizer_bytes_chunk",
                     upload_tokenizer_bytes_chunk, candid_in,
                     candid_out_expected, silent_on_trap, my_principal);
@@ -315,19 +327,19 @@ int main() {
   // ==========================================================================
   // Mimic two principals at once are building a story...
 
-  // '()' -> '(variant { Ok = 200 : nat16 })'
+  // '()' -> '(variant { Ok = record { status_code = 200 : nat16} })'
   mockIC.run_test("initialize", initialize, "4449444c0000",
-                  "4449444c016b01bc8a017a010000c800", silent_on_trap,
-                  my_principal);
+                  "4449444c026c019aa1b2f90c7a6b01bc8a0100010100c800",
+                  silent_on_trap, my_principal);
 
   // '()' -> '(variant { Ok = 200 : nat16 })'
   mockIC.run_test("new_chat", new_chat, "4449444c0000",
-                  "4449444c016b01bc8a017a010000c800", silent_on_trap,
-                  my_principal);
+                  "4449444c026c019aa1b2f90c7a6b01bc8a0100010100c800",
+                  silent_on_trap, my_principal);
   // '()' -> '(variant { Ok = 200 : nat16 })'
   mockIC.run_test("new_chat", new_chat, "4449444c0000",
-                  "4449444c016b01bc8a017a010000c800", silent_on_trap,
-                  your_principal);
+                  "4449444c026c019aa1b2f90c7a6b01bc8a0100010100c800",
+                  silent_on_trap, your_principal);
 
   // '()' -> '(variant { Err =  "The Llama2 canister does not allow calling with anonymous principal." : text })'
   mockIC.run_test(
@@ -418,8 +430,8 @@ int main() {
       // A new chat, using a prompt built in multiple steps
       // '()' -> '(variant { Ok = 200 : nat16 })'
       mockIC.run_test("new_chat", new_chat, "4449444c0000",
-                      "4449444c016b01bc8a017a010000c800", silent_on_trap,
-                      principal);
+                      "4449444c026c019aa1b2f90c7a6b01bc8a0100010100c800",
+                      silent_on_trap, principal);
     }
 
     // Loop to create a long story, 10 tokens at a time
@@ -447,16 +459,21 @@ int main() {
         mockIC.run_test("inference 0a", inference, candid_in, "",
                         silent_on_trap, principals[j], &candid_out);
 
+        CandidTypeRecord inference_record;
+        inference_record.append("inference",
+                                CandidTypeText{&generated_tokens[j]});
         std::string err_text;
         CandidTypeVariant v_out;
-        v_out.append("Ok", CandidTypeText(&generated_tokens[j]));
-        v_out.append("Err", CandidTypeText(&err_text));
+        v_out.append("Ok", inference_record);
+        v_out.append("Err",
+                     CandidTypeVariant{"Other", CandidTypeText(&err_text)});
 
         CandidArgs A;
         A.append(v_out);
         CandidDeserialize(candid_out, A);
         if (err_text.size() > 0) {
-          std::cout << "ERROR returned by inference function.\n";
+          std::cout << "Err returned by inference function:\n"
+                    << err_text << "\n";
           exit(1);
         }
         story[j] += generated_tokens[j];
@@ -490,8 +507,8 @@ int main() {
   { // A new chat, starting with an empty prompt
     // '()' -> '(variant { Ok = 200 : nat16 })'
     mockIC.run_test("new_chat", new_chat, "4449444c0000",
-                    "4449444c016b01bc8a017a010000c800", silent_on_trap,
-                    your_principal);
+                    "4449444c026c019aa1b2f90c7a6b01bc8a0100010100c800",
+                    silent_on_trap, your_principal);
 
     // Loop to create 1000 token long story, 10 tokens at a time
     // With temperature=0.0: greedy argmax sampling -> the story will be the same every time
@@ -516,10 +533,18 @@ int main() {
       mockIC.run_test("inference 0b", inference, candid_in, "", silent_on_trap,
                       your_principal, &candid_out);
 
+      CandidTypeRecord inference_record;
+      inference_record.append("inference", CandidTypeText{&generated_tokens});
       std::string err_text;
       CandidTypeVariant v_out;
-      v_out.append("Ok", CandidTypeText(&generated_tokens));
-      v_out.append("Err", CandidTypeText(&err_text));
+      v_out.append("Ok", inference_record);
+      v_out.append("Err",
+                   CandidTypeVariant{"Other", CandidTypeText(&err_text)});
+
+      // std::string err_text;
+      // CandidTypeVariant v_out;
+      // v_out.append("Ok", CandidTypeText(&generated_tokens));
+      // v_out.append("Err", CandidTypeText(&err_text));
 
       CandidArgs A;
       A.append(v_out);
@@ -539,28 +564,19 @@ int main() {
   // A new chat
   // '()' -> '(variant { Ok = 200 : nat16 })'
   mockIC.run_test("new_chat", new_chat, "4449444c0000",
-                  "4449444c016b01bc8a017a010000c800", silent_on_trap,
-                  my_principal);
+                  "4449444c026c019aa1b2f90c7a6b01bc8a0100010100c800",
+                  silent_on_trap, my_principal);
 
   // With temperature=0.0: greedy argmax sampling -> the story will be the same every time
   // '(record {prompt = "" : text; steps = 100 : nat64; temperature = 0.0 : float32; topp = 1.0 : float32; rng_seed = 0 : nat64;})'
+  // -> '(variant { Ok = record { inference = "...story..." : text;} })'
   expected_response = "-to-do-B-";
   if (model_to_use == 1) {
-    // -> '(variant { Ok = ""Once upon a time, there was a little girl named Lily. She loved to play outside in the park. One day, she saw a big, red ball. She wanted to play with it, but it was too high.\nLily\'s mom said, \"Lily, let\'s go to the park.\" Lily was sad and didn\'t know w\n"" : text })'
     expected_response =
-        "4449444c016b01bc8a0171010000fd014f6e63652075706f6e20612074696d652c207468657265207761732061206c6974746c65206769726c206e616d6564204c696c792e20536865206c6f76656420746f20706c6179206f75747369646520696e20746865207061726b2e204f6e65206461792c20736865207361772061206269672c207265642062616c6c2e205368652077616e74656420746f20706c617920776974682069742c206275742069742077617320746f6f20686967682e0a4c696c792773206d6f6d20736169642c20224c696c792c206c6574277320676f20746f20746865207061726b2e22204c696c79207761732073616420616e64206469646e2774206b6e6f772077";
+        "4449444c026c01d9b3b9980f716b01bc8a0100010100fd014f6e63652075706f6e20612074696d652c207468657265207761732061206c6974746c65206769726c206e616d6564204c696c792e20536865206c6f76656420746f20706c6179206f75747369646520696e20746865207061726b2e204f6e65206461792c20736865207361772061206269672c207265642062616c6c2e205368652077616e74656420746f20706c617920776974682069742c206275742069742077617320746f6f20686967682e0a4c696c792773206d6f6d20736169642c20224c696c792c206c6574277320676f20746f20746865207061726b2e22204c696c79207761732073616420616e64206469646e2774206b6e6f772077";
   } else if (model_to_use == 2) {
-    // -> '(variant { Ok = "Once upon a time, there was a little girl named Lily. She loved to play outside in the sunshine. One day, she saw a big, red ball in the sky. It was the sun! She thought it was so pretty.\nLily wanted to play with the ball, but it was too high up in the sky. She tried to jump and reach it, but she couldn\'t. Then, she had an idea. She would use a stick to knock the" : text })'
-    expected_response =
-        "4449444c016b019cc20171010000ed024f6e63652075706f6e20612074696d652c207468657265207761732061206c6974746c65206769726c206e616d6564204c696c792e20536865206c6f76656420746f20706c6179206f75747369646520696e207468652073756e7368696e652e204f6e65206461792c20736865207361772061206269672c207265642062616c6c20696e2074686520736b792e20497420776173207468652073756e21205368652074686f756768742069742077617320736f207072657474792e0a4c696c792077616e74656420746f20706c61792077697468207468652062616c6c2c206275742069742077617320746f6f206869676820757020696e2074686520736b792e2053686520747269656420746f206a756d7020616e642072656163682069742c206275742073686520636f756c646e27742e205468656e2c207368652068616420616e20696465612e2053686520776f756c6420757365206120737469636b20746f206b6e6f636b20746865";
   } else if (model_to_use == 3) {
-    // -> '(variant { Ok = "Once upon a time, there was a little girl named Lily. She loved to play outside in the sunshine. One day, she saw a big, yellow flower in the garden. It was a sunflower! Lily thought it was the most beautiful flower she had ever seen.\nLily\'s mom came outside and saw the sunflower too. \"Wow, that\'s a big flower!\" she said. \"Let\'s pick it and put it in" : text })'
-    expected_response =
-        "4449444c016b019cc20171010000e0024f6e63652075706f6e20612074696d652c207468657265207761732061206c6974746c65206769726c206e616d6564204c696c792e20536865206c6f76656420746f20706c6179206f75747369646520696e207468652073756e7368696e652e204f6e65206461792c20736865207361772061206269672c2079656c6c6f7720666c6f77657220696e207468652067617264656e2e2049742077617320612073756e666c6f77657221204c696c792074686f756768742069742077617320746865206d6f73742062656175746966756c20666c6f77657220736865206861642065766572207365656e2e0a4c696c792773206d6f6d2063616d65206f75747369646520616e6420736177207468652073756e666c6f77657220746f6f2e2022576f772c2074686174277320612062696720666c6f77657221222073686520736169642e20224c65742773207069636b20697420616e642070757420697420696e";
   } else if (model_to_use == 4) {
-    // -> '(variant { Ok = "Once upon a time, there was a little girl named Lily. She loved to play outside in the sunshine. One day, she saw a big, red apple on a tree. She wanted to eat it, but it was too high up.\nLily asked her friend, a little bird, \"Can you help me get the apple?\"\nThe bird said, \"Sure, I can fly up and get it for you.\"\nThe bird flew up to the apple" : text })'
-    expected_response =
-        "4449444c016b019cc20171010000d8024f6e63652075706f6e20612074696d652c207468657265207761732061206c6974746c65206769726c206e616d6564204c696c792e20536865206c6f76656420746f20706c6179206f75747369646520696e207468652073756e7368696e652e204f6e65206461792c20736865207361772061206269672c20726564206170706c65206f6e206120747265652e205368652077616e74656420746f206561742069742c206275742069742077617320746f6f20686967682075702e0a4c696c792061736b65642068657220667269656e642c2061206c6974746c6520626972642c202243616e20796f752068656c70206d652067657420746865206170706c653f220a546865206269726420736169642c2022537572652c20492063616e20666c7920757020616e642067657420697420666f7220796f752e220a546865206269726420666c657720757020746f20746865206170706c65";
   }
   mockIC.run_test(
       "inference 1", inference,
@@ -571,8 +587,8 @@ int main() {
   // A new chat
   // '()' -> '(variant { Ok = 200 : nat16 })'
   mockIC.run_test("new_chat", new_chat, "4449444c0000",
-                  "4449444c016b01bc8a017a010000c800", silent_on_trap,
-                  my_principal);
+                  "4449444c026c019aa1b2f90c7a6b01bc8a0100010100c800",
+                  silent_on_trap, my_principal);
   // With temperature=0.0 & topp=0.9, still greedy argmax sampling -> the story will be the same every time
   // '(record {prompt = "" : text; steps = 100 : nat64; temperature = 0.0 : float32; topp = 0.9 : float32; rng_seed = 0 : nat64;})'
   mockIC.run_test(
@@ -584,8 +600,8 @@ int main() {
   // A new chat
   // '()' -> '(variant { Ok = 200 : nat16 })'
   mockIC.run_test("new_chat", new_chat, "4449444c0000",
-                  "4449444c016b01bc8a017a010000c800", silent_on_trap,
-                  my_principal);
+                  "4449444c026c019aa1b2f90c7a6b01bc8a0100010100c800",
+                  silent_on_trap, my_principal);
   // With temperature>0.0 & topp=1.0: regular sampling
   // '(record {prompt = "" : text; steps = 100 : nat64; temperature = 0.9 : float32; topp = 1.0 : float32; rng_seed = 0 : nat64;})'
   // -> --can not check on story--
@@ -598,8 +614,8 @@ int main() {
   // A new chat
   // '()' -> '(variant { Ok = 200 : nat16 })'
   mockIC.run_test("new_chat", new_chat, "4449444c0000",
-                  "4449444c016b01bc8a017a010000c800", silent_on_trap,
-                  my_principal);
+                  "4449444c026c019aa1b2f90c7a6b01bc8a0100010100c800",
+                  silent_on_trap, my_principal);
   // With temperature>0.0 & topp<1.0: top-pp (nucleus) sampling
   // '(record {prompt = "" : text; steps = 100 : nat64; temperature = 0.9 : float32; topp = 0.9 : float32; rng_seed = 0 : nat64;})'
   // -> --can not check on story--
@@ -612,8 +628,8 @@ int main() {
   // A new chat
   // '()' -> '(variant { Ok = 200 : nat16 })'
   mockIC.run_test("new_chat", new_chat, "4449444c0000",
-                  "4449444c016b01bc8a017a010000c800", silent_on_trap,
-                  my_principal);
+                  "4449444c026c019aa1b2f90c7a6b01bc8a0100010100c800",
+                  silent_on_trap, my_principal);
   // With temperature=0.0: greedy argmax sampling -> the story will be the same every time
   // '(record {prompt = "Yesterday I went for a walk" : text; steps = 100 : nat64; temperature = 0.0 : float32; topp = 1.0 : float32; rng_seed = 0 : nat64;})'
   // -> '(variant { Ok = "..." : text })'
@@ -626,8 +642,8 @@ int main() {
   // A new chat
   // '()' -> '(variant { Ok = 200 : nat16 })'
   mockIC.run_test("new_chat", new_chat, "4449444c0000",
-                  "4449444c016b01bc8a017a010000c800", silent_on_trap,
-                  my_principal);
+                  "4449444c026c019aa1b2f90c7a6b01bc8a0100010100c800",
+                  silent_on_trap, my_principal);
   // With temperature=0.0 & topp=0.9, still greedy argmax sampling -> the story will be the same every time
   // '(record {prompt = "Yesterday I went for a walk" : text; steps = 100 : nat64; temperature = 0.0 : float32; topp = 0.9 : float32; rng_seed = 0 : nat64;})'
   // -> '(variant { Ok = "..." : text })'
@@ -640,8 +656,8 @@ int main() {
   // A new chat
   // '()' -> '(variant { Ok = 200 : nat16 })'
   mockIC.run_test("new_chat", new_chat, "4449444c0000",
-                  "4449444c016b01bc8a017a010000c800", silent_on_trap,
-                  my_principal);
+                  "4449444c026c019aa1b2f90c7a6b01bc8a0100010100c800",
+                  silent_on_trap, my_principal);
   // With temperature>0.0 & topp=1.0: regular sampling
   // '(record {prompt = "Yesterday I went for a walk" : text; steps = 100 : nat64; temperature = 0.9 : float32; topp = 1.0 : float32; rng_seed = 0 : nat64;})'
   // -> --can not check on story--
@@ -654,8 +670,8 @@ int main() {
   // A new chat
   // '()' -> '(variant { Ok = 200 : nat16 })'
   mockIC.run_test("new_chat", new_chat, "4449444c0000",
-                  "4449444c016b01bc8a017a010000c800", silent_on_trap,
-                  my_principal);
+                  "4449444c026c019aa1b2f90c7a6b01bc8a0100010100c800",
+                  silent_on_trap, my_principal);
   // With temperature>0.0 & topp<1.0: top-pp (nucleus) sampling
   // '(record {prompt = "Yesterday I went for a walk" : text; steps = 100 : nat64; temperature = 0.9 : float32; topp = 0.9 : float32; rng_seed = 0 : nat64;})'
   // -> --can not check on story--
@@ -668,64 +684,73 @@ int main() {
   // # canister_mode = 'nft-ordinal' #
   // #################################
 
-  // '("nft-ordinal": text)' -> '()'
-  mockIC.run_test("set_canister_mode to nft-ordinal", set_canister_mode,
-                  "4449444c0001710b6e66742d6f7264696e616c", "4449444c0000",
-                  silent_on_trap, my_principal);
+  // '("nft-ordinal": text)'
+  // -> '(variant { Ok = record { canister_mode = "nft-ordinal"} })'
+  mockIC.run_test(
+      "set_canister_mode to nft-ordinal", set_canister_mode,
+      "4449444c0001710b6e66742d6f7264696e616c",
+      "4449444c026c01bbbff4b30c716b01bc8a01000101000b6e66742d6f7264696e616c",
+      silent_on_trap, my_principal);
 
   // -----------------------------------------------------------------------------
   // Whitelist principals that can mint NFTs
 
   // '(record { id = principal "nfxu4-cn7qt-x7r3c-5dhnk-dcrct-gmgoz-67gcg-5glvc-2krhv-gcmsr-qqe"; description = "A whitelisted user"; })'
-  // -> TRAP
+  // -> '(variant { Err = record { Other = "Access Denied"} })'
   // Call with non owner principal must be denied
-  mockIC.run_trap_test(
+  mockIC.run_test(
       "nft_whitelist a user as non-owner", nft_whitelist,
       "4449444c016c02dbb70168fc91f4f805710100011dbf84eff8ec5d19daa18a2299986767df308dd32ea2d2a27a984c94610212412077686974656c69737465642075736572",
+      "4449444c026b01b0ad8fcd0c716b01c5fed20100010100000d4163636573732044656e696564",
       silent_on_trap, your_principal);
 
   // '(record { id = principal "nfxu4-cn7qt-x7r3c-5dhnk-dcrct-gmgoz-67gcg-5glvc-2krhv-gcmsr-qqe"; description = "A whitelisted user"; })'
-  // -> '(variant { Ok = 200 : nat16 })'
+  // -> '(variant { Ok = record { status_code = 200 : nat16} })'
   mockIC.run_test(
       "nft_whitelist a user", nft_whitelist,
       "4449444c016c02dbb70168fc91f4f805710100011dbf84eff8ec5d19daa18a2299986767df308dd32ea2d2a27a984c94610212412077686974656c69737465642075736572",
-      "4449444c016b01bc8a017a010000c800", silent_on_trap, my_principal);
+      "4449444c026c019aa1b2f90c7a6b01bc8a0100010100c800", silent_on_trap,
+      my_principal);
 
   // '(record { id = principal "bd3sg-teaaa-aaaaa-qaaba-cai"; description = "A whitelisted canister"; })'
-  // -> '(variant { Ok = 200 : nat16 })'
+  // -> '(variant { Ok = record { status_code = 200 : nat16} })'
   mockIC.run_test(
       "nft_whitelist a canister", nft_whitelist,
       "4449444c016c02dbb70168fc91f4f805710100010a8000000000100002010116412077686974656c69737465642063616e6973746572",
-      "4449444c016b01bc8a017a010000c800", silent_on_trap, my_principal);
+      "4449444c026c019aa1b2f90c7a6b01bc8a0100010100c800", silent_on_trap,
+      my_principal);
 
   // -----------------------------------------------------------------------------
   // Initialize the NFT Collection
 
   // '(record { nft_supply_cap = 2 : nat64; nft_total_supply = 0 : nat64; nft_symbol = "CHARLES"; nft_name = "Sir Charles The 3rd"; nft_description = "A Bitcoin Ordinal Collection powered by a C++ LLM running on the Internet Computer"})'
-  // -> TRAP
+  // -> '(variant { Err = record { Other = "Access Denied"} })'
   // Call with non owner principal must be denied
-  mockIC.run_trap_test(
+  mockIC.run_test(
       "nft_init as non-owner", nft_init,
       "4449444c016c05a5d0bfc60278ee86c3950871bb9effa20f71b9e4b5ac0f71ad91e7ca0f78010002000000000000001353697220436861726c6573205468652033726407434841524c4553524120426974636f696e204f7264696e616c20436f6c6c656374696f6e20706f7765726564206279206120432b2b204c4c4d2072756e6e696e67206f6e2074686520496e7465726e657420436f6d70757465720000000000000000",
+      "4449444c026b01b0ad8fcd0c716b01c5fed20100010100000d4163636573732044656e696564",
       silent_on_trap, your_principal);
 
-  // -> '(variant { Ok = 200 : nat16 })'
+  // -> '(variant { Ok = record { status_code = 200 : nat16} })'
   mockIC.run_test(
       "nft_init", nft_init,
       "4449444c016c05a5d0bfc60278ee86c3950871bb9effa20f71b9e4b5ac0f71ad91e7ca0f78010002000000000000001353697220436861726c6573205468652033726407434841524c4553524120426974636f696e204f7264696e616c20436f6c6c656374696f6e20706f7765726564206279206120432b2b204c4c4d2072756e6e696e67206f6e2074686520496e7465726e657420436f6d70757465720000000000000000",
-      "4449444c016b01bc8a017a010000c800", silent_on_trap, my_principal);
+      "4449444c026c019aa1b2f90c7a6b01bc8a0100010100c800", silent_on_trap,
+      my_principal);
 
-  // -> TRAP
+  // -> '(variant { Err = record { Other = "NFT Collection is already initialized"} })'
   // Re-initialization must be denied
-  mockIC.run_trap_test(
+  mockIC.run_test(
       "nft_init again", nft_init,
       "4449444c016c05a5d0bfc60278ee86c3950871bb9effa20f71b9e4b5ac0f71ad91e7ca0f78010002000000000000001353697220436861726c6573205468652033726407434841524c4553524120426974636f696e204f7264696e616c20436f6c6c656374696f6e20706f7765726564206279206120432b2b204c4c4d2072756e6e696e67206f6e2074686520496e7465726e657420436f6d70757465720000000000000000",
+      "4449444c026b01b0ad8fcd0c716b01c5fed2010001010000254e465420436f6c6c656374696f6e20697320616c726561647920696e697469616c697a6564",
       silent_on_trap, my_principal);
 
-  // '()' -> '(record { nft_supply_cap = 2 : nat64; nft_total_supply = 0 : nat64; nft_symbol = "CHARLES"; nft_name = "Sir Charles The 3rd"; nft_description = "A Bitcoin Ordinal Collection powered by a C++ LLM running on the Internet Computer"})'
+  // '()' -> '(variant { Ok = record { nft_supply_cap = 2 : nat64; nft_total_supply = 0 : nat64; nft_symbol = "CHARLES"; nft_name = "Sir Charles The 3rd"; nft_description = "A Bitcoin Ordinal Collection powered by a C++ LLM running on the Internet Computer"}})'
   mockIC.run_test(
       "nft_metadata", nft_metadata, "4449444c0000",
-      "4449444c016c05a5d0bfc60278ee86c3950871bb9effa20f71b9e4b5ac0f71ad91e7ca0f78010002000000000000001353697220436861726c6573205468652033726407434841524c4553524120426974636f696e204f7264696e616c20436f6c6c656374696f6e20706f7765726564206279206120432b2b204c4c4d2072756e6e696e67206f6e2074686520496e7465726e657420436f6d70757465720000000000000000",
+      "4449444c026c05a5d0bfc60278ee86c3950871bb9effa20f71b9e4b5ac0f71ad91e7ca0f786b01bc8a010001010002000000000000001353697220436861726c6573205468652033726407434841524c4553524120426974636f696e204f7264696e616c20436f6c6c656374696f6e20706f7765726564206279206120432b2b204c4c4d2072756e6e696e67206f6e2074686520496e7465726e657420436f6d70757465720000000000000000",
       silent_on_trap, anonymous_principal);
 
   // ------------------------------------------------------------------------
@@ -742,61 +767,92 @@ int main() {
 
   // Verify it traps when not owner of the canister
   // A regular user cannot mint NFTs
-  // '(record {token_id = "token-A" : text})' -> trap
-  mockIC.run_trap_test("nft_mint trap test", nft_mint,
-                       "4449444c016c01a1a1c1da0271010007746f6b656e2d41",
-                       silent_on_trap, your_principal);
+  // '(record {token_id = "token-A" : text})'
+  // -> '(variant { Err = record { Other = "Access Denied"} })'
+  mockIC.run_test(
+      "nft_mint Err test 1", nft_mint,
+      "4449444c016c01a1a1c1da0271010007746f6b656e2d41",
+      "4449444c026b01b0ad8fcd0c716b01c5fed20100010100000d4163636573732044656e696564",
+      silent_on_trap, your_principal);
 
   // A whitelisted principal can NOT mint NFTs, they can only create new stories
-  mockIC.run_trap_test("nft_mint trap test", nft_mint,
-                       "4449444c016c01a1a1c1da0271010007746f6b656e2d41",
-                       silent_on_trap, nft_whitelist_principal_id_user);
+  mockIC.run_test(
+      "nft_mint Err test 1", nft_mint,
+      "4449444c016c01a1a1c1da0271010007746f6b656e2d41",
+      "4449444c026b01b0ad8fcd0c716b01c5fed20100010100000d4163636573732044656e696564",
+      silent_on_trap, nft_whitelist_principal_id_user);
 
   // -----------
   // Mint one
   // '(record {token_id = "token-A" : text})'
-  // -> '(variant { Ok = 200 : nat16 })'
-  mockIC.run_test(
-      "nft_mint", nft_mint, "4449444c016c01a1a1c1da0271010007746f6b656e2d41",
-      "4449444c016b01bc8a017a010000c800", silent_on_trap, my_principal);
+  // -> '(variant { Ok = record { status_code = 200 : nat16} })'
+  mockIC.run_test("nft_mint", nft_mint,
+                  "4449444c016c01a1a1c1da0271010007746f6b656e2d41",
+                  "4449444c026c019aa1b2f90c7a6b01bc8a0100010100c800",
+                  silent_on_trap, my_principal);
   // Summarize NFT collection metadata
-  // '()' -> '(record { nft_supply_cap = 2 : nat64; nft_total_supply = 1 : nat64; nft_symbol = "CHARLES"; nft_name = "Sir Charles The 3rd"; nft_description = "A Bitcoin Ordinal Collection powered by a C++ LLM running on the Internet Computer"})'
+  // '()' -> '(variant {Ok = record { nft_supply_cap = 2 : nat64; nft_total_supply = 1 : nat64; nft_symbol = "CHARLES"; nft_name = "Sir Charles The 3rd"; nft_description = "A Bitcoin Ordinal Collection powered by a C++ LLM running on the Internet Computer"}})'
   mockIC.run_test(
       "nft_metadata - total_supply = 1", nft_metadata, "4449444c0000",
-      "4449444c016c05a5d0bfc60278ee86c3950871bb9effa20f71b9e4b5ac0f71ad91e7ca0f78010002000000000000001353697220436861726c6573205468652033726407434841524c4553524120426974636f696e204f7264696e616c20436f6c6c656374696f6e20706f7765726564206279206120432b2b204c4c4d2072756e6e696e67206f6e2074686520496e7465726e657420436f6d70757465720100000000000000",
+      "4449444c026c05a5d0bfc60278ee86c3950871bb9effa20f71b9e4b5ac0f71ad91e7ca0f786b01bc8a010001010002000000000000001353697220436861726c6573205468652033726407434841524c4553524120426974636f696e204f7264696e616c20436f6c6c656374696f6e20706f7765726564206279206120432b2b204c4c4d2072756e6e696e67206f6e2074686520496e7465726e657420436f6d70757465720100000000000000",
       silent_on_trap, anonymous_principal);
 
   // -----------
-  // Minting it again for the same ordinal must trap.
+  // Minting it again for the same ordinal must Err.
   // '(record {token_id = "token-A" : text})'
-  // -> TRAP
-  mockIC.run_trap_test("nft_mint only one per ordinal", nft_mint,
-                       "4449444c016c01a1a1c1da0271010007746f6b656e2d41",
-                       silent_on_trap, my_principal);
+  // -> '(variant { Err = record { Other = "An NFT for the token_id token-A already exists."} })'
+  mockIC.run_test(
+      "nft_mint only one per ordinal", nft_mint,
+      "4449444c016c01a1a1c1da0271010007746f6b656e2d41",
+      "4449444c026b01b0ad8fcd0c716b01c5fed20100010100002f416e204e465420666f722074686520746f6b656e5f696420746f6b656e2d4120616c7265616479206578697374732e",
+      silent_on_trap, my_principal);
 
   // -----------
   // Mint another NFT with different token_id
   // '(record {token_id = "token-B" : text})'
-  // -> '(variant { Ok = 200 : nat16 })'
+  // -> '(variant { Ok = record { status_code = 200 : nat16} })'
   mockIC.run_test("nft_mint again", nft_mint,
                   "4449444c016c01a1a1c1da0271010007746f6b656e2d42",
-                  "4449444c016b01bc8a017a010000c800", silent_on_trap,
-                  my_principal);
+                  "4449444c026c019aa1b2f90c7a6b01bc8a0100010100c800",
+                  silent_on_trap, my_principal);
   // Summarize NFT collection metadata
-  // '()' -> '(record { nft_supply_cap = 2 : nat64; nft_total_supply = 2 : nat64; nft_symbol = "CHARLES"; nft_name = "Sir Charles The 3rd"; nft_description = "A Bitcoin Ordinal Collection powered by a C++ LLM running on the Internet Computer"})'
+  // '()' -> '(variant = {Ok = record { nft_supply_cap = 2 : nat64; nft_total_supply = 2 : nat64; nft_symbol = "CHARLES"; nft_name = "Sir Charles The 3rd"; nft_description = "A Bitcoin Ordinal Collection powered by a C++ LLM running on the Internet Computer"}})'
   mockIC.run_test(
       "nft_metadata - total_supply = 2", nft_metadata, "4449444c0000",
-      "4449444c016c05a5d0bfc60278ee86c3950871bb9effa20f71b9e4b5ac0f71ad91e7ca0f78010002000000000000001353697220436861726c6573205468652033726407434841524c4553524120426974636f696e204f7264696e616c20436f6c6c656374696f6e20706f7765726564206279206120432b2b204c4c4d2072756e6e696e67206f6e2074686520496e7465726e657420436f6d70757465720200000000000000",
+      "4449444c026c05a5d0bfc60278ee86c3950871bb9effa20f71b9e4b5ac0f71ad91e7ca0f786b01bc8a010001010002000000000000001353697220436861726c6573205468652033726407434841524c4553524120426974636f696e204f7264696e616c20436f6c6c656374696f6e20706f7765726564206279206120432b2b204c4c4d2072756e6e696e67206f6e2074686520496e7465726e657420436f6d70757465720200000000000000",
       silent_on_trap, anonymous_principal);
 
   // -----------
-  // Minting another NFT for another ordinal must trap, because we reached supply_cap
+  // Minting another NFT for another ordinal must Err, because we reached supply_cap
   // '(record {token_id = "token-C" : text})'
-  // -> TRAP
-  mockIC.run_trap_test("nft_mint hit supply_cap", nft_mint,
-                       "4449444c016c01a1a1c1da0271010007746f6b656e2d43",
-                       silent_on_trap, my_principal);
+  // -> '(variant { Err = record { Other = "Cannot mint, reached supply_cap of 2"} })'
+  mockIC.run_test(
+      "nft_mint hit supply_cap", nft_mint,
+      "4449444c016c01a1a1c1da0271010007746f6b656e2d43",
+      "4449444c026b01b0ad8fcd0c716b01c5fed20100010100002443616e6e6f74206d696e742c207265616368656420737570706c795f636170206f662032",
+      silent_on_trap, my_principal);
 
+  // ------------------------------------------------------------------------
+  // calling nft_get_story on non-existing token_id must fail
+
+  // '(record {token_id = "token-ERR" : text})'
+  // -> '(variant { Err = variant { Other = "NFT token-ERR does not exists." : text} })'
+  mockIC.run_test(
+      "nft_get_story Err 0", nft_get_story,
+      "4449444c016c01a1a1c1da0271010009746f6b656e2d455252",
+      "4449444c026b01b0ad8fcd0c716b01c5fed20100010100001e4e465420746f6b656e2d45525220646f6573206e6f74206578697374732e",
+      silent_on_trap, my_principal);
+
+  // ------------------------------------------------------------------------
+  // calling nft_get_story on existing token_id without a story must fail
+
+  // '(record {token_id = "token-A" : text})'
+  // -> '(variant { Err = variant { Other = "The story for NFT token-A does not exists." : text} })'
+  mockIC.run_test(
+      "nft_get_story Err 1", nft_get_story,
+      "4449444c016c01a1a1c1da0271010007746f6b656e2d41",
+      "4449444c026b01b0ad8fcd0c716b01c5fed20100010100002a5468652073746f727920666f72204e465420746f6b656e2d4120646f6573206e6f74206578697374732e",
+      silent_on_trap, my_principal);
   // ------------------------------------------------------------------------
   // Create the story for nft_id=0, with token_id="token-A"
 
@@ -804,18 +860,20 @@ int main() {
   // '(record {token_id = "token-A" : text}, record{ prompt = "It was a bright sunny day and Charles went to the beach with his fishing pole." : text; steps = 100 : nat64; temperature = 0.0 : float32; topp = 1.0 : float32; rng_seed = 0 : nat64;})'
   expected_response = "-to-do-B-";
   if (model_to_use == 1) {
-    // -> '(variant { Ok = "...some story..." : text })'
+    // -> '(variant { Ok = record { inference = "...some story..." : text;} })'
     expected_response =
-        "4449444c016b01bc8a01710100004e4974207761732061206272696768742073756e6e792064617920616e6420436861726c65732077656e7420746f207468652062656163682077697468206869732066697368696e6720706f6c652e";
+        "4449444c026c01d9b3b9980f716b01bc8a01000101004e4974207761732061206272696768742073756e6e792064617920616e6420436861726c65732077656e7420746f207468652062656163682077697468206869732066697368696e6720706f6c652e";
   } else if (model_to_use == 2) {
   } else if (model_to_use == 3) {
   } else if (model_to_use == 4) {
   }
-  // Verify it traps when caller is not whitelisted
+  // Verify it returns Err when caller is not whitelisted
   // A regular user cannot create new stories for NFTs
-  mockIC.run_trap_test(
-      "nft_story_start trap test", nft_story_start,
+  // -> '(variant { Err = variant { Other = "Access Denied - You are not authorized to call this function." } })'
+  mockIC.run_test(
+      "nft_story_start Err test", nft_story_start,
       "4449444c026c01a1a1c1da02716c05b4e8c2e40373bbb885e80473a7f7b9a00878c5c8cea60878a4a3e1aa0b7102000107746f6b656e2d41000000000000803f640000000000000000000000000000004e4974207761732061206272696768742073756e6e792064617920616e6420436861726c65732077656e7420746f207468652062656163682077697468206869732066697368696e6720706f6c652e",
+      "4449444c026b01b0ad8fcd0c716b01c5fed20100010100003d4163636573732044656e696564202d20596f7520617265206e6f7420617574686f72697a656420746f2063616c6c20746869732066756e6374696f6e2e",
       silent_on_trap, your_principal);
   mockIC.run_test(
       "nft_story_start 0", nft_story_start,
@@ -826,18 +884,20 @@ int main() {
   // '(record {token_id = "token-A" : text}, record{ prompt = "" : text; steps = 100 : nat64; temperature = 0.0 : float32; topp = 1.0 : float32; rng_seed = 0 : nat64;})'
   expected_response = "-to-do-B-";
   if (model_to_use == 1) {
-    // -> '(variant { Ok = "...some story..." : text })'
+    // -> '(variant { Ok = record { inference = "...some story..." : text;} })'
     expected_response =
-        "4449444c016b01bc8a0171010000a701204865207761732076657279206578636974656420746f2073656520776861742077617320696e736964652e204865207761732076657279206578636974656420746f2073656520776861742077617320696e736964652e0a2248656c6c6f2c20436861726c69652122207361696420436861726c69652e0a2249276d20736f7272792c22207361696420436861726c69652e0a2249276d20736f7272792c2220736169642043";
+        "4449444c026c01d9b3b9980f716b01bc8a0100010100a701204865207761732076657279206578636974656420746f2073656520776861742077617320696e736964652e204865207761732076657279206578636974656420746f2073656520776861742077617320696e736964652e0a2248656c6c6f2c20436861726c69652122207361696420436861726c69652e0a2249276d20736f7272792c22207361696420436861726c69652e0a2249276d20736f7272792c2220736169642043";
   } else if (model_to_use == 2) {
   } else if (model_to_use == 3) {
   } else if (model_to_use == 4) {
   }
-  // Verify it traps when caller is not whitelisted
+  // Verify it returns Err when caller is not whitelisted
   // A regular user cannot continue stories for NFTs
-  mockIC.run_trap_test(
-      "nft_story_continue trap test", nft_story_continue,
+  // -> '(variant { Err = variant { Other = "Access Denied - You are not authorized to call this function." } })'
+  mockIC.run_test(
+      "nft_story_continue Err test", nft_story_continue,
       "4449444c026c01a1a1c1da02716c05b4e8c2e40373bbb885e80473a7f7b9a00878c5c8cea60878a4a3e1aa0b7102000107746f6b656e2d41000000000000803f6400000000000000000000000000000000",
+      "4449444c026b01b0ad8fcd0c716b01c5fed20100010100003d4163636573732044656e696564202d20596f7520617265206e6f7420617574686f72697a656420746f2063616c6c20746869732066756e6374696f6e2e",
       silent_on_trap, your_principal);
   mockIC.run_test(
       "nft_story_continue 0", nft_story_continue,
@@ -851,18 +911,20 @@ int main() {
   // '(record {token_id = "token-B" : text}, record{ prompt = "Charles had a boat." : text; steps = 100 : nat64; temperature = 0.0 : float32; topp = 1.0 : float32; rng_seed = 0 : nat64;})'
   expected_response = "-to-do-B-";
   if (model_to_use == 1) {
-    // -> '(variant { Ok = "...some story..." : text })'
+    // -> '(variant { Ok = record { inference = "...some story..." : text;} })'
     expected_response =
-        "4449444c016b01bc8a017101000013436861726c657320686164206120626f61742e";
+        "4449444c026c01d9b3b9980f716b01bc8a010001010013436861726c657320686164206120626f61742e";
   } else if (model_to_use == 2) {
   } else if (model_to_use == 3) {
   } else if (model_to_use == 4) {
   }
-  // Verify it traps when caller is not whitelisted
+  // Verify it returns Err when caller is not whitelisted
   // A regular user cannot create new stories for NFTs
-  mockIC.run_trap_test(
-      "nft_story_start 1 trap test", nft_story_start,
+  // -> '(variant { Err = variant { Other = "Access Denied - You are not authorized to call this function." } })'
+  mockIC.run_test(
+      "nft_story_start 1 Err test", nft_story_start,
       "4449444c026c01a1a1c1da02716c05b4e8c2e40373bbb885e80473a7f7b9a00878c5c8cea60878a4a3e1aa0b7102000107746f6b656e2d42000000000000803f6400000000000000000000000000000013436861726c657320686164206120626f61742e",
+      "4449444c026b01b0ad8fcd0c716b01c5fed20100010100003d4163636573732044656e696564202d20596f7520617265206e6f7420617574686f72697a656420746f2063616c6c20746869732066756e6374696f6e2e",
       silent_on_trap, your_principal);
   mockIC.run_test(
       "nft_story_start 1", nft_story_start,
@@ -873,18 +935,20 @@ int main() {
   // '(record {token_id = "token-B" : text}, record{ prompt = "" : text; steps = 100 : nat64; temperature = 0.0 : float32; topp = 1.0 : float32; rng_seed = 0 : nat64;})'
   expected_response = "-to-do-B-";
   if (model_to_use == 1) {
-    // -> '(variant { Ok = "...some story..." : text })'
+    // -> '(variant { Ok = record { inference = "...some story..." : text;} })'
     expected_response =
-        "4449444c016b01bc8a01710100008902204865206c696b656420746f20706c617920776974682068697320746f797320616e642072756e2061726f756e642074686520726f6f6d2e2048652077617320766572792068617070792e2048652077616e74656420746f20706c617920776974682068697320746f79732e0a4f6e65206461792c20436861726c69652073617720612062696720626f61742e2054686520626f6174207761732076657279207363617265642e2048652077616e74656420746f20706c617920776974682074686520626f61742e2048652077616e74656420746f20706c617920776974682074686520626f61742e2048652077616e74656420746f20706c617920776974682074686520626f6174";
+        "4449444c026c01d9b3b9980f716b01bc8a01000101008902204865206c696b656420746f20706c617920776974682068697320746f797320616e642072756e2061726f756e642074686520726f6f6d2e2048652077617320766572792068617070792e2048652077616e74656420746f20706c617920776974682068697320746f79732e0a4f6e65206461792c20436861726c69652073617720612062696720626f61742e2054686520626f6174207761732076657279207363617265642e2048652077616e74656420746f20706c617920776974682074686520626f61742e2048652077616e74656420746f20706c617920776974682074686520626f61742e2048652077616e74656420746f20706c617920776974682074686520626f6174";
   } else if (model_to_use == 2) {
   } else if (model_to_use == 3) {
   } else if (model_to_use == 4) {
   }
-  // Verify it traps when caller is not whitelisted
-  // A regular user cannot create new stories for NFTs
-  mockIC.run_trap_test(
-      "nft_story_continue trap test", nft_story_continue,
+  // Verify it returns Err when caller is not whitelisted
+  // A regular user cannot continue stories for NFTs
+  // -> '(variant { Err = variant { Other = "Access Denied - You are not authorized to call this function." } })'
+  mockIC.run_test(
+      "nft_story_continue Err test", nft_story_continue,
       "4449444c026c01a1a1c1da02716c05b4e8c2e40373bbb885e80473a7f7b9a00878c5c8cea60878a4a3e1aa0b7102000107746f6b656e2d42000000000000803f6400000000000000000000000000000000",
+      "4449444c026b01b0ad8fcd0c716b01c5fed20100010100003d4163636573732044656e696564202d20596f7520617265206e6f7420617574686f72697a656420746f2063616c6c20746869732066756e6374696f6e2e",
       silent_on_trap, your_principal);
   mockIC.run_test(
       "nft_story_continue 1", nft_story_continue,
@@ -895,12 +959,11 @@ int main() {
   // Get the story for nft_id=0, with token_id="token-A"
 
   // '(record {token_id = "token-A" : text})'
-  // -> '(variant { Ok = "...story..." : text })'
+  // -> '(variant { Ok = record { story = "...story..." : text;} })'
   expected_response = "-to-do-B-";
   if (model_to_use == 1) {
-    // -> '(variant { Ok = "...some story..." : text })'
     expected_response =
-        "4449444c016b01bc8a0171010000f5014974207761732061206272696768742073756e6e792064617920616e6420436861726c65732077656e7420746f207468652062656163682077697468206869732066697368696e6720706f6c652e204865207761732076657279206578636974656420746f2073656520776861742077617320696e736964652e204865207761732076657279206578636974656420746f2073656520776861742077617320696e736964652e0a2248656c6c6f2c20436861726c69652122207361696420436861726c69652e0a2249276d20736f7272792c22207361696420436861726c69652e0a2249276d20736f7272792c2220736169642043";
+        "4449444c026c01f5a7d8a008716b01bc8a0100010100f5014974207761732061206272696768742073756e6e792064617920616e6420436861726c65732077656e7420746f207468652062656163682077697468206869732066697368696e6720706f6c652e204865207761732076657279206578636974656420746f2073656520776861742077617320696e736964652e204865207761732076657279206578636974656420746f2073656520776861742077617320696e736964652e0a2248656c6c6f2c20436861726c69652122207361696420436861726c69652e0a2249276d20736f7272792c22207361696420436861726c69652e0a2249276d20736f7272792c2220736169642043";
   } else if (model_to_use == 2) {
   } else if (model_to_use == 3) {
   } else if (model_to_use == 4) {
@@ -913,12 +976,11 @@ int main() {
   // Get the story for nft_id=1, with token_id="token-B"
 
   // '(record {token_id = "token-B" : text})'
-  // -> '(variant { Ok = "...story..." : text })'
+  // -> '(variant { Ok = record { story = "...story..." : text;} })'
   expected_response = "-to-do-B-";
   if (model_to_use == 1) {
-    // -> '(variant { Ok = "...some story..." : text })'
     expected_response =
-        "4449444c016b01bc8a01710100009c02436861726c657320686164206120626f61742e204865206c696b656420746f20706c617920776974682068697320746f797320616e642072756e2061726f756e642074686520726f6f6d2e2048652077617320766572792068617070792e2048652077616e74656420746f20706c617920776974682068697320746f79732e0a4f6e65206461792c20436861726c69652073617720612062696720626f61742e2054686520626f6174207761732076657279207363617265642e2048652077616e74656420746f20706c617920776974682074686520626f61742e2048652077616e74656420746f20706c617920776974682074686520626f61742e2048652077616e74656420746f20706c617920776974682074686520626f6174";
+        "4449444c026c01f5a7d8a008716b01bc8a01000101009c02436861726c657320686164206120626f61742e204865206c696b656420746f20706c617920776974682068697320746f797320616e642072756e2061726f756e642074686520726f6f6d2e2048652077617320766572792068617070792e2048652077616e74656420746f20706c617920776974682068697320746f79732e0a4f6e65206461792c20436861726c69652073617720612062696720626f61742e2054686520626f6174207761732076657279207363617265642e2048652077616e74656420746f20706c617920776974682074686520626f61742e2048652077616e74656420746f20706c617920776974682074686520626f61742e2048652077616e74656420746f20706c617920776974682074686520626f6174";
   } else if (model_to_use == 2) {
   } else if (model_to_use == 3) {
   } else if (model_to_use == 4) {
@@ -1015,59 +1077,50 @@ int main() {
   // -----------------------------------------------------------------------------------------
   // Users data
 
-  // Verify that calls trap when not owner
-  mockIC.run_trap_test("get_user_count", get_user_count, "4449444c0000",
-                       silent_on_trap, your_principal);
-
-  mockIC.run_trap_test("get_user_ids", get_user_ids, "4449444c0000",
-                       silent_on_trap, your_principal);
-
-  mockIC.run_trap_test("get_user_metadata", get_user_metadata,
-                       "4449444c000171093269626f372d646961", silent_on_trap,
-                       your_principal);
+  // Verify that calls Err when not owner
+  // (variant { Err = variant { Other = "Access Denied" } })
+  mockIC.run_test(
+      "get_users Err test", get_users, "4449444c0000",
+      "4449444c026b01b0ad8fcd0c716b01c5fed20100010100000d4163636573732044656e696564",
+      silent_on_trap, your_principal);
+  mockIC.run_test(
+      "get_user_metadata Err test", get_user_metadata,
+      "4449444c000171093269626f372d646961",
+      "4449444c026b01b0ad8fcd0c716b01c5fed20100010100000d4163636573732044656e696564",
+      silent_on_trap, your_principal);
 
   // '()' -> '(4 : nat64)'
-  mockIC.run_test("get_user_count", get_user_count, "4449444c0000",
-                  "4449444c0001780400000000000000", silent_on_trap,
-                  my_principal);
-
   /*
-  '()' -> 
-  (
-    vec {
-      "token-B";
-      "token-A";
-      "2ibo7-dia";
-      "expmt-gtxsw-inftj-ttabj-qhp5s-nozup-n3bbo-k7zvn-dg4he-knac3-lae";
-    },
-  )
+  '()' 
+  -> '( variant {
+          Ok = record {
+            user_count = 4 : nat64;
+            user_ids = vec {
+            "token-B";
+            "token-A";
+            "2ibo7-dia";
+            "expmt-gtxsw-inftj-ttabj-qhp5s-nozup-n3bbo-k7zvn-dg4he-knac3-lae";
+            };
+          }
+        },
+      )'
   */
   mockIC.run_test(
-      "get_user_ids", get_user_ids, "4449444c0000",
-      "4449444c016d7101000407746f6b656e2d4207746f6b656e2d41093269626f372d6469613f6578706d742d67747873772d696e66746a2d747461626a2d71687035732d6e6f7a75702d6e3362626f2d6b377a766e2d64673468652d6b6e6163332d6c6165",
+      "get_users", get_users, "4449444c0000",
+      "4449444c036c029bd1ed017884ba9db801016d716b01bc8a010001020004000000000000000407746f6b656e2d4207746f6b656e2d41093269626f372d6469613f6578706d742d67747873772d696e66746a2d747461626a2d71687035732d6e6f7a75702d6e3362626f2d6b377a766e2d64673468652d6b6e6163332d6c6165",
       silent_on_trap, my_principal);
 
-  // '("2ibo7-dia")' -> ... two vectors of nat64 ... but we can not check time-stamp!
-  /*
-  (
-    vec {
-      1_695_424_351_661_183_242 : nat64;
-      1_695_424_351_661_875_047 : nat64;
-      1_695_424_351_885_991_917 : nat64;
-    },
-    vec { 0 : nat64; 620 : nat64; 620 : nat64 },
-  )
-  */
+  // '("2ibo7-dia")' -> a UserMetadataRecord... two vectors of nat64 ... but we can not check time-stamp!
   mockIC.run_test("get_user_metadata", get_user_metadata,
                   "4449444c000171093269626f372d646961", "", silent_on_trap,
                   my_principal);
 
   // -----------------------------------------------------------------------------------------
   // Reset the model
-  // '()' -> '(variant { Ok = 200 : nat16 })'
+  // '()' -> '(variant { Ok = record { status_code = 200 : nat16} })'
   mockIC.run_test("reset_model", reset_model, "4449444c0000",
-                  "4449444c016b01bc8a017a010000c800", silent_on_trap,
-                  my_principal);
+                  "4449444c026c019aa1b2f90c7a6b01bc8a0100010100c800",
+                  silent_on_trap, my_principal);
 
   // -----------------------------------------------------------------------------
   // returns 1 if any tests failed

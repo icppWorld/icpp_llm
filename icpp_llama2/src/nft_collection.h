@@ -59,3 +59,5 @@ bool nft_is_whitelisted(IC_API &ic_api, bool err_to_wire = true);
 void new_p_nft_collection();
 void delete_p_nft_collection();
 void nft_story_(bool story_start);
+bool nft_exists_(const std::string &token_id);
+bool nft_story_exists_(const std::string &token_id);

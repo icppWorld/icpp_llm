@@ -70,7 +70,7 @@ def test__reset_model_err(identity_anonymous: dict[str, str], network: str) -> N
         network=network,
         timeout_seconds=10,
     )
-    expected_response = "(variant { Err = 401 : nat16 })"
+    expected_response = '(variant { Err = variant { Other = "Access Denied" } })'
     assert response == expected_response
 
 
@@ -140,30 +140,17 @@ def test__inference_2(identity_default: dict[str, str], network: str) -> None:
 # Users data, requires that identity_default is the owner
 # So, deploy with that default identity !!!
 #
-def test__get_user_count(identity_default: dict[str, str], network: str) -> None:
+def test__get_users(identity_default: dict[str, str], network: str) -> None:
     response = call_canister_api(
         dfx_json_path=DFX_JSON_PATH,
         canister_name=CANISTER_NAME,
-        canister_method="get_user_count",
-        canister_argument="4449444c0000",
-        canister_input="raw",
-        canister_output="raw",
+        canister_method="get_users",
+        canister_argument="()",
         network=network,
     )
-    assert "4449444c0001780100000000000000" == response
-
-
-def test__get_user_ids(identity_default: dict[str, str], network: str) -> None:
-    _response = call_canister_api(
-        dfx_json_path=DFX_JSON_PATH,
-        canister_name=CANISTER_NAME,
-        canister_method="get_user_ids",
-        canister_argument="4449444c0000",
-        canister_input="raw",
-        canister_output="raw",
-        network=network,
-    )
-    # No assert. A test just to make sure it does not trap.
+    principal = identity_default["principal"]
+    expected_response = f'(variant {{ Ok = record {{ user_count = 1 : nat64; user_ids = vec {{ "{principal}";}};}} }})'
+    assert response == expected_response
 
 
 def test__get_user_metadata(identity_default: dict[str, str], network: str) -> None:
@@ -176,44 +163,30 @@ def test__get_user_metadata(identity_default: dict[str, str], network: str) -> N
         canister_output="raw",
         network=network,
     )
-    # No assert. A test just to make sure it does not trap.
+    # No assert. A test just to make sure it returns.
 
 
 # ----------------------------------------------------------------------------------
-# Trap testing
+# Err testing
 #
-# Verify that calls trap when not owner
-def test__trap_get_user_count(identity_anonymous: dict[str, str], network: str) -> None:
+# Verify that Err when not owner
+def test__err_get_users(identity_anonymous: dict[str, str], network: str) -> None:
     response = call_canister_api(
         dfx_json_path=DFX_JSON_PATH,
         canister_name=CANISTER_NAME,
-        canister_method="get_user_count",
+        canister_method="get_users",
         canister_argument="4449444c0000",
         canister_input="raw",
         canister_output="raw",
         network=network,
     )
-    assert "Failed call to api" in response
-    assert "trapped explicitly" in response
-    assert "Access Denied" in response
-
-
-def test__trap_get_user_ids(identity_anonymous: dict[str, str], network: str) -> None:
-    response = call_canister_api(
-        dfx_json_path=DFX_JSON_PATH,
-        canister_name=CANISTER_NAME,
-        canister_method="get_user_ids",
-        canister_argument="4449444c0000",
-        canister_input="raw",
-        canister_output="raw",
-        network=network,
+    assert (
+        "4449444c026b01b0ad8fcd0c716b01c5fed20100010100000d4163636573732044656e696564"
+        == response
     )
-    assert "Failed call to api" in response
-    assert "trapped explicitly" in response
-    assert "Access Denied" in response
 
 
-def test__trap_get_user_metadata(
+def test__err_get_user_metadata(
     identity_anonymous: dict[str, str], network: str
 ) -> None:
     response = call_canister_api(
@@ -225,6 +198,7 @@ def test__trap_get_user_metadata(
         canister_output="raw",
         network=network,
     )
-    assert "Failed call to api" in response
-    assert "trapped explicitly" in response
-    assert "Access Denied" in response
+    assert (
+        "4449444c026b01b0ad8fcd0c716b01c5fed20100010100000d4163636573732044656e696564"
+        == response
+    )

@@ -57,5 +57,5 @@ void new_p_chats();
 void delete_p_chats();
 void new_p_metadata_users();
 void delete_p_metadata_users();
-void build_new_chat(std::string key);
-bool is_ready_and_authorized(IC_API ic_api);
+bool build_new_chat(std::string key, IC_API &ic_api);
+bool is_ready_and_authorized(IC_API &ic_api);

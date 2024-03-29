@@ -21,6 +21,12 @@ def parse_args() -> argparse.Namespace:
         help="canister name in dfx.json",
     )
     parser.add_argument(
+        "--canister-id",
+        type=str,
+        default="",
+        help="canister-id name canister_ids.json",
+    )
+    parser.add_argument(
         "--candid",
         type=str,
         default="src/llama2.did",

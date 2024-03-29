@@ -44,7 +44,12 @@ std::string safe_stringify(const char *piece) {
 // Copied from run.c and modified slightly
 std::string generate(IC_API ic_api, Chat *chat, Transformer *transformer,
                      Tokenizer *tokenizer, Sampler *sampler, std::string prompt,
-                     int steps) {
+                     int steps, bool *error) {
+  // --- DEBUG TEST
+  // *error = true;
+  // return "Testing return of error=true from 'generate'.";
+  //--- DEBUG TEST END
+  *error = false;
   std::string output;
 
   // encode the (string) prompt into tokens sequence
@@ -52,11 +57,27 @@ std::string generate(IC_API ic_api, Chat *chat, Transformer *transformer,
 
   // +3 for '\0', ?BOS, ?EOS
   int *prompt_tokens = (int *)malloc((prompt.length() + 3) * sizeof(int));
-  if (!prompt_tokens)
-    IC_API::trap("Failed to allocate memory for prompt_tokens.");
+  if (!prompt_tokens) {
+    *error = true;
+    return "Failed to allocate memory for prompt_tokens.";
+  }
   // We do not pass bos, but next, which is 1 after new_chat, else last token of previous call
+  int error_code = 0;
   encode(tokenizer, prompt.c_str(), chat->next, chat->eos, prompt_tokens,
-         &num_prompt_tokens);
+         &num_prompt_tokens, &error_code);
+  if (error_code != 0) {
+    std::string error_msg;
+    if (error_code == 1) {
+      error_msg = "cannot encode NULL text in 'encode' function of LLM.";
+    } else if (error_code == 2) {
+      error_msg =
+          "allocation failed of str_buffer in 'encode' function of LLM.";
+    } else {
+      error_msg = "Unknown error occured in 'encode' function of LLM.";
+    }
+    *error = true;
+    return error_msg;
+  }
 
   // icpp: make sure we do not re-add bos next time, unless reset by new_chat
   chat->bos = 0;
@@ -144,7 +165,13 @@ std::string generate(IC_API ic_api, Chat *chat, Transformer *transformer,
 // Inference endpoint for ICGPT, with story ownership based on principal of caller
 void inference() {
   IC_API ic_api(CanisterUpdate{std::string(__func__)}, false);
-  if (!is_canister_mode_chat_principal()) IC_API::trap("Access Denied");
+  if (!is_canister_mode_chat_principal()) {
+    std::string error_msg =
+        "Access Denied: canister_mode is not set to 'principal'.";
+    ic_api.to_wire(CandidTypeVariant{
+        "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
+    return;
+  }
   if (!is_ready_and_authorized(ic_api)) return;
 
   // Get the Prompt from the wire
@@ -162,22 +189,41 @@ void inference() {
   std::string principal = caller.get_text();
 
   if (p_chats && p_chats->umap.find(principal) == p_chats->umap.end()) {
-    build_new_chat(principal);
+    if (!build_new_chat(principal, ic_api)) return;
   }
   if (!p_chats || !p_chats_output_history) {
-    IC_API::trap("ERROR: null pointers that should not be null in function " +
-                 std::string(__func__));
+    std::string error_msg =
+        "ERROR: null pointers that should not be null in function " +
+        std::string(__func__);
+    ic_api.to_wire(CandidTypeVariant{
+        "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
+    return;
   }
 
   Chat *chat = &p_chats->umap[principal];
   std::string *output_history = &p_chats_output_history->umap[principal];
   MetadataUser *metadata_user = &p_metadata_users->umap[principal];
 
-  do_inference(ic_api, wire_prompt, chat, output_history, metadata_user);
+  bool error{false};
+  std::string output = do_inference(ic_api, wire_prompt, chat, output_history,
+                                    metadata_user, &error);
+
+  if (error) {
+    ic_api.to_wire(CandidTypeVariant{
+        "Err", CandidTypeVariant{"Other", CandidTypeText{output}}});
+    return;
+  }
+
+  // IC_API::debug_print(output);
+  // Send the generated response to the wire
+  CandidTypeRecord inference_record;
+  inference_record.append("inference", CandidTypeText{output});
+  ic_api.to_wire(CandidTypeVariant{"Ok", CandidTypeRecord{inference_record}});
 }
 
-void do_inference(IC_API &ic_api, Prompt wire_prompt, Chat *chat,
-                  std::string *output_history, MetadataUser *metadata_user) {
+std::string do_inference(IC_API &ic_api, Prompt wire_prompt, Chat *chat,
+                         std::string *output_history,
+                         MetadataUser *metadata_user, bool *error) {
 
   // parameter validation/overrides
   if (wire_prompt.rng_seed <= 0)
@@ -209,28 +255,27 @@ void do_inference(IC_API &ic_api, Prompt wire_prompt, Chat *chat,
   std::string output;
   // if (mode == "generate") {
   output += generate(ic_api, chat, &transformer, &tokenizer, &sampler,
-                     wire_prompt.prompt, wire_prompt.steps);
+                     wire_prompt.prompt, wire_prompt.steps, error);
   // } else if (mode =="chat") {
   // chat(&transformer, &tokenizer, &sampler, prompt, system_prompt, steps);
   // } else {
-  //   IC_API::trap("unsupported mode: " + mode);
+  //   return an error about: "unsupported mode: " + mode)
   // }
 
-  // Update & persist full output using Orthogonal Persistence
-  *output_history += output;
+  if (!*error) {
+    // Update & persist full output using Orthogonal Persistence
+    *output_history += output;
 
-  // Now we have the total_steps, stored with the chat
-  // And we can update the metadata_user
-  if (!metadata_user->metadata_chats.empty()) {
-    MetadataChat &metadata_chat = metadata_user->metadata_chats.back();
-    metadata_chat.total_steps += chat->total_steps;
+    // Now we have the total_steps, stored with the chat
+    // And we can update the metadata_user
+    if (!metadata_user->metadata_chats.empty()) {
+      MetadataChat &metadata_chat = metadata_user->metadata_chats.back();
+      metadata_chat.total_steps += chat->total_steps;
+    }
   }
 
   // memory and file handles cleanup
   free_sampler(&sampler);
 
-  // IC_API::debug_print(output);
-
-  // Send the generated response to the wire
-  ic_api.to_wire(CandidTypeVariant{"Ok", CandidTypeText{output}});
+  return output;
 }

@@ -8,5 +8,6 @@
 
 void inference() WASM_SYMBOL_EXPORTED("canister_update inference");
 
-void do_inference(IC_API &ic_api, Prompt wire_prompt, Chat *chat,
-                  std::string *output_history, MetadataUser *metadata_user);
+std::string do_inference(IC_API &ic_api, Prompt wire_prompt, Chat *chat,
+                         std::string *output_history,
+                         MetadataUser *metadata_user, bool *error);
