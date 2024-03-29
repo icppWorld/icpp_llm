@@ -193,6 +193,7 @@ service : {
 
   // nft endpoints (for canister_mode=nft-ordinal)
   nft_whitelist : (NFTWhitelistRecord) -> (StatusCodeRecordResult);
+  nft_ami_whitelisted : () -> (StatusCodeRecordResult);
   nft_init : (NFTCollectionRecord) -> (StatusCodeRecordResult);
   nft_metadata : () -> (NFTCollectionRecordResult) query;
   nft_mint : (NFT) -> (StatusCodeRecordResult);

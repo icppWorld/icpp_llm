@@ -8,6 +8,8 @@
 #include "wasm_symbol.h"
 
 void nft_whitelist() WASM_SYMBOL_EXPORTED("canister_update nft_whitelist");
+void nft_ami_whitelisted()
+    WASM_SYMBOL_EXPORTED("canister_query nft_ami_whitelisted");
 void nft_init() WASM_SYMBOL_EXPORTED("canister_update nft_init");
 void nft_metadata() WASM_SYMBOL_EXPORTED("canister_query nft_metadata");
 void nft_mint() WASM_SYMBOL_EXPORTED("canister_update nft_mint");

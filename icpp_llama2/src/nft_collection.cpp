@@ -118,6 +118,22 @@ void nft_whitelist() {
   ic_api.to_wire(CandidTypeVariant{"Ok", status_code_record});
 }
 
+void nft_ami_whitelisted() {
+  IC_API ic_api(CanisterQuery{std::string(__func__)}, false);
+
+  if (!nft_is_whitelisted(ic_api, false)) {
+    std::string error_msg = "Access Denied";
+    ic_api.to_wire(CandidTypeVariant{
+        "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
+    return;
+  }
+
+  CandidTypeRecord status_code_record;
+  status_code_record.append("status_code",
+                            CandidTypeNat16{Http::StatusCode::OK});
+  ic_api.to_wire(CandidTypeVariant{"Ok", status_code_record});
+}
+
 // Initialize the NFT Collection
 void nft_init() {
   IC_API ic_api(CanisterUpdate{std::string(__func__)}, false);

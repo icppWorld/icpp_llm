@@ -61,6 +61,7 @@ def test__whoami(identity_default: dict[str, str], network: str) -> None:
     assert response == expected_response
 
 
+# ----------------------------------------------------------------------------------
 def test__reset_model_err(identity_anonymous: dict[str, str], network: str) -> None:
     response = call_canister_api(
         dfx_json_path=DFX_JSON_PATH,

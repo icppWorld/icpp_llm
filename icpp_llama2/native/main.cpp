@@ -720,6 +720,19 @@ int main() {
       "4449444c026c019aa1b2f90c7a6b01bc8a0100010100c800", silent_on_trap,
       my_principal);
 
+  // '()'
+  // -> '(variant { Ok = record { status_code = 200 : nat16} })'
+  mockIC.run_test("nft_ami_whitelisted Ok", nft_ami_whitelisted, "4449444c0000",
+                  "4449444c026c019aa1b2f90c7a6b01bc8a0100010100c800",
+                  silent_on_trap, nft_whitelist_principal_id_canister);
+
+  // '()'
+  // -> '(variant { Err = record { Other = "Access Denied"} })'
+  mockIC.run_test(
+      "nft_ami_whitelisted Err", nft_ami_whitelisted, "4449444c0000",
+      "4449444c026b01b0ad8fcd0c716b01c5fed20100010100000d4163636573732044656e696564",
+      silent_on_trap, your_principal);
+
   // -----------------------------------------------------------------------------
   // Initialize the NFT Collection
 
