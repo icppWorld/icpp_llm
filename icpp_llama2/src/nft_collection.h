@@ -14,8 +14,12 @@ void nft_init() WASM_SYMBOL_EXPORTED("canister_update nft_init");
 void nft_metadata() WASM_SYMBOL_EXPORTED("canister_query nft_metadata");
 void nft_mint() WASM_SYMBOL_EXPORTED("canister_update nft_mint");
 void nft_story_start() WASM_SYMBOL_EXPORTED("canister_update nft_story_start");
+void nft_story_start_mo()
+    WASM_SYMBOL_EXPORTED("canister_update nft_story_start_mo");
 void nft_story_continue()
     WASM_SYMBOL_EXPORTED("canister_update nft_story_continue");
+void nft_story_continue_mo()
+    WASM_SYMBOL_EXPORTED("canister_update nft_story_continue_mo");
 void nft_get_story() WASM_SYMBOL_EXPORTED("canister_query nft_get_story");
 
 // ------------------------------------------------
@@ -60,6 +64,6 @@ void delete_p_nft_whitelist();
 bool nft_is_whitelisted(IC_API &ic_api, bool err_to_wire = true);
 void new_p_nft_collection();
 void delete_p_nft_collection();
-void nft_story_(bool story_start);
+void nft_story_(bool story_start, bool from_motoko);
 bool nft_exists_(const std::string &token_id);
 bool nft_story_exists_(const std::string &token_id);

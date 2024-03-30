@@ -9,6 +9,15 @@ type Prompt = record {
   rng_seed : nat64;
 };
 
+// Motoko does not support float32, so we use float64, and then map PromptMo onto Prompt
+type PromptMo = record {
+  prompt : text;
+  steps : nat64;
+  temperature : float64;
+  topp : float64;
+  rng_seed : nat64;
+};
+
 type Config = record {
   dim : int;
   hidden_dim : int;
@@ -182,6 +191,7 @@ service : {
   // Chat endpoints for canister_mode=chat-principal
   new_chat : () -> (StatusCodeRecordResult);
   inference : (Prompt) -> (InferenceRecordResult);
+  inference_mo : (PromptMo) -> (InferenceRecordResult);
 
   // admin endpoints
   whoami : () -> (text) query;
@@ -198,6 +208,8 @@ service : {
   nft_metadata : () -> (NFTCollectionRecordResult) query;
   nft_mint : (NFT) -> (StatusCodeRecordResult);
   nft_story_start : (NFT, Prompt) -> (InferenceRecordResult);
+  nft_story_start_mo : (NFT, PromptMo) -> (InferenceRecordResult);
   nft_story_continue : (NFT, Prompt) -> (InferenceRecordResult);
+  nft_story_continue_mo : (NFT, PromptMo) -> (InferenceRecordResult);
   nft_get_story : (NFT) -> (StoryRecordResult) query;
 };

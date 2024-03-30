@@ -584,16 +584,16 @@ int main() {
       expected_response, silent_on_trap, my_principal);
 
   // -----------------------------------------------------------------------------------------
-  // A new chat
+  // A new chat, pretend it being called from Motoko, using float64
   // '()' -> '(variant { Ok = 200 : nat16 })'
   mockIC.run_test("new_chat", new_chat, "4449444c0000",
                   "4449444c026c019aa1b2f90c7a6b01bc8a0100010100c800",
                   silent_on_trap, my_principal);
   // With temperature=0.0 & topp=0.9, still greedy argmax sampling -> the story will be the same every time
-  // '(record {prompt = "" : text; steps = 100 : nat64; temperature = 0.0 : float32; topp = 0.9 : float32; rng_seed = 0 : nat64;})'
+  // '(record {prompt = "" : text; steps = 100 : nat64; temperature = 0.0 : float64; topp = 0.9 : float64; rng_seed = 0 : nat64;})'
   mockIC.run_test(
-      "inference 2", inference,
-      "4449444c016c05b4e8c2e40373bbb885e80473a7f7b9a00878c5c8cea60878a4a3e1aa0b710100000000006666663f6400000000000000000000000000000000",
+      "inference_mo 2", inference_mo,
+      "4449444c016c05b4e8c2e40372bbb885e80472a7f7b9a00878c5c8cea60878a4a3e1aa0b7101000000000000000000cdccccccccccec3f6400000000000000000000000000000000",
       expected_response, silent_on_trap, my_principal);
 
   // -----------------------------------------------------------------------------------------
@@ -918,10 +918,10 @@ int main() {
       expected_response, silent_on_trap, my_principal);
 
   // ------------------------------------------------------------------------
-  // Create the story for nft_id=1 with token_id="token-B"
+  // Create the story for nft_id=1 with token_id="token-B", being called from Motoko with PromptMo (float64 types)
 
   // With temperature=0.0: greedy argmax sampling -> the story will be the same every time
-  // '(record {token_id = "token-B" : text}, record{ prompt = "Charles had a boat." : text; steps = 100 : nat64; temperature = 0.0 : float32; topp = 1.0 : float32; rng_seed = 0 : nat64;})'
+  // '(record {token_id = "token-B" : text}, record{ prompt = "Charles had a boat." : text; steps = 100 : nat64; temperature = 0.0 : float64; topp = 1.0 : float64; rng_seed = 0 : nat64;})'
   expected_response = "-to-do-B-";
   if (model_to_use == 1) {
     // -> '(variant { Ok = record { inference = "...some story..." : text;} })'
@@ -935,17 +935,17 @@ int main() {
   // A regular user cannot create new stories for NFTs
   // -> '(variant { Err = variant { Other = "Access Denied - You are not authorized to call this function." } })'
   mockIC.run_test(
-      "nft_story_start 1 Err test", nft_story_start,
-      "4449444c026c01a1a1c1da02716c05b4e8c2e40373bbb885e80473a7f7b9a00878c5c8cea60878a4a3e1aa0b7102000107746f6b656e2d42000000000000803f6400000000000000000000000000000013436861726c657320686164206120626f61742e",
+      "nft_story_start_mo 1 Err test", nft_story_start_mo,
+      "4449444c026c01a1a1c1da02716c05b4e8c2e40372bbb885e80472a7f7b9a00878c5c8cea60878a4a3e1aa0b7102000107746f6b656e2d420000000000000000000000000000f03f6400000000000000000000000000000013436861726c657320686164206120626f61742e",
       "4449444c026b01b0ad8fcd0c716b01c5fed20100010100003d4163636573732044656e696564202d20596f7520617265206e6f7420617574686f72697a656420746f2063616c6c20746869732066756e6374696f6e2e",
       silent_on_trap, your_principal);
   mockIC.run_test(
-      "nft_story_start 1", nft_story_start,
-      "4449444c026c01a1a1c1da02716c05b4e8c2e40373bbb885e80473a7f7b9a00878c5c8cea60878a4a3e1aa0b7102000107746f6b656e2d42000000000000803f6400000000000000000000000000000013436861726c657320686164206120626f61742e",
+      "nft_story_start_mo 1", nft_story_start_mo,
+      "4449444c026c01a1a1c1da02716c05b4e8c2e40372bbb885e80472a7f7b9a00878c5c8cea60878a4a3e1aa0b7102000107746f6b656e2d420000000000000000000000000000f03f6400000000000000000000000000000013436861726c657320686164206120626f61742e",
       expected_response, silent_on_trap, my_principal);
 
   // With temperature=0.0: greedy argmax sampling -> the story will be the same every time
-  // '(record {token_id = "token-B" : text}, record{ prompt = "" : text; steps = 100 : nat64; temperature = 0.0 : float32; topp = 1.0 : float32; rng_seed = 0 : nat64;})'
+  // '(record {token_id = "token-B" : text}, record{ prompt = "" : text; steps = 100 : nat64; temperature = 0.0 : float64; topp = 1.0 : float64; rng_seed = 0 : nat64;})'
   expected_response = "-to-do-B-";
   if (model_to_use == 1) {
     // -> '(variant { Ok = record { inference = "...some story..." : text;} })'
@@ -959,13 +959,13 @@ int main() {
   // A regular user cannot continue stories for NFTs
   // -> '(variant { Err = variant { Other = "Access Denied - You are not authorized to call this function." } })'
   mockIC.run_test(
-      "nft_story_continue Err test", nft_story_continue,
-      "4449444c026c01a1a1c1da02716c05b4e8c2e40373bbb885e80473a7f7b9a00878c5c8cea60878a4a3e1aa0b7102000107746f6b656e2d42000000000000803f6400000000000000000000000000000000",
+      "nft_story_continue_mo Err test", nft_story_continue_mo,
+      "4449444c026c01a1a1c1da02716c05b4e8c2e40372bbb885e80472a7f7b9a00878c5c8cea60878a4a3e1aa0b7102000107746f6b656e2d420000000000000000000000000000f03f6400000000000000000000000000000000",
       "4449444c026b01b0ad8fcd0c716b01c5fed20100010100003d4163636573732044656e696564202d20596f7520617265206e6f7420617574686f72697a656420746f2063616c6c20746869732066756e6374696f6e2e",
       silent_on_trap, your_principal);
   mockIC.run_test(
-      "nft_story_continue 1", nft_story_continue,
-      "4449444c026c01a1a1c1da02716c05b4e8c2e40373bbb885e80473a7f7b9a00878c5c8cea60878a4a3e1aa0b7102000107746f6b656e2d42000000000000803f6400000000000000000000000000000000",
+      "nft_story_continue_mo 1", nft_story_continue_mo,
+      "4449444c026c01a1a1c1da02716c05b4e8c2e40372bbb885e80472a7f7b9a00878c5c8cea60878a4a3e1aa0b7102000107746f6b656e2d420000000000000000000000000000f03f6400000000000000000000000000000000",
       expected_response, silent_on_trap, my_principal);
 
   // ------------------------------------------------------------------------

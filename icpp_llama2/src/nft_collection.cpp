@@ -286,10 +286,12 @@ void nft_mint() {
 }
 
 // Endpoints for the story of an NFT, callable by whitelisted principals only
-void nft_story_start() { nft_story_(true); }
-void nft_story_continue() { nft_story_(false); }
+void nft_story_start() { nft_story_(true, false); }
+void nft_story_start_mo() { nft_story_(true, true); }
+void nft_story_continue() { nft_story_(false, false); }
+void nft_story_continue_mo() { nft_story_(false, true); }
 
-void nft_story_(bool story_start) {
+void nft_story_(bool story_start, bool from_motoko) {
   IC_API ic_api(CanisterUpdate{std::string(__func__)}, false);
   if (!is_canister_mode_nft_ordinal()) {
     std::string error_msg = "Access Denied - Canister is not in NFT mode.";
@@ -311,18 +313,31 @@ void nft_story_(bool story_start) {
   CandidTypeRecord r_in1;
   r_in1.append("token_id", CandidTypeText{&token_id});
 
+  PromptMo wire_prompt_motoko; // Motoko does not support float32, uses float64
   Prompt wire_prompt;
   CandidTypeRecord r_in2;
   r_in2.append("prompt", CandidTypeText{&wire_prompt.prompt});
   r_in2.append("steps", CandidTypeNat64{&wire_prompt.steps});
-  r_in2.append("temperature", CandidTypeFloat32{&wire_prompt.temperature});
-  r_in2.append("topp", CandidTypeFloat32{&wire_prompt.topp});
+  if (from_motoko) {
+    r_in2.append("temperature",
+                 CandidTypeFloat64{&wire_prompt_motoko.temperature});
+    r_in2.append("topp", CandidTypeFloat64{&wire_prompt_motoko.topp});
+  } else {
+    r_in2.append("temperature", CandidTypeFloat32{&wire_prompt.temperature});
+    r_in2.append("topp", CandidTypeFloat32{&wire_prompt.topp});
+  }
   r_in2.append("rng_seed", CandidTypeNat64{&wire_prompt.rng_seed});
 
   CandidArgs args;
   args.append(r_in1);
   args.append(r_in2);
   ic_api.from_wire(args);
+
+  if (from_motoko) {
+    wire_prompt.temperature =
+        static_cast<float>(wire_prompt_motoko.temperature);
+    wire_prompt.topp = static_cast<float>(wire_prompt_motoko.topp);
+  }
 
   print_prompt(wire_prompt);
 

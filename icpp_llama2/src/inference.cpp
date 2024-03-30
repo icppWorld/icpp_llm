@@ -163,7 +163,11 @@ std::string generate(IC_API ic_api, Chat *chat, Transformer *transformer,
 }
 
 // Inference endpoint for ICGPT, with story ownership based on principal of caller
-void inference() {
+void inference() { inference_(false); }
+void inference_mo() {
+  inference_(true);
+} // Use this when calling from Motoko, with float64
+void inference_(bool from_motoko) {
   IC_API ic_api(CanisterUpdate{std::string(__func__)}, false);
   if (!is_canister_mode_chat_principal()) {
     std::string error_msg =
@@ -175,14 +179,27 @@ void inference() {
   if (!is_ready_and_authorized(ic_api)) return;
 
   // Get the Prompt from the wire
+  PromptMo wire_prompt_motoko; // Motoko does not support float32, uses float64
   Prompt wire_prompt;
   CandidTypeRecord r_in;
   r_in.append("prompt", CandidTypeText{&wire_prompt.prompt});
   r_in.append("steps", CandidTypeNat64{&wire_prompt.steps});
-  r_in.append("temperature", CandidTypeFloat32{&wire_prompt.temperature});
-  r_in.append("topp", CandidTypeFloat32{&wire_prompt.topp});
+  if (from_motoko) {
+    r_in.append("temperature",
+                CandidTypeFloat64{&wire_prompt_motoko.temperature});
+    r_in.append("topp", CandidTypeFloat64{&wire_prompt_motoko.topp});
+  } else {
+    r_in.append("temperature", CandidTypeFloat32{&wire_prompt.temperature});
+    r_in.append("topp", CandidTypeFloat32{&wire_prompt.topp});
+  }
   r_in.append("rng_seed", CandidTypeNat64{&wire_prompt.rng_seed});
   ic_api.from_wire(r_in);
+
+  if (from_motoko) {
+    wire_prompt.temperature =
+        static_cast<float>(wire_prompt_motoko.temperature);
+    wire_prompt.topp = static_cast<float>(wire_prompt_motoko.topp);
+  }
   // print_prompt(wire_prompt);
 
   CandidTypePrincipal caller = ic_api.get_caller();
