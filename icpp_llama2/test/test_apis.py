@@ -31,7 +31,7 @@ def test__health(identity_anonymous: dict[str, str], network: str) -> None:
         network=network,
         timeout_seconds=10,
     )
-    expected_response = "(true)"
+    expected_response = "(variant { Ok = record { status_code = 200 : nat16;} })"
     assert response == expected_response
 
 
@@ -44,7 +44,7 @@ def test__ready(identity_anonymous: dict[str, str], network: str) -> None:
         network=network,
         timeout_seconds=10,
     )
-    expected_response = "(true)"
+    expected_response = "(variant { Ok = record { status_code = 200 : nat16;} })"
     assert response == expected_response
 
 

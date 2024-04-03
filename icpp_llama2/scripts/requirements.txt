@@ -14,3 +14,4 @@ matplotlib
 fastparquet
 openpyxl
 seaborn
+requests

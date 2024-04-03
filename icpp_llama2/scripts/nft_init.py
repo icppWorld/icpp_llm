@@ -58,7 +58,7 @@ def main() -> int:
     # check health (liveness)
     print("--\nChecking liveness of canister (did we deploy it!)")
     response = canister_llama2.health()
-    if response == [True]:
+    if "Ok" in response[0].keys():
         print("Ok!")
     else:
         print("Not OK, response is:")

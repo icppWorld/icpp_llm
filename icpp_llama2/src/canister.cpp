@@ -132,13 +132,43 @@ void canister_init() {
 void health() {
   IC_API ic_api(CanisterQuery{std::string(__func__)}, false);
   IC_API::debug_print("llama2 is healthy!");
-  ic_api.to_wire(CandidTypeBool{true});
+
+  CandidTypeRecord status_code_record;
+  status_code_record.append("status_code",
+                            CandidTypeNat16{Http::StatusCode::OK});
+  ic_api.to_wire(CandidTypeVariant{"Ok", status_code_record});
 }
 
 // readiness endpoint (ready for inference & NFT Collection initialized
 void ready() {
   IC_API ic_api(CanisterQuery{std::string(__func__)}, false);
-  bool ready = ready_for_inference && p_nft_collection &&
-               p_nft_collection->initialized && is_canister_mode_set();
-  ic_api.to_wire(CandidTypeBool{ready});
+
+  if (!ready_for_inference) {
+    std::string error_msg =
+        "Model not yet uploaded or initialize endpoint not yet called";
+    ic_api.to_wire(CandidTypeVariant{
+        "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
+    return;
+  }
+
+  if (!is_canister_mode_set()) {
+    std::string error_msg = "canister_mode is not yet set";
+    ic_api.to_wire(CandidTypeVariant{
+        "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
+    return;
+  }
+
+  if (is_canister_mode_nft_ordinal()) {
+    if (!(p_nft_collection && p_nft_collection->initialized)) {
+      std::string error_msg =
+          "canister_mode=nft_ordinal, but nft_collection is not initialized";
+      ic_api.to_wire(CandidTypeVariant{
+          "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
+      return;
+    }
+  }
+  CandidTypeRecord status_code_record;
+  status_code_record.append("status_code",
+                            CandidTypeNat16{Http::StatusCode::OK});
+  ic_api.to_wire(CandidTypeVariant{"Ok", status_code_record});
 }

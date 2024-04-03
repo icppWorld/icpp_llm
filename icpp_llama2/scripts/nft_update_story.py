@@ -59,7 +59,7 @@ def main() -> int:
     # check health (liveness)
     print("--\nChecking liveness of canister (did we deploy it!)")
     response = canister_llama2.health()
-    if response == [True]:
+    if "Ok" in response[0].keys():
         print("Ok!")
     else:
         print("Not OK, response is:")
@@ -69,7 +69,7 @@ def main() -> int:
     # check readiness for inference
     print("--\nChecking if the canister is ready for inference.")
     response = canister_llama2.ready()
-    if response[0] is True:
+    if "Ok" in response[0].keys():
         if DEBUG_VERBOSE >= 2:
             print("OK!")
     else:

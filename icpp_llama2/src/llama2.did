@@ -177,8 +177,8 @@ service : {
   // canister endpoints
   canister_init : () -> ();
   set_canister_mode : (text) -> (CanisterModeRecordResult);
-  health : () -> (bool) query;
-  ready : () -> (bool) query;
+  health : () -> (StatusCodeRecordResult) query;
+  ready : () -> (StatusCodeRecordResult) query;
 
   // LLM initialization endpoints
   reset_model : () -> (StatusCodeRecordResult);
