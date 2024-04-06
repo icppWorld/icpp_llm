@@ -193,16 +193,15 @@ int main() {
       silent_on_trap, my_principal);
 
   // '("chat-principal": text)'
-  // -> '(variant { Ok = record { canister_mode = "chat-principal"} })'
-  mockIC.run_test(
-      "set_canister_mode to chat-principal", set_canister_mode,
-      "4449444c0001710e636861742d7072696e636970616c",
-      "4449444c026c01bbbff4b30c716b01bc8a01000101000e636861742d7072696e636970616c",
-      silent_on_trap, my_principal);
+  // -> '(variant { Ok = record { status_code = 200 : nat16} })'
+  mockIC.run_test("set_canister_mode to chat-principal", set_canister_mode,
+                  "4449444c0001710e636861742d7072696e636970616c",
+                  "4449444c026c019aa1b2f90c7a6b01bc8a0100010100c800",
+                  silent_on_trap, my_principal);
 
   // -----------------------------------------------------------------------------
   // The canister health & readiness checks
-  // '()' -> '(variant { Ok = 200 : nat16 })'
+  // '()' -> '(variant { Ok = record { status_code = 200 : nat16} })'
   mockIC.run_test("health", health, "4449444c0000",
                   "4449444c026c019aa1b2f90c7a6b01bc8a0100010100c800",
                   silent_on_trap, anonymous_principal);
@@ -228,7 +227,7 @@ int main() {
       "4449444c026b01b0ad8fcd0c716b01c5fed20100010100000d4163636573732044656e696564",
       silent_on_trap, anonymous_principal);
 
-  // '()' -> '(variant { Ok = 200 : nat16 })'
+  // '()' -> '(variant { Ok = record { status_code = 200 : nat16} })'
   // Call with owner principal
   mockIC.run_test("reset_model", reset_model, "4449444c0000",
                   "4449444c026c019aa1b2f90c7a6b01bc8a0100010100c800",
@@ -271,7 +270,7 @@ int main() {
       std::cout << candid_in.substr(0, 10) << "..."
                 << candid_in.substr(candid_in.size() - 10) << "\n";
 
-    // candid_in -> '(variant { Ok = 200 : nat16 })'
+    // candid_in -> '(variant { Ok = record { status_code = 200 : nat16} })'
     candid_out_expected = "4449444c026c019aa1b2f90c7a6b01bc8a0100010100c800";
     mockIC.run_test("upload_model_bytes_chunk", upload_model_bytes_chunk,
                     candid_in, candid_out_expected, silent_on_trap,
@@ -318,7 +317,7 @@ int main() {
       std::cout << candid_in.substr(0, 10) << "..."
                 << candid_in.substr(candid_in.size() - 10) << "\n";
 
-    // candid_in -> '(variant { Ok = 200 : nat16 })'
+    // candid_in -> '(variant { Ok = record { status_code = 200 : nat16} })'
     candid_out_expected = "4449444c026c019aa1b2f90c7a6b01bc8a0100010100c800";
     mockIC.run_test("upload_tokenizer_bytes_chunk",
                     upload_tokenizer_bytes_chunk, candid_in,
@@ -335,11 +334,11 @@ int main() {
                   "4449444c026c019aa1b2f90c7a6b01bc8a0100010100c800",
                   silent_on_trap, my_principal);
 
-  // '()' -> '(variant { Ok = 200 : nat16 })'
+  // '()' -> '(variant { Ok = record { status_code = 200 : nat16} })'
   mockIC.run_test("new_chat", new_chat, "4449444c0000",
                   "4449444c026c019aa1b2f90c7a6b01bc8a0100010100c800",
                   silent_on_trap, my_principal);
-  // '()' -> '(variant { Ok = 200 : nat16 })'
+  // '()' -> '(variant { Ok = record { status_code = 200 : nat16} })'
   mockIC.run_test("new_chat", new_chat, "4449444c0000",
                   "4449444c026c019aa1b2f90c7a6b01bc8a0100010100c800",
                   silent_on_trap, your_principal);
@@ -431,7 +430,7 @@ int main() {
     for (const auto &principal : principals) {
 
       // A new chat, using a prompt built in multiple steps
-      // '()' -> '(variant { Ok = 200 : nat16 })'
+      // '()' -> '(variant { Ok = record { status_code = 200 : nat16} })'
       mockIC.run_test("new_chat", new_chat, "4449444c0000",
                       "4449444c026c019aa1b2f90c7a6b01bc8a0100010100c800",
                       silent_on_trap, principal);
@@ -508,7 +507,7 @@ int main() {
 
   // -----------------------------------------------------------------------------------------
   { // A new chat, starting with an empty prompt
-    // '()' -> '(variant { Ok = 200 : nat16 })'
+    // '()' -> '(variant { Ok = record { status_code = 200 : nat16} })'
     mockIC.run_test("new_chat", new_chat, "4449444c0000",
                     "4449444c026c019aa1b2f90c7a6b01bc8a0100010100c800",
                     silent_on_trap, your_principal);
@@ -565,7 +564,7 @@ int main() {
 
   // -----------------------------------------------------------------------------------------
   // A new chat
-  // '()' -> '(variant { Ok = 200 : nat16 })'
+  // '()' -> '(variant { Ok = record { status_code = 200 : nat16} })'
   mockIC.run_test("new_chat", new_chat, "4449444c0000",
                   "4449444c026c019aa1b2f90c7a6b01bc8a0100010100c800",
                   silent_on_trap, my_principal);
@@ -588,7 +587,7 @@ int main() {
 
   // -----------------------------------------------------------------------------------------
   // A new chat, pretend it being called from Motoko, using float64
-  // '()' -> '(variant { Ok = 200 : nat16 })'
+  // '()' -> '(variant { Ok = record { status_code = 200 : nat16} })'
   mockIC.run_test("new_chat", new_chat, "4449444c0000",
                   "4449444c026c019aa1b2f90c7a6b01bc8a0100010100c800",
                   silent_on_trap, my_principal);
@@ -601,7 +600,7 @@ int main() {
 
   // -----------------------------------------------------------------------------------------
   // A new chat
-  // '()' -> '(variant { Ok = 200 : nat16 })'
+  // '()' -> '(variant { Ok = record { status_code = 200 : nat16} })'
   mockIC.run_test("new_chat", new_chat, "4449444c0000",
                   "4449444c026c019aa1b2f90c7a6b01bc8a0100010100c800",
                   silent_on_trap, my_principal);
@@ -615,7 +614,7 @@ int main() {
 
   // -----------------------------------------------------------------------------------------
   // A new chat
-  // '()' -> '(variant { Ok = 200 : nat16 })'
+  // '()' -> '(variant { Ok = record { status_code = 200 : nat16} })'
   mockIC.run_test("new_chat", new_chat, "4449444c0000",
                   "4449444c026c019aa1b2f90c7a6b01bc8a0100010100c800",
                   silent_on_trap, my_principal);
@@ -629,7 +628,7 @@ int main() {
 
   // -----------------------------------------------------------------------------------------
   // A new chat
-  // '()' -> '(variant { Ok = 200 : nat16 })'
+  // '()' -> '(variant { Ok = record { status_code = 200 : nat16} })'
   mockIC.run_test("new_chat", new_chat, "4449444c0000",
                   "4449444c026c019aa1b2f90c7a6b01bc8a0100010100c800",
                   silent_on_trap, my_principal);
@@ -643,7 +642,7 @@ int main() {
 
   // -----------------------------------------------------------------------------------------
   // A new chat
-  // '()' -> '(variant { Ok = 200 : nat16 })'
+  // '()' -> '(variant { Ok = record { status_code = 200 : nat16} })'
   mockIC.run_test("new_chat", new_chat, "4449444c0000",
                   "4449444c026c019aa1b2f90c7a6b01bc8a0100010100c800",
                   silent_on_trap, my_principal);
@@ -657,7 +656,7 @@ int main() {
 
   // -----------------------------------------------------------------------------------------
   // A new chat
-  // '()' -> '(variant { Ok = 200 : nat16 })'
+  // '()' -> '(variant { Ok = record { status_code = 200 : nat16} })'
   mockIC.run_test("new_chat", new_chat, "4449444c0000",
                   "4449444c026c019aa1b2f90c7a6b01bc8a0100010100c800",
                   silent_on_trap, my_principal);
@@ -671,7 +670,7 @@ int main() {
 
   // -----------------------------------------------------------------------------------------
   // A new chat
-  // '()' -> '(variant { Ok = 200 : nat16 })'
+  // '()' -> '(variant { Ok = record { status_code = 200 : nat16} })'
   mockIC.run_test("new_chat", new_chat, "4449444c0000",
                   "4449444c026c019aa1b2f90c7a6b01bc8a0100010100c800",
                   silent_on_trap, my_principal);
@@ -688,12 +687,11 @@ int main() {
   // #################################
 
   // '("nft-ordinal": text)'
-  // -> '(variant { Ok = record { canister_mode = "nft-ordinal"} })'
-  mockIC.run_test(
-      "set_canister_mode to nft-ordinal", set_canister_mode,
-      "4449444c0001710b6e66742d6f7264696e616c",
-      "4449444c026c01bbbff4b30c716b01bc8a01000101000b6e66742d6f7264696e616c",
-      silent_on_trap, my_principal);
+  // -> '(variant { Ok = record { status_code = 200 : nat16} })'
+  mockIC.run_test("set_canister_mode to nft-ordinal", set_canister_mode,
+                  "4449444c0001710b6e66742d6f7264696e616c",
+                  "4449444c026c019aa1b2f90c7a6b01bc8a0100010100c800",
+                  silent_on_trap, my_principal);
 
   // -----------------------------------------------------------------------------
   // Whitelist principals that can mint NFTs
@@ -814,14 +812,13 @@ int main() {
       silent_on_trap, anonymous_principal);
 
   // -----------
-  // Minting it again for the same ordinal must Err.
+  // Minting it again for the same ordinal is Ok.
   // '(record {token_id = "token-A" : text})'
-  // -> '(variant { Err = record { Other = "An NFT for the token_id token-A already exists."} })'
-  mockIC.run_test(
-      "nft_mint only one per ordinal", nft_mint,
-      "4449444c016c01a1a1c1da0271010007746f6b656e2d41",
-      "4449444c026b01b0ad8fcd0c716b01c5fed20100010100002f416e204e465420666f722074686520746f6b656e5f696420746f6b656e2d4120616c7265616479206578697374732e",
-      silent_on_trap, my_principal);
+  // -> '(variant { Ok = record { status_code = 200 : nat16} })'
+  mockIC.run_test("nft_mint only one per ordinal", nft_mint,
+                  "4449444c016c01a1a1c1da0271010007746f6b656e2d41",
+                  "4449444c026c019aa1b2f90c7a6b01bc8a0100010100c800",
+                  silent_on_trap, my_principal);
 
   // -----------
   // Mint another NFT with different token_id

@@ -53,7 +53,7 @@ type StatusCodeRecord = record { status_code : nat16 };
 // Returned by 'set_canister_mode'
 type CanisterModeRecordResult = variant {
   Err : ApiError;
-  Ok : InferenceRecord;
+  Ok : CanisterModeRecord;
 };
 type CanisterModeRecord = record { canister_mode : text };
 
@@ -176,7 +176,7 @@ type StreamingStrategy = variant {
 service : {
   // canister endpoints
   canister_init : () -> ();
-  set_canister_mode : (text) -> (CanisterModeRecordResult);
+  set_canister_mode : (text) -> (StatusCodeRecordResult);
   health : () -> (StatusCodeRecordResult) query;
   ready : () -> (StatusCodeRecordResult) query;
 

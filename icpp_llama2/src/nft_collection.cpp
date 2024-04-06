@@ -252,33 +252,35 @@ void nft_mint() {
   r_in.append("token_id", CandidTypeText{&token_id});
   ic_api.from_wire(r_in);
 
-  // Have we reached the limit?
-  if (p_nft_collection->nfts.size() >= p_nft_collection->supply_cap) {
-    std::string error_msg = "Cannot mint, reached supply_cap of " +
-                            std::to_string(p_nft_collection->supply_cap);
-    ic_api.to_wire(CandidTypeVariant{
-        "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
-    return;
+  // Have we reached the limit? (supply_cap of zero means no limit)
+  if (p_nft_collection->supply_cap != 0) {
+    if (p_nft_collection->nfts.size() >= p_nft_collection->supply_cap) {
+      std::string error_msg = "Cannot mint, reached supply_cap of " +
+                              std::to_string(p_nft_collection->supply_cap);
+      ic_api.to_wire(CandidTypeVariant{
+          "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
+      return;
+    }
   }
 
-  // Is there already an NFT for this token_id?
   if (nft_exists_(token_id)) {
-    std::string error_msg =
-        "An NFT for the token_id " + token_id + " already exists.";
-    ic_api.to_wire(CandidTypeVariant{
-        "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
-    return;
+    // We don't care if it already exists
+    // std::string error_msg =
+    //     "An NFT for the token_id " + token_id + " already exists.";
+    // ic_api.to_wire(CandidTypeVariant{
+    //     "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
+    // return;
+  } else {
+
+    // Create the NFT with an empty story:
+    // (-) We checked above that the caller must be the canister_owner
+    // (-) We checked above that there is no other NFT for this token_id
+    NFT nft;
+    nft.token_id = token_id;
+
+    // Store the NFT in the NFTCollection
+    p_nft_collection->nfts.push_back(nft);
   }
-
-  // Create the NFT with an empty story:
-  // (-) We checked above that the caller must be the canister_owner
-  // (-) We checked above that there is no other NFT for this token_id
-  NFT nft;
-  nft.token_id = token_id;
-
-  // Store the NFT in the NFTCollection
-  p_nft_collection->nfts.push_back(nft);
-
   CandidTypeRecord status_code_record;
   status_code_record.append("status_code",
                             CandidTypeNat16{Http::StatusCode::OK});

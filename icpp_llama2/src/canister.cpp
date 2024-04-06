@@ -96,10 +96,10 @@ void set_canister_mode() {
   IC_API::debug_print(std::string(__func__) +
                       ": p_canister_mode = " + *p_canister_mode);
 
-  CandidTypeRecord canister_mode_record;
-  canister_mode_record.append("canister_mode",
-                              CandidTypeText{*p_canister_mode});
-  ic_api.to_wire(CandidTypeVariant{"Ok", canister_mode_record});
+  CandidTypeRecord status_code_record;
+  status_code_record.append("status_code",
+                            CandidTypeNat16{Http::StatusCode::OK});
+  ic_api.to_wire(CandidTypeVariant{"Ok", status_code_record});
 }
 
 void print_canister_metadata() {
