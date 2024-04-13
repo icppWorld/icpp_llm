@@ -366,6 +366,7 @@ void nft_story_(bool story_start, bool from_motoko) {
   // Send the generated response to the wire
   CandidTypeRecord inference_record;
   inference_record.append("inference", CandidTypeText{output});
+  inference_record.append("num_tokens", CandidTypeNat64{chat->total_steps});
   ic_api.to_wire(CandidTypeVariant{"Ok", CandidTypeRecord{inference_record}});
 }
 

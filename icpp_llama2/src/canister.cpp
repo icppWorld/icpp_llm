@@ -35,9 +35,6 @@ bool is_canister_owner(IC_API &ic_api, bool err_to_wire) {
   CandidTypePrincipal caller = ic_api.get_caller();
   if (caller.get_text() == *p_canister_owner_principal) return true;
   else {
-    IC_API::debug_print(std::string(__func__) +
-                        ": ERROR - caller is not the owner.");
-
     if (err_to_wire) {
       std::string error_msg = "Access Denied";
       ic_api.to_wire(CandidTypeVariant{

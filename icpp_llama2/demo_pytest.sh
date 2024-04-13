@@ -19,8 +19,8 @@ dfx start --clean --background
 #######################################################################
 echo "--------------------------------------------------"
 echo "Building the wasm with wasi-sdk"
-# icpp build-wasm --to-compile all
-icpp build-wasm --to-compile mine
+icpp build-wasm --to-compile all
+# icpp build-wasm --to-compile mine
 
 #######################################################################
 echo " "

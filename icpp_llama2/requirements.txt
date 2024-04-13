@@ -1,4 +1,4 @@
 -r scripts/requirements.txt
-icpp-pro==3.13.0
+icpp-pro==3.15.2
 ic-py==1.0.1
 requests

@@ -445,7 +445,9 @@ int main() {
     std::array<uint64_t, 2> rng_seed = {0, 0};
 
     std::array<std::string, 2> generated_tokens = {"", ""};
+    std::array<uint64_t, 2> num_tokens = {0, 0};
     std::array<std::string, 2> story = {"", ""};
+
     for (int i = 0; i < 10; i++) {
       for (int j = 0; j < 2; j++) {
 
@@ -464,6 +466,7 @@ int main() {
         CandidTypeRecord inference_record;
         inference_record.append("inference",
                                 CandidTypeText{&generated_tokens[j]});
+        inference_record.append("num_tokens", CandidTypeNat64{&num_tokens[j]});
         std::string err_text;
         CandidTypeVariant v_out;
         v_out.append("Ok", inference_record);
@@ -521,6 +524,7 @@ int main() {
     uint64_t rng_seed = 0;
 
     std::string generated_tokens = "";
+    uint64_t num_tokens = 0;
     std::string story = "";
     for (int i = 0; i < 100; i++) {
       CandidTypeRecord r_in;
@@ -537,6 +541,7 @@ int main() {
 
       CandidTypeRecord inference_record;
       inference_record.append("inference", CandidTypeText{&generated_tokens});
+      inference_record.append("num_tokens", CandidTypeNat64{&num_tokens});
       std::string err_text;
       CandidTypeVariant v_out;
       v_out.append("Ok", inference_record);
@@ -571,11 +576,11 @@ int main() {
 
   // With temperature=0.0: greedy argmax sampling -> the story will be the same every time
   // '(record {prompt = "" : text; steps = 100 : nat64; temperature = 0.0 : float32; topp = 1.0 : float32; rng_seed = 0 : nat64;})'
-  // -> '(variant { Ok = record { inference = "...story..." : text;} })'
+  // -> '(variant { Ok = record { inference = "...story..." : text; num_tokens = 101 } })'
   expected_response = "-to-do-B-";
   if (model_to_use == 1) {
     expected_response =
-        "4449444c026c01d9b3b9980f716b01bc8a0100010100fd014f6e63652075706f6e20612074696d652c207468657265207761732061206c6974746c65206769726c206e616d6564204c696c792e20536865206c6f76656420746f20706c6179206f75747369646520696e20746865207061726b2e204f6e65206461792c20736865207361772061206269672c207265642062616c6c2e205368652077616e74656420746f20706c617920776974682069742c206275742069742077617320746f6f20686967682e0a4c696c792773206d6f6d20736169642c20224c696c792c206c6574277320676f20746f20746865207061726b2e22204c696c79207761732073616420616e64206469646e2774206b6e6f772077";
+        "4449444c026c02f3feb4990678d9b3b9980f716b01bc8a01000101006500000000000000fd014f6e63652075706f6e20612074696d652c207468657265207761732061206c6974746c65206769726c206e616d6564204c696c792e20536865206c6f76656420746f20706c6179206f75747369646520696e20746865207061726b2e204f6e65206461792c20736865207361772061206269672c207265642062616c6c2e205368652077616e74656420746f20706c617920776974682069742c206275742069742077617320746f6f20686967682e0a4c696c792773206d6f6d20736169642c20224c696c792c206c6574277320676f20746f20746865207061726b2e22204c696c79207761732073616420616e64206469646e2774206b6e6f772077";
   } else if (model_to_use == 2) {
   } else if (model_to_use == 3) {
   } else if (model_to_use == 4) {

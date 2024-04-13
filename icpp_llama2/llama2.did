@@ -64,10 +64,7 @@ type InferenceRecordResult = variant {
   Err : ApiError;
   Ok : InferenceRecord;
 };
-type InferenceRecord = record {
-  inference : text;
-  num_tokens : nat64;
-};
+type InferenceRecord = record { inference : text };
 
 // --
 // A story, from beginning, build from multiple inference calls
