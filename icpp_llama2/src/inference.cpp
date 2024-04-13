@@ -96,21 +96,32 @@ std::string generate(IC_API ic_api, Chat *chat, Transformer *transformer,
   if (prompt.length() > 0) {
     steps = 0;
   }
-  chat->total_steps += num_prompt_tokens + steps;
-  // override to ~max length
-  if (chat->total_steps > transformer->config.seq_len)
-    chat->total_steps = transformer->config.seq_len;
+  // chat->total_steps += num_prompt_tokens + steps;
+  // // override to ~max length
+  // if (chat->total_steps > transformer->config.seq_len)
+  //   chat->total_steps = transformer->config.seq_len;
+
+  unsigned long long max_total_steps =
+      chat->total_steps + num_prompt_tokens + steps;
+  if (max_total_steps > transformer->config.seq_len)
+    max_total_steps = transformer->config.seq_len;
 
   // start the main loop
+  chat->inference_steps = 0;
   long start =
       0;    // used to time our code, only initialized after first iteration
   int next; // will store the next token in the sequence
   // icpp: use -1, so the exact prompt will be returned when steps is 0
   //       this is critical when building the prompt in multiple calls
-  while (pos < chat->total_steps - 1) {
+  // while (pos < chat->total_steps - 1) {
+  while (pos < max_total_steps - 1) {
 
     // forward the transformer to get logits for the next token
     float *logits = forward(chat, transformer, token, pos);
+
+    // increase our counts
+    chat->inference_steps++;
+    chat->total_steps++;
 
     // advance the state state machine
     if (prompt_pos < num_prompt_tokens - 1) {
@@ -148,6 +159,7 @@ std::string generate(IC_API ic_api, Chat *chat, Transformer *transformer,
     // init the timer here because the first iteration can be slower
     // if (start == 0) { start = time_in_ms(); }
   }
+
   // printf("\n");
   // output += "\n"; // icpp: don't do this... we're continuining in next call
 
@@ -235,7 +247,7 @@ void inference_(bool from_motoko) {
   // Send the generated response to the wire
   CandidTypeRecord inference_record;
   inference_record.append("inference", CandidTypeText{output});
-  inference_record.append("num_tokens", CandidTypeNat64{chat->total_steps});
+  inference_record.append("num_tokens", CandidTypeNat64{chat->inference_steps});
   ic_api.to_wire(CandidTypeVariant{"Ok", CandidTypeRecord{inference_record}});
 }
 

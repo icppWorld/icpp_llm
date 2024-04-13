@@ -135,7 +135,8 @@ bool build_new_chat(std::string key, IC_API &ic_api) {
   chat->eos = 0;
 
   //icpp: initialize total_steps
-  chat->total_steps = 0;
+  chat->total_steps = 0; // total story length, across multiple inference calls
+  chat->inference_steps = 0; // per inference
 
   // --------------------------------------------------------------------------
   // The New Chat metadata
