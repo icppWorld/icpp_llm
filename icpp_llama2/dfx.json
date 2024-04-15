@@ -6,7 +6,7 @@
       "candid": "src/llama2.did",
       "wasm": "build/llama2.wasm"
     },
-    "llama2": {
+    "llama2_15M": {
       "type": "custom",
       "candid": "src/llama2.did",
       "wasm": "build/llama2.wasm"

@@ -112,10 +112,10 @@ bool malloc_run_state(RunState* s, Config* p) {
     if (!s->x || !s->xb || !s->xb2 || !s->hb || !s->hb2 || !s->q
      || !s->k || !s->v || !s->att || !s->logits || !s->key_cache
      || !s->value_cache) {
-        // ICPP: The calling function will trap the canister with a message
+        // ICPP: The calling function will return Err
         // printf("malloc failed!\n");
         // exit(1);
-        return false;
+        return false; // ICPP: caller with return Err
     }
     return true; // ICPP: all is ok
 }
@@ -484,7 +484,12 @@ int str_lookup(char *str, TokenIndex *sorted_vocab, int vocab_size) {
     return res != NULL ? res->id : -1;
 }
 
-void encode(Tokenizer* t, const char *text, int bos, int eos, int *tokens, int *n_tokens) {
+void encode(Tokenizer* t, const char *text, int bos, int eos, int *tokens, int *n_tokens, int *error_code) {
+    // DEBUG TEST START - pretend this error happens...
+    // *error_code = 2;
+    // return; // ICPP: allocation of str_buffer in 'encode' function of LLM failed.
+    // DEBUG TEST END
+
     // encode the string text (input) into an upper-bound preallocated tokens[] array
     // bos != 0 means prepend the BOS token (=1), eos != 0 means append the EOS token (=2)
 
@@ -493,6 +498,7 @@ void encode(Tokenizer* t, const char *text, int bos, int eos, int *tokens, int *
 
     // ICPP: We made sure this does not happen when calling encode.
     if (text == NULL) { 
+        *error_code = 1;
         return;
         // fprintf(stderr, "cannot encode NULL text\n"); exit(EXIT_FAILURE); 
         }
@@ -512,8 +518,10 @@ void encode(Tokenizer* t, const char *text, int bos, int eos, int *tokens, int *
     // create a temporary buffer that will store merge candidates of always two consecutive tokens
     // *2 for concat, +1 for null terminator +2 for UTF8 (in case max_token_length is 1)
     char* str_buffer = malloc((t->max_token_length*2 +1 +2) * sizeof(char));
-    if (!str_buffer)
-        return; // ICPP: allocation failed. Just return and it will trap
+    if (!str_buffer) {
+        *error_code = 2;
+        return; // ICPP: allocation of str_buffer in 'encode' function of LLM failed. 
+    }
     size_t str_len = 0;
 
     // add optional BOS (=1) token, if desired
@@ -952,7 +960,7 @@ int sample(Sampler* sampler, float* logits) {
 
 //     // default parameters
 //     char *checkpoint_path = NULL;  // e.g. out/model.bin
-//     char *tokenizer_path = "tokenizer.bin";
+//     char *tokenizer_path = "tok4096.bin";
 //     float temperature = 1.0f;   // 0.0 = greedy deterministic. 1.0 = original. don't set higher
 //     float topp = 0.9f;          // top-p in nucleus sampling. 1.0 = off. 0.9 works well, but slower
 //     int steps = 256;            // number of steps to run for

@@ -74,12 +74,14 @@ typedef struct {
 typedef struct {
   RunState state; // buffers for the "wave" of activations in the forward pass
   // icpp: to support generation across endpoint calls, we need to save the next token predicted
-  int pos;         // position in the sequence
-  int next;        // next token that was predicted
-  int8_t bos;      // add begin-of-sentence token or not
-  int8_t eos;      // add end-of-sentence token or not
+  int pos;    // position in the sequence
+  int next;   // next token that was predicted
+  int8_t bos; // add begin-of-sentence token or not
+  int8_t eos; // add end-of-sentence token or not
   unsigned long long
-      total_steps; // total steps to generate, including previous calls
+      total_steps; // total steps generated, including previous calls
+  unsigned long long
+      inference_steps; // actual steps generated during current inference call, excluding previous calls
 } Chat;
 
 typedef struct {
@@ -122,7 +124,7 @@ bool malloc_run_state(RunState *s, Config *p);
 void memory_map_weights(TransformerWeights *w, Config *p, float *ptr,
                         int shared_weights);
 void encode(Tokenizer *t, const char *text, int bos, int eos, int *tokens,
-            int *n_tokens);
+            int *n_tokens, int *error_code);
 float *forward(Chat *chat, Transformer *transformer, int token, int pos);
 char *decode(Tokenizer *t, int prev_token, int token);
 void build_sampler(Sampler *sampler, int vocab_size, float temperature,

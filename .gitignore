@@ -8,7 +8,8 @@ paths.txt
 secret
 
 # llama2 models
-models
+stories15M.bin
+stories42Mtok4096.bin
 #stories260K
 
 # llama2 metrics

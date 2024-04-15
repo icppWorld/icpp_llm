@@ -11,36 +11,49 @@
 
 #include "run.h"
 
-void get_user_count() {
+void whoami() {
   IC_API ic_api(CanisterQuery{std::string(__func__)}, false);
-  if (!is_owner(ic_api, false)) IC_API::trap("Access Denied");
+  CandidTypePrincipal caller = ic_api.get_caller();
+  ic_api.to_wire(CandidTypeText{caller.get_text()});
+}
 
+void get_users() {
+  IC_API ic_api(CanisterQuery{std::string(__func__)}, false);
+  if (!is_canister_owner(ic_api, false)) {
+    std::string error_msg = "Access Denied";
+    ic_api.to_wire(CandidTypeVariant{
+        "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
+    return;
+  }
+
+  // Get the number of users
   uint64_t user_count = 0;
   if (p_metadata_users) {
     user_count = p_metadata_users->umap.size();
   }
 
-  ic_api.to_wire(CandidTypeNat64{user_count});
-}
-
-void get_user_ids() {
-  IC_API ic_api(CanisterQuery{std::string(__func__)}, false);
-  if (!is_owner(ic_api, false)) IC_API::trap("Access Denied");
-
+  // Get the user ids
   std::vector<std::string> user_ids;
-
   if (p_metadata_users) {
     for (const auto &pair : p_metadata_users->umap) {
       user_ids.push_back(pair.first);
     }
   }
 
-  ic_api.to_wire(CandidTypeVecText{user_ids});
+  CandidTypeRecord users_record;
+  users_record.append("user_count", CandidTypeNat64{user_count});
+  users_record.append("user_ids", CandidTypeVecText{user_ids});
+  ic_api.to_wire(CandidTypeVariant{"Ok", users_record});
 }
 
 void get_user_metadata() {
   IC_API ic_api(CanisterQuery{std::string(__func__)}, false);
-  if (!is_owner(ic_api, false)) IC_API::trap("Access Denied");
+  if (!is_canister_owner(ic_api, false)) {
+    std::string error_msg = "Access Denied";
+    ic_api.to_wire(CandidTypeVariant{
+        "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
+    return;
+  }
 
   std::string in_principal;
   ic_api.from_wire(CandidTypeText{&in_principal});
@@ -57,8 +70,10 @@ void get_user_metadata() {
     }
   }
 
-  CandidArgs args_out;
-  args_out.append(CandidTypeVecNat64{chats_start_time});
-  args_out.append(CandidTypeVecNat64{chats_total_steps});
-  ic_api.to_wire(args_out);
+  CandidTypeRecord user_metadata_record;
+  user_metadata_record.append("chats_start_time",
+                              CandidTypeVecNat64{chats_start_time});
+  user_metadata_record.append("chats_total_steps",
+                              CandidTypeVecNat64{chats_total_steps});
+  ic_api.to_wire(CandidTypeVariant{"Ok", user_metadata_record});
 }
