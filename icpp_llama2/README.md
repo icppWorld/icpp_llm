@@ -1,9 +1,24 @@
 # [karpathy/llama2.c](https://github.com/karpathy/llama2.c) for the Internet Computer
 
-# Instructions
+# Try it out
+
+The 15M parameter model is the backend of [ICGPT](https://icgpt.icpp.world/).
+
+# Getting Started
 
 - Install the C++ development environment for the Internet Computer ([docs](https://docs.icpp.world/installation.html)):
-  - Install the required python packages *(icpp-pro & ic-py)*:
+
+  - Create a python environment. (We like MiniConda, but use whatever you like!)
+    ```bash
+    conda create --name myllama2 python=3.11
+    conda activate myllama2
+    ```
+  - Clone this repo and enter the icpp_llama2 folder
+    ```bash
+    git clone https://github.com/icppWorld/icpp_llm.git
+    cd icpp_llm/icpp_llama2
+    ```
+  - Install the required python packages _(icpp-pro & ic-py)_:
     ```bash
     pip install -r requirements.txt
     ```
@@ -12,78 +27,165 @@
     icpp install-wasi-sdk
     ```
   - Install dfx:
+
     ```bash
     sh -ci "$(curl -fsSL https://internetcomputer.org/install.sh)"
+
+    # Configure your shell
+    source "$HOME/.local/share/dfx/env"
     ```
-    *(Note: On Windows, just install dfx in wsl, and icpp-pro in PowerShell will know where to find it. )*
-    
 
-- Get a model checkpoint, as explained in [karpathy/llama2.c](https://github.com/karpathy/llama2.c):
+    _(Note: On Windows, just install dfx in wsl, and icpp-pro in PowerShell will know where to find it. )_
 
-   This command downloads the 15M parameter model that was trained on the TinyStories dataset (~60MB download) and stores it in a `models` folder:
+- Deploy the 15M parameter pre-trained model to canister `llama2_15M`:
 
-   ```bash
-   # on Linux/Mac
-   mkdir -p models
-   wget -P models https://huggingface.co/karpathy/tinyllamas/resolve/main/stories15M.bin
-   ```
+  - Start the local network:
+    ```bash
+    dfx start --clean
+    ```
+  - Compile & link to WebAssembly (wasm), as defined in `icpp.toml`:
+    ```bash
+    icpp build-wasm
+    ```
+  - Deploy the wasm to a canister on the local network:
+    ```bash
+    dfx deploy llama2_15M
+    ```
+  - Check the health endpoint of the `llama2_15M` canister:
+    ```bash
+    $ dfx canister call llama2_15M health
+    (variant { Ok = record { status_code = 200 : nat16 } })
+    ```
+  - Set the canister mode to 'chat-principal'
+    ```
+    $ dfx canister call llama2_15M set_canister_mode chat-principal
+    (variant { Ok = record { status_code = 200 : nat16 } })
+    ```
+  - Upload the 15M parameter model & tokenizer:
+    _(We have included a fine-tuned model based on a 4096 tokens tokenizer)_
+    ```bash
+    python -m scripts.upload --network local --canister llama2_15M --model models/stories15Mtok4096.bin --tokenizer tokenizers/tok4096.bin
+    ```
+  - Check the readiness endpoint, indicating it can be used for inference:
+    ```bash
+    $ dfx canister call llama2_15M ready
+    (variant { Ok = record { status_code = 200 : nat16 } })
+    ```
 
-   ```powershell
-   # in Windows PowerShell (Miniconda recommended)
-   if (-not (Test-Path -Path .\models)) {
-    New-Item -Path .\models -ItemType Directory
-   }
-   Invoke-WebRequest -Uri https://huggingface.co/karpathy/tinyllamas/resolve/main/stories15M.bin -OutFile .\models\stories15M.bin
-   ```
+- Test it with dfx.
+
+  - Generate a new story, 60 tokens at a time, starting with an empty prompt:
+
+    _(Your story will be slightly different, because the temperature > 0.0)_
+
+    ```bash
+    $ dfx canister call llama2_15M new_chat '()'
+    (variant { Ok = record { status_code = 200 : nat16 } })
+
+    $ dfx canister call llama2_15M inference '(record {prompt = "" : text; steps = 60 : nat64; temperature = 0.1 : float32; topp = 0.9 : float32; rng_seed = 0 : nat64;})'
+    (
+      variant {
+        Ok = record {
+          num_tokens = 60 : nat64;
+          inference = "Once upon a time, there was a little girl named Lily. She loved to play outside in the park. One day, she saw a big tree with a swing hanging from it. She ran to the swing and started to swing back and forth. It was so much fun!\nSuddenly,";
+        }
+      },
+    )
+
+    $ dfx canister call llama2_15M inference '(record {prompt = "" : text; steps = 60 : nat64; temperature = 0.1 : float32; topp = 0.9 : float32; rng_seed = 0 : nat64;})'
+    (
+      variant {
+        Ok = record {
+          num_tokens = 60 : nat64;
+          inference = " Lily saw a boy who was crying. She asked him what was wrong. The boy said he lost his toy car. Lily felt sad for him and wanted to help. She asked the boy if he wanted to play with her. The boy smiled and said yes.\nLily and the boy played together";
+        }
+      },
+    )
+
+    # etc.
+    # If you keep going, at some point the LLM will end the story
+    ```
+
+  - Now generate a new story, starting with your own, non-empty prompt:
+
+    ```bash
+    $ dfx canister call llama2_15M new_chat '()'
+    (variant { Ok = record { status_code = 200 : nat16 } })
+
+    $ dfx canister call llama2_15M inference '(record {prompt = "Timmy climbed in a tree" : text; steps = 60 : nat64; temperature = 0.1 : float32; topp = 0.9 : float32; rng_seed = 0 : nat64;})'
+    (
+      variant {
+        Ok = record {
+          num_tokens = 5 : nat64;
+          inference = "Timmy climbed in a tree";
+        }
+      },
+    )
+
+    $ dfx canister call llama2_15M inference '(record {prompt = "" : text; steps = 60 : nat64; temperature = 0.1 : float32; topp = 0.9 : float32; rng_seed = 0 : nat64;})'
+    (
+      variant {
+        Ok = record {
+          num_tokens = 60 : nat64;
+          inference = ". He was so excited to see what was on the roof. He looked up and saw a big bird. It was so big and it was so high up. Timmy wanted to get closer to the bird, so he started to climb.\nHe climbed and climbed until he reached the roof.";
+        }
+      },
+    )
+
+    # etc.
+    # If you keep going, at some point the LLM will end the story
+    ```
+
+# Next steps
+
+You also will notice that using dfx to generate stories is not very user friendly. We created a little react frontend, available as an open source project: https://github.com/icppWorld/icgpt, and deployed to the IC as deployed as [ICGPT](https://icgpt.icpp.world/).
+
+# llama2_260K
+
+For quick tests, we have included a really small model, with only 260K parameters and fine-tuned with a tokenizer of 512 tokens.
+
+- model: stories260K/stories260k.bin
+- tokenizer: stories260K/tok512.bin
+
+The CI/CD using a GitHub actions workflow, and the demo_pytest.sh script are based on this model.
+
+# demo_pytest.sh
 
 - The demo_pytest.sh script starts the local network, deploys llama2_260K, uploads the model & tokenizer, and runs the QA with pytest:
-  - `./demo_pytest.sh`  , on Linux / Mac
 
-- The *demo* script starts the local network, deploys llama2, uploads the model & tokenizer, and generates two stories:
-  - `./demo.sh`  , on Linux / Mac
+  - `./demo_pytest.sh` , on Linux / Mac
+
+# demo shell scripts
+
+- The _demo_ script starts the local network, deploys llama2, uploads the model & tokenizer, and generates two stories:
+  - `./demo.sh` , on Linux / Mac
   - `.\demo.ps1` , in Windows PowerShell (Miniconda recommended)
 
-​        This screenshot shows the generation of the second story:
+# More models
 
-![icpp_llama2_without_limits](../assets/icpp_llama2_without_limits.png)
+- You can get other model checkpoints, as explained in [karpathy/llama2.c](https://github.com/karpathy/llama2.c):
 
-- To deploy all the LLM canisters and upload their models + tokenizers:
+  This command downloads the 15M parameter model that was trained on the TinyStories dataset (~60MB download) and stores it in a `models` folder:
+
   ```bash
-  # ---------------------------------------------------------------
-  # Build WASM & deploy 
-  icpp build-wasm
-  dfx deploy
+  # on Linux/Mac
+  mkdir -p models
+  wget -P models https://huggingface.co/karpathy/tinyllamas/resolve/main/stories15M.bin
+  ```
 
-  # Set the canister mode to either 'chat-principal' or 'nft-ordinal'
-  # for normal LLMs
-  dfx canister call llama2_260K set_canister_mode chat-principal
-  dfx canister call llama2      set_canister_mode chat-principal
-  dfx canister call llama2_42M  set_canister_mode chat-principal
-  dfx canister call llama2_110M set_canister_mode chat-principal
+  ```powershell
+  # in Windows PowerShell (Miniconda recommended)
+  if (-not (Test-Path -Path .\models)) {
+   New-Item -Path .\models -ItemType Directory
+  }
+  Invoke-WebRequest -Uri https://huggingface.co/karpathy/tinyllamas/resolve/main/stories15M.bin -OutFile .\models\stories15M.bin
+  ```
 
-  # for NFT LLMs controlled by bitcoin ordinals
-  dfx canister call <...>     set_canister_mode nft-ordinal
+# Deploying to the IC main net
 
-  # ---------------------------------------------------------------
-  # Call `nft_init`
-  
-  # For the ICGPT backend canisters, minting is not supported:
-  python -m scripts.nft_init --network local --canister llama2_260K --nft-supply-cap 0 --nft-symbol "" --nft-name "" --nft-description ""
-  python -m scripts.nft_init --network local --canister llama2      --nft-supply-cap 0 --nft-symbol "" --nft-name "" --nft-description ""
-  python -m scripts.nft_init --network local --canister llama2_42M  --nft-supply-cap 0 --nft-symbol "" --nft-name "" --nft-description ""
-  python -m scripts.nft_init --network local --canister llama2_110M --nft-supply-cap 0 --nft-symbol "" --nft-name "" --nft-description ""
+- Deploying IC main network is as usual, but you will likely run into a time-out error during upload of the model. You have to patch ic-py as described here:
 
-  # For an NFT canister: Initialize the NFT Collection
-  python -m scripts.nft_init --network local --canister <...> --nft-supply-cap <...> --nft-symbol "..." --nft-name "..." --nft-description "..." 
-
-  # ---------------------------------------------------------------
-  # Upload the models & tokenizers to the canisters
-  # Notes:
-  # (-) The storiesXX.bin files are not included in the github repo
-  # (-) See `Get a model checkpoint` above
-  # (-) The default tokenizer.bin is included in the github repo
-  # (-) See `stories260k` below how to build the tok512.bin for the stories260K model
-  # (-) Use `--network ic` when deploying to mainnet
+  ```bash
   #
   # IMPORTANT: ic-py will through a timeout => patch it here:
   # /home/arjaan/miniconda3/envs/icpp-pro-w-llama2/lib/python3.11/site-packages/httpx/_config.py
@@ -97,74 +199,10 @@
             # ENDPATCH
             self._sock.settimeout(timeout)
             return self._sock.recv(max_bytes)
-  
-  # The ICGPT backend canisters
-  python -m scripts.upload --network local --canister llama2_260K --model stories260K/stories260K.bin --tokenizer stories260K/tok512.bin
 
-  python -m scripts.upload --network local --canister llama2 --model models/stories15Mtok4096.bin --tokenizer tokenizers/tok4096.bin
 
-  python -m scripts.upload --network local --canister llama2_42M --model models/stories42Mtok4096.bin --tokenizer tokenizers/tok4096.bin
-
-  python -m scripts.upload --network local --canister llama2_110M --model models/stories110M.bin --tokenizer tokenizers/tokenizer.bin
-
-  #
-  # The NFT canister
-  python -m scripts.upload --network local --canister <...> --model <...> --tokenizer <...>
-
-  # ---------------------------------------------------------------
-  # For an NFT canister: mint the NFTs
-  => TODO
-  
-  # ---------------------------------------------------------------
-  # Run tests
-  pytest
-  
-  ```
-
-# stories260K
-
-The default model is `stories15M.bin`, with `tokenizer.bin`, which contains the default llama2 tokenizer using 32000 tokens. 
-
-For testing, it is nice to be able to work with a smaller model & tokenizer:
-- Download the model & tokenizer from [huggingface stories260K](https://huggingface.co/karpathy/tinyllamas/tree/main/stories260K) and store them in:
-  - stories260K/stories260K.bin
-  - stories260K/tok512.bin
-  - stories260K/tok512.model
-- Deploy the canister:
-  ```bash
-  icpp build-wasm
-  dfx deploy
-  ```
-- Upload the model & tokenizer:
-  ```bash
-  python -m scripts.upload --canister llama2_260K --model stories260K/stories260K.bin --tokenizer stories260K/tok512.bin
-  ```
-- Inference is now possible with many more tokens before hitting the instruction limit, but off course, the stories are not as good:
-  ```bash
-  # Create a new chat
-  $ dfx canister call llama2_260K new_chat '()'
-
-  # Start the chat by providing the starting prompt
-  $ dfx canister call llama2_260K inference '(record {prompt = "Lilly went swimming yesterday  " : text; steps = 100 : nat64; temperature = 0.9 : float32; topp = 0.9 : float32; rng_seed = 0 : nat64;})'
-  (
-    variant {
-      Ok = "Lilly went swimming yesterday  order. She had a great eyes that was closed. One day, she asked her mom why the cloud was close to the pond. \n\"Mommy, I will take clothes away,\" Lila said. \"Th\n"
-    },
-  )
-
-  # Continue the current chat by calling again, with an empty prompt
-  $ dfx canister call llama2_260K inference '(record {prompt = "" : text; steps = 100 : nat64; temperature = 0.9 : float32; topp = 0.9 : float32; rng_seed = 0 : nat64;})'
-  (
-    variant {
-      Ok = "eone replace it.\nThe fox agreed to go as fast as they set on the other birds. They searched, and it didn\'t give up. They started to scared the bird. The forest was so careful and jumped up."
-    },
-  )
-
-  # Retrieve your full story, by calling with curl, passing the principal by which the LLM knows you in the body
-  $ dfx canister call llama2_260K whoami
-  '("<your-principal>")'
-
-  $ curl -X GET -d '{"principal":"<your-principal>"}' http://localhost:$(dfx info webserver-port)?canisterId=$(dfx canister id llama2_260K)
+  # Now, this command should work
+  python -m scripts.upload --network local --canister llama2_15M --model models/stories15Mtok4096.bin --tokenizer tokenizers/tok4096.bin
 
   ```
 
@@ -188,10 +226,10 @@ make run
 
 # Fine tuning
 
-  When making your own checkpoint via fine-tuning, make sure to train with the correct version of [karpathy/llama2.c](https://github.com/karpathy/llama2.c):
+When making your own checkpoint via fine-tuning, make sure to train with the correct version of [karpathy/llama2.c](https://github.com/karpathy/llama2.c):
 
-  | release | commit sha                                |
-  | --------| ----------------------------------------- |
-  | 0.1.0   |  b28c1e26c5ab5660267633e1bdc910a43b7255bf |
-  | 0.2.0   |  57bf0e9ee4bbd61c98c4ad204b72f2b8881ac8cd |
-  | 0.3.0   |  b9fb86169f56bd787bb644c62a80bbab56f8dccc |
+| release | commit sha                               |
+| ------- | ---------------------------------------- |
+| 0.1.0   | b28c1e26c5ab5660267633e1bdc910a43b7255bf |
+| 0.2.0   | 57bf0e9ee4bbd61c98c4ad204b72f2b8881ac8cd |
+| 0.3.0   | b9fb86169f56bd787bb644c62a80bbab56f8dccc |

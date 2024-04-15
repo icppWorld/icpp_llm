@@ -1,5 +1,5 @@
 // Endpoints for uploading the trained model           & the tokenizer files
-// eg.                         models/stories15M.bin   & tokenizers/tokenizer.bin
+// eg.                         models/stories15Mtok4096.bin   & tokenizers/tok4096.bin
 
 #include "upload.h"
 
@@ -135,7 +135,7 @@ void reset_tokenizer() {
   ic_api.to_wire(CandidTypeVariant{"Ok", status_code_record});
 }
 
-// Endpoint for uploading the stories15M.bin file as bytes
+// Endpoint for uploading the stories15Mtok4096.bin file as bytes
 void upload_model_bytes_chunk() {
   IC_API ic_api(CanisterUpdate{std::string(__func__)}, false);
   if (!is_canister_owner(ic_api)) return;
@@ -156,7 +156,7 @@ void upload_model_bytes_chunk() {
   ic_api.to_wire(CandidTypeVariant{"Ok", status_code_record});
 }
 
-// Endpoint for uploading the tokenizer.bin file as bytes
+// Endpoint for uploading the tok4096.bin file as bytes
 void upload_tokenizer_bytes_chunk() {
   IC_API ic_api(CanisterUpdate{std::string(__func__)}, false);
   if (!is_canister_owner(ic_api)) return;

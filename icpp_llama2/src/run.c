@@ -960,7 +960,7 @@ int sample(Sampler* sampler, float* logits) {
 
 //     // default parameters
 //     char *checkpoint_path = NULL;  // e.g. out/model.bin
-//     char *tokenizer_path = "tokenizer.bin";
+//     char *tokenizer_path = "tok4096.bin";
 //     float temperature = 1.0f;   // 0.0 = greedy deterministic. 1.0 = original. don't set higher
 //     float topp = 0.9f;          // top-p in nucleus sampling. 1.0 = off. 0.9 works well, but slower
 //     int steps = 256;            // number of steps to run for

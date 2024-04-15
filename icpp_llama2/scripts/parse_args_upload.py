@@ -33,14 +33,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--model",
         type=str,
-        default="models/stories15M.bin",
-        help="Model file (e.g. models/stories15M.bin)",
+        default="models/stories15Mtok4096.bin",
+        help="Model file (e.g. models/stories15Mtok4096.bin)",
     )
     parser.add_argument(
         "--tokenizer",
         type=str,
-        default="tokenizers/tokenizer.bin",
-        help="Tokenizer file (e.g. tokenizers/tokenizer.bin)",
+        default="tokenizers/tok4096.bin",
+        help="Tokenizer file (e.g. tokenizers/tok4096.bin)",
     )
     parser.add_argument(
         "--chunksize",

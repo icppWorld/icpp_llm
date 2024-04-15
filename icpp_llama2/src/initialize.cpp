@@ -21,7 +21,7 @@ Tokenizer tokenizer;
 // -----------------------------------------------------------------------
 
 // This is an exact copy of code in this method run.c,
-// Modified to read the data from the uploaded tokenizer.bin bytes
+// Modified to read the data from the uploaded tok4096.bin bytes
 bool build_tokenizer(Tokenizer *t, int vocab_size, IC_API &ic_api) {
   if (!p_tokenizer_bytes or
       (p_tokenizer_bytes && p_tokenizer_bytes->vec.size() == 0)) {
@@ -147,7 +147,7 @@ bool build_tokenizer(Tokenizer *t, int vocab_size, IC_API &ic_api) {
 // - read_checkpoint
 // - build_transformer
 // - free_transformer
-// Modified to read the data from the uploaded tokenizer.bin bytes
+// Modified to read the data from the uploaded tok4096.bin bytes
 void read_checkpoint(Config *config, TransformerWeights *weights) {
   // FILE *file = fopen(checkpoint, "rb");
   // if (!file) {

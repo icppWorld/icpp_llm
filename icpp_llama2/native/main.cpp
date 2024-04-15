@@ -86,7 +86,7 @@ int main() {
     tokenizer_path = "stories260K/tok512.bin";
   } else if (model_to_use == 2) {
     // Use this during final QA
-    model_path = "models/stories15M.bin";
+    model_path = "models/stories15Mtok4096.bin";
     tokenizer_path = "tokenizers/tokenizer.bin";
   } else if (model_to_use == 3) {
     model_path = "models/stories42M.bin";

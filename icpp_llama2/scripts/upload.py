@@ -23,7 +23,7 @@ DEBUG_VERBOSE = 1
 
 # ------------------------------------------------------------------------------
 def read_file_bytes(file_path: Path) -> bytes:
-    """Returns the stories15M.bin file as a bytes array"""
+    """Returns the stories15Mtok4096.bin file as a bytes array"""
     file_bytes = b""
     try:
         with open(file_path, "rb") as file:
