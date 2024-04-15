@@ -38,7 +38,7 @@ VERSION_CLANG := $(shell cat version_clang.txt)
 
 ###########################################################################
 # Use some clang tools that come with wasi-sdk
-ICPP_COMPILER_ROOT := $(HOME)/.icpp/wasi-sdk-20.0
+ICPP_COMPILER_ROOT := $(HOME)/.icpp/wasi-sdk-21.0
 CLANG_FORMAT = $(ICPP_COMPILER_ROOT)/bin/clang-format
 CLANG_TIDY = $(ICPP_COMPILER_ROOT)/bin/clang-tidy
 
@@ -148,7 +148,7 @@ install-clang-ubuntu:
 # Make sure to source ~/.profile afterwards -> it adds ~/bin to the path if it exists
 .PHONY: install-dfx
 install-dfx:
-	sh -ci "$$(curl -fsSL https://sdk.dfinity.org/install.sh)"
+	DFXVM_INIT_YES=true sh -ci "$$(curl -fsSL https://sdk.dfinity.org/install.sh)"
 
 .PHONY: install-didc
 install-didc:
