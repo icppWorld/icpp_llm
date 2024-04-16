@@ -1,4 +1,4 @@
--r icpp_llama2/requirements.txt
+-r llama2_c/requirements.txt
 
 # to lint python scripts
 black

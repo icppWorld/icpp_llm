@@ -13,10 +13,10 @@ The 15M parameter model is the backend of [ICGPT](https://icgpt.icpp.world/).
     conda create --name myllama2 python=3.11
     conda activate myllama2
     ```
-  - Clone this repo and enter the icpp_llama2 folder
+  - Clone this repo and enter the llama2_c folder
     ```bash
     git clone https://github.com/icppWorld/icpp_llm.git
-    cd icpp_llm/icpp_llama2
+    cd icpp_llm/llama2_c
     ```
   - Install the required python packages _(icpp-pro & ic-py)_:
     ```bash

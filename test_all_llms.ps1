@@ -14,8 +14,8 @@ wsl --% dfx identity use default
 
 Write-Host " "
 Write-Host "--------------------------------------------------"
-Write-Host "Testing icpp_llama2"
-Set-Location -Path .\icpp_llama2
+Write-Host "Testing llama2_c"
+Set-Location -Path .\llama2_c
 .\demo.ps1
 
 # Change directory back to the root

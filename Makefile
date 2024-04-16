@@ -49,19 +49,6 @@ CLANG_TIDY = $(ICPP_COMPILER_ROOT)/bin/clang-tidy
 .PHONY: all-tests
 all-tests: all-static test-all-llms 
 
-.PHONY: icpp_llama2_get_stories260K
-icpp_llama2_get_stories260K:
-	cd icpp_llama2 && \
-		mkdir -p stories260K && \
-		wget -P stories260K https://huggingface.co/karpathy/tinyllamas/resolve/main/stories260K/stories260K.bin && \
-		wget -P stories260K https://huggingface.co/karpathy/tinyllamas/resolve/main/stories260K/tok512.bin
-
-.PHONY: icpp_llama2_get_stories15M
-icpp_llama2_get_stories15M:
-	cd icpp_llama2 && \
-		mkdir -p models && \
-		wget -P models https://huggingface.co/karpathy/tinyllamas/resolve/main/stories15M.bin
-
 .PHONY: summary
 summary:
 	@echo "-------------------------------------------------------------"
@@ -77,9 +64,9 @@ summary:
 test-all-llms:
 	dfx identity use default
 	@echo "#########################################"
-	@echo "####### testing icpp_llama2 #############"
+	@echo "####### testing llama2_c #############"
 	@echo "#########################################"
-	cd icpp_llama2 && \
+	cd llama2_c && \
 		icpp build-native && \
 		./build-native/mockic.exe && \
 		./demo.sh && \
@@ -92,8 +79,8 @@ all-static: \
 	python-format python-lint python-type
 	
 CPP_AND_H_FILES = $(shell ls \
-icpp_llama2/src/*.cpp icpp_llama2/src/*.h \
-icpp_llama2/native/*.cpp icpp_llama2/native/*.h)
+llama2_c/src/*.cpp llama2_c/src/*.h \
+llama2_c/native/*.cpp llama2_c/native/*.h)
 
 .PHONY: cpp-format
 cpp-format:
@@ -107,7 +94,7 @@ cpp-lint:
 	@echo "cpp-lint"
 	@echo "TO IMPLEMENT with clang-tidy"
 
-PYTHON_DIRS ?= icpp_llama2
+PYTHON_DIRS ?= llama2_c
 
 .PHONY: python-format
 python-format:

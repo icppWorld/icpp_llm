@@ -4,10 +4,10 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "icpp_llama2/**"
-      - "Makefile"
-      - ".github/trigger.txt"
-      - ".github/workflows/cicd.yml"
+      - 'llama2_c/**'
+      - 'Makefile'
+      - '.github/trigger.txt'
+      - '.github/workflows/cicd.yml'
 
 env:
   PYTHON_VERSION: 3.11
@@ -18,13 +18,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # https://github.com/marketplace/actions/setup-miniconda
-      - uses: conda-incubator/setup-miniconda@v2
+      - uses: conda-incubator/setup-miniconda@v3
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
       # -------------------------------------------------------------------
-      # Checkout icpp-llm
-      - name: checkout icpp-llm
+      # Checkout icpp_llm
+      - name: checkout icpp_llm
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
@@ -64,12 +64,6 @@ jobs:
         run: |
           echo "Installing wasi-sdk"
           icpp install-wasi-sdk
-
-      - name: download models
-        shell: bash -l {0}
-        run: |
-          make icpp_llama2_get_stories15M
-          make icpp_llama2_get_stories260K
 
       - name: all-tests
         shell: bash -l {0}
