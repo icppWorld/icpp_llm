@@ -6,6 +6,7 @@ paths.txt
 .*.swp
 .DS_Store
 secret
+.mops
 
 # llama2 models
 stories15M.bin

@@ -155,10 +155,15 @@ def main() -> int:
         response = canister_llama2.nft_story_continue(NFT, prompt)
         print(response)
         if "Ok" in response[0].keys():
+            # Check if the number of generated tokens is less than the requested tokens
+            if response[0]["Ok"]["num_tokens"] < prompt['steps']:
+                print(f'The end! - num_tokens = {response[0]["Ok"]["num_tokens"]}')
+                break
             # Check if the response is an empty string. If it is, break out of the loop.
             if response[0]["Ok"]["inference"] == "":
-                print("The end!")
-                break
+                print("The end! - we got an empty string. THIS IS AN ERROR ACTUALLY. WE SHOULD NOT GET HERE..")
+                print("Something went wrong:")
+                sys.exit(1)
         else:
             print("Something went wrong:")
             sys.exit(1)
