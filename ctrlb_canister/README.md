@@ -1,6 +1,6 @@
 # ctrlb_canister (Control & Load Balancer)
 
-To bootstrap the code to be added to bioniq's launch canister
+Developed for Oxford Hackathon
 
 ### Setup
 
