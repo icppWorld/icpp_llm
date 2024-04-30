@@ -149,6 +149,7 @@ For quick tests, we have included a really small model, with only 260K parameter
 
 The CI/CD using a GitHub actions workflow, and the demo_pytest.sh script are based on this model.
 
+
 # demo_pytest.sh
 
 - The demo_pytest.sh script starts the local network, deploys llama2_260K, uploads the model & tokenizer, and runs the QA with pytest:
@@ -161,25 +162,15 @@ The CI/CD using a GitHub actions workflow, and the demo_pytest.sh script are bas
   - `./demo.sh` , on Linux / Mac
   - `.\demo.ps1` , in Windows PowerShell (Miniconda recommended)
 
-# More models
+# Models
 
-- You can get other model checkpoints, as explained in [karpathy/llama2.c](https://github.com/karpathy/llama2.c):
+## HuggingFace
 
-  This command downloads the 15M parameter model that was trained on the TinyStories dataset (~60MB download) and stores it in a `models` folder:
+You can find many models in the llama2_c *.bin format on HuggingFace, for example:
 
-  ```bash
-  # on Linux/Mac
-  mkdir -p models
-  wget -P models https://huggingface.co/karpathy/tinyllamas/resolve/main/stories15M.bin
-  ```
+- [onicai/llama2_c_canister_models](https://huggingface.co/onicai/llama2_c_canister_models)
+- [karpathy/tinyllamas](https://huggingface.co/karpathy/tinyllamas)
 
-  ```powershell
-  # in Windows PowerShell (Miniconda recommended)
-  if (-not (Test-Path -Path .\models)) {
-   New-Item -Path .\models -ItemType Directory
-  }
-  Invoke-WebRequest -Uri https://huggingface.co/karpathy/tinyllamas/resolve/main/stories15M.bin -OutFile .\models\stories15M.bin
-  ```
 
 # Deploying to the IC main net
 
