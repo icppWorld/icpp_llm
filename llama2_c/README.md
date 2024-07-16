@@ -22,10 +22,6 @@ The 15M parameter model is the backend of [ICGPT](https://icgpt.icpp.world/).
     ```bash
     pip install -r requirements.txt
     ```
-  - Install the [wasi-sdk](https://github.com/WebAssembly/wasi-sdk) compiler:
-    ```bash
-    icpp install-wasi-sdk
-    ```
   - Install dfx:
 
     ```bash
@@ -39,14 +35,19 @@ The 15M parameter model is the backend of [ICGPT](https://icgpt.icpp.world/).
 
 - Deploy the 15M parameter pre-trained model to canister `llama2_15M`:
 
-  - Start the local network:
-    ```bash
-    dfx start --clean
-    ```
-  - Compile & link to WebAssembly (wasm), as defined in `icpp.toml`:
+  - Compile & link to WebAssembly (wasm):
     ```bash
     icpp build-wasm
     ```
+    Note: 
+    
+    The first time you run this command, the tool-chain will be installed in ~/.icpp
+    
+    This can take a few minutes, depending on your internet speed and computer.
+  - Start the local network:
+    ```bash
+    dfx start --clean
+    ```  
   - Deploy the wasm to a canister on the local network:
     ```bash
     dfx deploy llama2_15M
