@@ -1,4 +1,5 @@
 // Maintain one chat per user (principal) in Orthogonal Persistence
+#include <iostream>
 
 #include "nft_collection.h"
 #include "canister.h"
@@ -346,7 +347,10 @@ void nft_story_(bool story_start, bool from_motoko) {
   if (story_start or
       (p_chats && p_chats->umap.find(token_id) == p_chats->umap.end())) {
     // Does not yet exist
+    std::cout << "calling build_new_chat" << std::endl;
     if (!build_new_chat(token_id, ic_api)) return;
+  } else {
+    std::cout << "skipping call to build_new_chat." << std::endl;
   }
   Chat *chat = &p_chats->umap[token_id];
   std::string *output_history = &p_chats_output_history->umap[token_id];
@@ -356,12 +360,15 @@ void nft_story_(bool story_start, bool from_motoko) {
   std::string output = do_inference(ic_api, wire_prompt, chat, output_history,
                                     metadata_user, &error);
 
+
   if (error) {
     ic_api.to_wire(CandidTypeVariant{
         "Err", CandidTypeVariant{"Other", CandidTypeText{output}}});
     return;
   }
 
+  std::cout << "do_inference produced this output:" << std::endl;
+  std::cout << output << std::endl;
   // IC_API::debug_print(output);
   // Send the generated response to the wire
   CandidTypeRecord inference_record;

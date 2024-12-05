@@ -2,6 +2,7 @@
 
 #include "inference.h"
 
+#include <iostream>
 #include <string>
 #include <unordered_map>
 #include <variant>
@@ -138,6 +139,8 @@ std::string generate(IC_API ic_api, Chat *chat, Transformer *transformer,
       next = sample(sampler, logits);
     }
     pos++;
+
+    // std::cout << "pos = " << pos << std::endl;
 
     // data-dependent terminating condition: the BOS (=1) token delimits sequences
     if (next == 1) {
