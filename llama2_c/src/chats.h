@@ -23,6 +23,7 @@ public:
   std::unordered_map<std::string, Chat> umap;
 };
 extern Chats *p_chats;
+extern RunState *p_runstate;
 
 // Save current chat history (the full human readable story)
 class ChatsOutputHistory {
@@ -60,7 +61,9 @@ void delete_p_metadata_users();
 bool build_new_chat(std::string key, IC_API &ic_api);
 bool is_ready_and_authorized(IC_API &ic_api);
 
-bool malloc_and_read_runstate(std::string key, IC_API &ic_api);
-bool write_and_free_runstate(std::string key, IC_API &ic_api);
+bool load_runstate(std::string key, IC_API &ic_api);
+bool save_runstate(std::string key, IC_API &ic_api);
 bool write_run_state(const std::string& key, const RunState& state, const Config& config);
 bool read_run_state(const std::string& key, RunState& state, const Config& config);
+
+void init_run_state(RunState *s);

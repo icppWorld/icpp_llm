@@ -72,7 +72,8 @@ typedef struct {
 } Transformer;
 
 typedef struct {
-  RunState state; // buffers for the "wave" of activations in the forward pass
+  // We now maintain a single RunState object , and write/read to file...
+  // RunState state; // buffers for the "wave" of activations in the forward pass
   // icpp: to support generation across endpoint calls, we need to save the next token predicted
   int pos;    // position in the sequence
   int next;   // next token that was predicted
@@ -125,7 +126,7 @@ void memory_map_weights(TransformerWeights *w, Config *p, float *ptr,
                         int shared_weights);
 void encode(Tokenizer *t, const char *text, int bos, int eos, int *tokens,
             int *n_tokens, int *error_code);
-float *forward(Chat *chat, Transformer *transformer, int token, int pos);
+float *forward(RunState *runstate, Chat *chat, Transformer *transformer, int token, int pos);
 char *decode(Tokenizer *t, int prev_token, int token);
 void build_sampler(Sampler *sampler, int vocab_size, float temperature,
                    float topp, unsigned long long rng_seed);

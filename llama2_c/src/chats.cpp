@@ -12,6 +12,7 @@
 
 // Orthogonally Persisted data
 Chats *p_chats{nullptr};
+RunState *p_runstate{nullptr}; // Just one run state that we read back each time
 ChatsOutputHistory *p_chats_output_history{nullptr};
 MetadataUsers *p_metadata_users{nullptr};
 
@@ -24,6 +25,16 @@ void new_p_chats() {
       // called from canister_init, so trap is correct!
       IC_API::trap("Allocation of p_chats failed");
     }
+  }
+
+  if (p_runstate == nullptr) {
+    IC_API::debug_print(std::string(__func__) + ": Creating p_runstate instance.");
+    p_runstate = new (std::nothrow) RunState();
+    if (p_runstate == nullptr) {
+      // called from canister_init, so trap is correct!
+      IC_API::trap("Allocation of p_runstate failed");
+    }
+    init_run_state(p_runstate);
   }
 
   if (p_chats_output_history == nullptr) {
@@ -40,13 +51,19 @@ void new_p_chats() {
 // Delete the p_chats & p_chats_output_history instance
 void delete_p_chats() {
   if (p_chats) {
-    for (auto &pair : p_chats->umap) {
-      const std::string &principal = pair.first;
-      Chat &chat = pair.second;
-      free_run_state(&chat.state);
-    }
+    // for (auto &pair : p_chats->umap) {
+    //   const std::string &principal = pair.first;
+    //   Chat &chat = pair.second;
+    //   free_run_state(&chat.state);
+    // }
     delete p_chats;
     p_chats = nullptr;
+  }
+
+  if (p_runstate) {
+    free_run_state(p_runstate);
+    delete p_runstate;
+    p_runstate = nullptr;
   }
 
   if (p_chats_output_history) {
@@ -98,7 +115,7 @@ bool build_new_chat(std::string key, IC_API &ic_api) {
   if (p_chats && p_chats->umap.find(key) == p_chats->umap.end()) {
     // Does not yet exist
     Chat chat;
-    init_run_state(&chat.state);
+    // init_run_state(&chat.state);  // moved to new_p_chats. not per user anymore.
     p_chats->umap[key] = chat;
   }
 
@@ -119,13 +136,13 @@ bool build_new_chat(std::string key, IC_API &ic_api) {
   // --------------------------------------------------------------------------
   // Reset the Chat data
   Chat *chat = &p_chats->umap[key];
-  free_run_state(&chat->state);
-  if (!malloc_run_state(&chat->state, &transformer.config)) {
-    std::string error_msg = "malloc_run_state failed";
-    ic_api.to_wire(CandidTypeVariant{
-        "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
-    return false;
-  }
+  // free_run_state(&chat->state);
+  // if (!malloc_run_state(&chat->state, &transformer.config)) {
+  //   std::string error_msg = "malloc_run_state failed";
+  //   ic_api.to_wire(CandidTypeVariant{
+  //       "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
+  //   return false;
+  // }
 
   // Reset the output data
   std::string *output_history = &p_chats_output_history->umap[key];
@@ -153,42 +170,31 @@ bool build_new_chat(std::string key, IC_API &ic_api) {
   return true;
 }
 
-// malloc OP memory for the run state & read it from file
+// read runstate from file
 // key = principal or ordinal-id
-bool malloc_and_read_runstate(std::string key, IC_API &ic_api) {
+bool load_runstate(std::string key, IC_API &ic_api) {
   if (p_chats && p_chats->umap.find(key) == p_chats->umap.end()) {
     // Does not yet exist
-    std::string error_msg = "malloc_and_read_runstate failed because key " + key + " does not exist";
-    ic_api.to_wire(CandidTypeVariant{
-        "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
-    return false;
-  }
-
-  // malloc the run state in OP memory
-  Chat *chat = &p_chats->umap[key];
-  if (!malloc_run_state(&chat->state, &transformer.config)) {
-    std::string error_msg = "malloc_and_read_runstate failed for key " + key;
-    std::cout << error_msg << std::endl;
+    std::string error_msg = "load_runstate failed because key " + key + " does not exist";
     ic_api.to_wire(CandidTypeVariant{
         "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
     return false;
   }
 
   // read the run state from file into OP memory
-  if (!read_run_state(key, chat->state, transformer.config)){
-    std::cout << "malloc_and_read_runstate failed for key " << key << std::endl;
+  if (!read_run_state(key, *p_runstate, transformer.config)){
     // If nothing there, just continue with the empty run state
   }
   
   return true;
 }
 
-// read the run state to file & free the OP memory
+// write the run state to file
 // key = principal or ordinal-id
-bool write_and_free_runstate(std::string key, IC_API &ic_api) {
+bool save_runstate(std::string key, IC_API &ic_api) {
   if (p_chats && p_chats->umap.find(key) == p_chats->umap.end()) {
     // Does not yet exist
-    std::string error_msg = "write_and_free_runstate failed because key " + key + " does not exist";
+    std::string error_msg = "save_runstate failed because key " + key + " does not exist";
     ic_api.to_wire(CandidTypeVariant{
         "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
     return false;
@@ -196,7 +202,7 @@ bool write_and_free_runstate(std::string key, IC_API &ic_api) {
 
   // write the run state from OP memory to a file
   Chat *chat = &p_chats->umap[key];
-  if (!write_run_state(key, chat->state, transformer.config)){
+  if (!write_run_state(key, *p_runstate, transformer.config)){
     std::string error_msg = "write_run_state failed for key " + key;
     std::cout << error_msg << std::endl;
     ic_api.to_wire(CandidTypeVariant{
@@ -205,7 +211,7 @@ bool write_and_free_runstate(std::string key, IC_API &ic_api) {
   }
 
   // free the run state in OP memory
-  free_run_state(&chat->state);
+  // free_run_state(&chat->state);
   
   return true;
 }
@@ -293,7 +299,7 @@ bool read_run_state(const std::string& key, RunState& state, const Config& confi
     std::string filename = key + ".runstate";
     std::ifstream in(filename, std::ios::binary);
     if (!in) {
-        std::cout << "Error: Could not open file for reading: " << filename << std::endl;
+        std::cout << "INFO: Could not open file for reading: " << filename << std::endl;
         return false;
     }
 

@@ -43,7 +43,7 @@ std::string safe_stringify(const char *piece) {
 }
 
 // Copied from run.c and modified slightly
-std::string generate(IC_API ic_api, Chat *chat, Transformer *transformer,
+std::string generate(IC_API ic_api, RunState *runstate, Chat *chat, Transformer *transformer,
                      Tokenizer *tokenizer, Sampler *sampler, std::string prompt,
                      int steps, bool *error) {
   // --- DEBUG TEST
@@ -118,7 +118,7 @@ std::string generate(IC_API ic_api, Chat *chat, Transformer *transformer,
   while (pos < max_total_steps - 1) {
 
     // forward the transformer to get logits for the next token
-    float *logits = forward(chat, transformer, token, pos);
+    float *logits = forward(runstate, chat, transformer, token, pos);
 
     // increase our counts
     chat->inference_steps++;
@@ -236,8 +236,11 @@ void inference_(bool from_motoko) {
   std::string *output_history = &p_chats_output_history->umap[principal];
   MetadataUser *metadata_user = &p_metadata_users->umap[principal];
 
+  std::cout << "calling load_runstate for principal " << principal << std::endl;
+  if (!load_runstate(principal, ic_api)) return;
+
   bool error{false};
-  std::string output = do_inference(ic_api, wire_prompt, chat, output_history,
+  std::string output = do_inference(ic_api, wire_prompt, p_runstate, chat, output_history,
                                     metadata_user, &error);
 
   if (error) {
@@ -245,6 +248,10 @@ void inference_(bool from_motoko) {
         "Err", CandidTypeVariant{"Other", CandidTypeText{output}}});
     return;
   }
+
+  // --------------------------------------------------------------------------
+  // save the chat data to file & free it from OP memory
+  if (!save_runstate(principal, ic_api)) return;
 
   // IC_API::debug_print(output);
   // Send the generated response to the wire
@@ -254,7 +261,7 @@ void inference_(bool from_motoko) {
   ic_api.to_wire(CandidTypeVariant{"Ok", CandidTypeRecord{inference_record}});
 }
 
-std::string do_inference(IC_API &ic_api, Prompt wire_prompt, Chat *chat,
+std::string do_inference(IC_API &ic_api, Prompt wire_prompt, RunState *runstate, Chat *chat,
                          std::string *output_history,
                          MetadataUser *metadata_user, bool *error) {
 
@@ -287,7 +294,7 @@ std::string do_inference(IC_API &ic_api, Prompt wire_prompt, Chat *chat,
   // run!
   std::string output;
   // if (mode == "generate") {
-  output += generate(ic_api, chat, &transformer, &tokenizer, &sampler,
+  output += generate(ic_api, runstate, chat, &transformer, &tokenizer, &sampler,
                      wire_prompt.prompt, wire_prompt.steps, error);
   // } else if (mode =="chat") {
   // chat(&transformer, &tokenizer, &sampler, prompt, system_prompt, steps);
