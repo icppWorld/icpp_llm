@@ -351,6 +351,8 @@ void nft_story_(bool story_start, bool from_motoko) {
     if (!build_new_chat(token_id, ic_api)) return;
   } else {
     std::cout << "skipping call to build_new_chat." << std::endl;
+    std::cout << "calling read_and_malloc_run_state." << std::endl;
+    if (!malloc_and_read_runstate(token_id, ic_api)) return;
   }
   Chat *chat = &p_chats->umap[token_id];
   std::string *output_history = &p_chats_output_history->umap[token_id];
@@ -367,6 +369,12 @@ void nft_story_(bool story_start, bool from_motoko) {
     return;
   }
 
+  // --------------------------------------------------------------------------
+  // save the chat data to file & free it from OP memory
+  if (!write_and_free_runstate(token_id, ic_api)) return;
+
+  // --------------------------------------------------------------------------
+  std::cout << "do_inference produced this output:" << std::endl;
   std::cout << "do_inference produced this output:" << std::endl;
   std::cout << output << std::endl;
   // IC_API::debug_print(output);
