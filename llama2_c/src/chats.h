@@ -65,5 +65,6 @@ bool load_runstate(std::string key, IC_API &ic_api);
 bool save_runstate(std::string key, IC_API &ic_api);
 bool write_run_state(const std::string& key, const RunState& state, const Config& config);
 bool read_run_state(const std::string& key, RunState& state, const Config& config);
+bool delete_run_state_file(const std::string& key);
 
 void init_run_state(RunState *s);

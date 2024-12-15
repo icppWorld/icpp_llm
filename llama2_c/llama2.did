@@ -211,5 +211,6 @@ service : {
   nft_story_start_mo : (NFT, PromptMo) -> (InferenceRecordResult);
   nft_story_continue : (NFT, Prompt) -> (InferenceRecordResult);
   nft_story_continue_mo : (NFT, PromptMo) -> (InferenceRecordResult);
+  nft_story_delete : (NFT) -> (StatusCodeRecordResult);
   nft_get_story : (NFT) -> (StoryRecordResult) query;
 };

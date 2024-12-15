@@ -376,7 +376,6 @@ void nft_story_(bool story_start, bool from_motoko) {
 
   // --------------------------------------------------------------------------
   std::cout << "do_inference produced this output:" << std::endl;
-  std::cout << "do_inference produced this output:" << std::endl;
   std::cout << output << std::endl;
   // IC_API::debug_print(output);
   // Send the generated response to the wire
@@ -425,4 +424,51 @@ void nft_get_story() {
   story_record.append("story",
                       CandidTypeText{p_chats_output_history->umap[token_id]});
   ic_api.to_wire(CandidTypeVariant{"Ok", story_record});
+}
+
+// For an NFT delete the story
+void nft_story_delete() {
+  IC_API ic_api(CanisterUpdate{std::string(__func__)}, false);
+  if (!is_canister_mode_nft_ordinal()) {
+    std::string error_msg = "Access Denied - Canister is not in NFT mode.";
+    ic_api.to_wire(CandidTypeVariant{
+        "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
+    return;
+  }
+  if (!nft_is_whitelisted(ic_api, false)) {
+    std::string error_msg =
+        "Access Denied - You are not authorized to call this function.";
+    ic_api.to_wire(CandidTypeVariant{
+        "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
+    return;
+  }
+  if (!is_ready_and_authorized(ic_api)) return;
+
+  // Get the token_id from the wire
+  std::string token_id;
+  CandidTypeRecord r_in;
+  r_in.append("token_id", CandidTypeText{&token_id});
+
+  ic_api.from_wire(r_in);
+
+  // TODO: more elegant to do this in the destructor of Chat
+  // Delete the runstate file, if it exists
+  delete_run_state_file(token_id);
+
+  // Delete the entry from the p_chats, if it exists
+  if (p_chats && p_chats->umap.find(token_id) == p_chats->umap.end()) {
+    // Does not yet exist
+    std::cout << "p_chats for token_id " << token_id << " does not exist. Nothing to delete" << std::endl;
+  } else {
+    std::cout << "Deleting p_chats for token_id " << token_id << std::endl;
+    auto it = p_chats->umap.find(token_id);
+    if (it != p_chats->umap.end()) {
+        p_chats->umap.erase(it); // Removes the Chat object and the key from the map
+    }
+  }
+
+  CandidTypeRecord status_code_record;
+  status_code_record.append("status_code",
+                            CandidTypeNat16{Http::StatusCode::OK});
+  ic_api.to_wire(CandidTypeVariant{"Ok", status_code_record});
 }

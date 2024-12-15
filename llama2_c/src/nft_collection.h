@@ -21,6 +21,7 @@ void nft_story_continue()
 void nft_story_continue_mo()
     WASM_SYMBOL_EXPORTED("canister_update nft_story_continue_mo");
 void nft_get_story() WASM_SYMBOL_EXPORTED("canister_query nft_get_story");
+void nft_story_delete() WASM_SYMBOL_EXPORTED("canister_update nft_story_delete");
 
 // ------------------------------------------------
 // Orthogonal persistent data

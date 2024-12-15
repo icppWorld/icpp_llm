@@ -327,3 +327,22 @@ bool read_run_state(const std::string& key, RunState& state, const Config& confi
 
     return true;
 }
+
+bool delete_run_state_file(const std::string& key) {
+    std::string filename = key + ".runstate";
+    
+    // Check if the file exists before attempting to delete
+    if (!std::filesystem::exists(filename)) {
+        std::cout << "Warning: File does not exist: " << filename << std::endl;
+        return true;  // Not considered an error
+    }
+
+    // Attempt to delete the file
+    if (std::filesystem::remove(filename)) {
+        std::cout << "File deleted successfully: " << filename << std::endl;
+        return true;
+    } else {
+        std::cout << "Error: Could not delete file: " << filename << std::endl;
+        return false;
+    }
+}
