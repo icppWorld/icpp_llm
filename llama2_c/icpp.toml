@@ -3,10 +3,21 @@ canister = "llama2"
 did_path = "src/llama2.did"
 cpp_paths = ["src/*.cpp"]
 cpp_include_dirs = ["src/vendors/*"]
-cpp_compile_flags = ["-D JSON_HAS_FILESYSTEM=0"]
+cpp_compile_flags = [
+    "-D JSON_HAS_FILESYSTEM=0", 
+    # "-msimd128",                     # enables WebAssembly SIMD instructions
+    # "-Rpass=loop-vectorize",         # check which loops were vectorized
+    # "-Rpass-missed=loop-vectorize",  # identify loops where vectorization was attempted but missed
+    # "-Rpass-analysis=loop-vectorize" # analyze vectorization opportunities
+    ]
 cpp_link_flags = []
 c_paths = ["src/run.c"]
-c_compile_flags = []
+c_compile_flags = [
+    # "-msimd128",                     # enables WebAssembly SIMD instructions
+    # "-Rpass=loop-vectorize",         # check which loops were vectorized
+    # "-Rpass-missed=loop-vectorize",  # identify loops where vectorization was attempted but missed
+    # "-Rpass-analysis=loop-vectorize" # analyze vectorization opportunities
+    ]
 [build-native]
 cpp_paths = ["native/main.cpp"]
 cpp_compile_flags = []

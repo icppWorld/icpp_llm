@@ -356,8 +356,11 @@ void nft_story_(bool story_start, bool from_motoko) {
   std::string *output_history = &p_chats_output_history->umap[token_id];
   MetadataUser *metadata_user = &p_metadata_users->umap[token_id];
 
+  std::cout << "calling load_runstate for token_id " << token_id << std::endl;
+  if (!load_runstate(token_id, ic_api)) return;
+
   bool error{false};
-  std::string output = do_inference(ic_api, wire_prompt, chat, output_history,
+  std::string output = do_inference(ic_api, wire_prompt, p_runstate, chat, output_history,
                                     metadata_user, &error);
 
 
@@ -367,6 +370,12 @@ void nft_story_(bool story_start, bool from_motoko) {
     return;
   }
 
+  // --------------------------------------------------------------------------
+  // save the chat data to file & free it from OP memory
+  if (!save_runstate(token_id, ic_api)) return;
+
+  // --------------------------------------------------------------------------
+  std::cout << "do_inference produced this output:" << std::endl;
   std::cout << "do_inference produced this output:" << std::endl;
   std::cout << output << std::endl;
   // IC_API::debug_print(output);

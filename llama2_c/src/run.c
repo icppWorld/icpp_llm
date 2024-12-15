@@ -259,12 +259,12 @@ void matmul(float* xout, float* x, float* w, int n, int d) {
     }
 }
 
-float* forward(Chat *chat, Transformer* transformer, int token, int pos) {
+float* forward(RunState *runstate, Chat *chat, Transformer* transformer, int token, int pos) {
 
     // a few convenience variables
     Config* p = &transformer->config;
     TransformerWeights* w = &transformer->weights;
-    RunState* s = &chat->state;
+    RunState* s = runstate;
     float *x = s->x;
     int dim = p->dim;
     int kv_dim = (p->dim * p->n_kv_heads) / p->n_heads;
