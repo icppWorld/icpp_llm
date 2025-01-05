@@ -31,8 +31,6 @@ The 15M parameter model is the backend of [ICGPT](https://icgpt.icpp.world/).
     source "$HOME/.local/share/dfx/env"
     ```
 
-    _(Note: On Windows, just install dfx in wsl, and icpp-pro in PowerShell will know where to find it. )_
-
 - Deploy the 15M parameter pre-trained model to canister `llama2_15M`:
 
   - Compile & link to WebAssembly (wasm):
@@ -160,8 +158,7 @@ The CI/CD using a GitHub actions workflow, and the demo_pytest.sh script are bas
 # demo shell scripts
 
 - The _demo_ script starts the local network, deploys llama2, uploads the model & tokenizer, and generates two stories:
-  - `./demo.sh` , on Linux / Mac
-  - `.\demo.ps1` , in Windows PowerShell (Miniconda recommended)
+  - `./demo.sh`
 
 # Models
 
