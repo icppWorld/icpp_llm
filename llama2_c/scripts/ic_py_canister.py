@@ -1,7 +1,6 @@
 """Returns the ic-py Canister instance, for calling the endpoints."""
 
 import sys
-import platform
 import subprocess
 from pathlib import Path
 from typing import Optional
@@ -16,13 +15,11 @@ ROOT_PATH = Path(__file__).parent.parent
 # We use dfx to get some information.
 DFX = "dfx"
 
+
 def run_dfx_command(cmd: str) -> Optional[str]:
     """Runs dfx command as a subprocess"""
     try:
-        return run_shell_cmd(
-            cmd,
-            capture_output=True
-        ).rstrip("\n")
+        return run_shell_cmd(cmd, capture_output=True).rstrip("\n")
     except subprocess.CalledProcessError as e:
         print(f"Failed dfx command: '{cmd}' with error: \n{e.output}")
         sys.exit(1)

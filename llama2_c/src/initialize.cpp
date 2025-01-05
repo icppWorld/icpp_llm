@@ -7,7 +7,6 @@
 #include <variant>
 #include <iostream>
 
-
 #include "canister.h"
 #include "chats.h"
 #include "http.h"
@@ -211,7 +210,8 @@ bool build_transformer(Transformer *t) {
   // icpp: moved into build_active_chat
   // // allocate the RunState buffers
   // malloc_run_state(&t->state, &t->config);
-  std::cout << "initialize.cpp - build_transform: calling malloc_run_state for p_runstate";
+  std::cout
+      << "initialize.cpp - build_transform: calling malloc_run_state for p_runstate";
   malloc_run_state(p_runstate, &t->config);
 
   // //icpp: initialize the token generation settings

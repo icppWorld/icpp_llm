@@ -360,9 +360,8 @@ void nft_story_(bool story_start, bool from_motoko) {
   if (!load_runstate(token_id, ic_api)) return;
 
   bool error{false};
-  std::string output = do_inference(ic_api, wire_prompt, p_runstate, chat, output_history,
-                                    metadata_user, &error);
-
+  std::string output = do_inference(ic_api, wire_prompt, p_runstate, chat,
+                                    output_history, metadata_user, &error);
 
   if (error) {
     ic_api.to_wire(CandidTypeVariant{
@@ -458,12 +457,14 @@ void nft_story_delete() {
   // Delete the entry from the p_chats, if it exists
   if (p_chats && p_chats->umap.find(token_id) == p_chats->umap.end()) {
     // Does not yet exist
-    std::cout << "p_chats for token_id " << token_id << " does not exist. Nothing to delete" << std::endl;
+    std::cout << "p_chats for token_id " << token_id
+              << " does not exist. Nothing to delete" << std::endl;
   } else {
     std::cout << "Deleting p_chats for token_id " << token_id << std::endl;
     auto it = p_chats->umap.find(token_id);
     if (it != p_chats->umap.end()) {
-        p_chats->umap.erase(it); // Removes the Chat object and the key from the map
+      p_chats->umap.erase(
+          it); // Removes the Chat object and the key from the map
     }
   }
 

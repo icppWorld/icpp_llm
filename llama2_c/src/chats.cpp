@@ -4,6 +4,7 @@
 #include <string>
 #include <cstring>
 #include <iostream>
+#include <filesystem>
 
 #include "chats.h"
 #include "canister.h"
@@ -28,7 +29,8 @@ void new_p_chats() {
   }
 
   if (p_runstate == nullptr) {
-    IC_API::debug_print(std::string(__func__) + ": Creating p_runstate instance.");
+    IC_API::debug_print(std::string(__func__) +
+                        ": Creating p_runstate instance.");
     p_runstate = new (std::nothrow) RunState();
     if (p_runstate == nullptr) {
       // called from canister_init, so trap is correct!
@@ -175,17 +177,18 @@ bool build_new_chat(std::string key, IC_API &ic_api) {
 bool load_runstate(std::string key, IC_API &ic_api) {
   if (p_chats && p_chats->umap.find(key) == p_chats->umap.end()) {
     // Does not yet exist
-    std::string error_msg = "load_runstate failed because key " + key + " does not exist";
+    std::string error_msg =
+        "load_runstate failed because key " + key + " does not exist";
     ic_api.to_wire(CandidTypeVariant{
         "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
     return false;
   }
 
   // read the run state from file into OP memory
-  if (!read_run_state(key, *p_runstate, transformer.config)){
+  if (!read_run_state(key, *p_runstate, transformer.config)) {
     // If nothing there, just continue with the empty run state
   }
-  
+
   return true;
 }
 
@@ -194,7 +197,8 @@ bool load_runstate(std::string key, IC_API &ic_api) {
 bool save_runstate(std::string key, IC_API &ic_api) {
   if (p_chats && p_chats->umap.find(key) == p_chats->umap.end()) {
     // Does not yet exist
-    std::string error_msg = "save_runstate failed because key " + key + " does not exist";
+    std::string error_msg =
+        "save_runstate failed because key " + key + " does not exist";
     ic_api.to_wire(CandidTypeVariant{
         "Err", CandidTypeVariant{"Other", CandidTypeText{error_msg}}});
     return false;
@@ -202,7 +206,7 @@ bool save_runstate(std::string key, IC_API &ic_api) {
 
   // write the run state from OP memory to a file
   Chat *chat = &p_chats->umap[key];
-  if (!write_run_state(key, *p_runstate, transformer.config)){
+  if (!write_run_state(key, *p_runstate, transformer.config)) {
     std::string error_msg = "write_run_state failed for key " + key;
     std::cout << error_msg << std::endl;
     ic_api.to_wire(CandidTypeVariant{
@@ -212,7 +216,7 @@ bool save_runstate(std::string key, IC_API &ic_api) {
 
   // free the run state in OP memory
   // free_run_state(&chat->state);
-  
+
   return true;
 }
 
@@ -261,88 +265,108 @@ void new_chat() {
 }
 
 // Function to write RunState to a file
-bool write_run_state(const std::string& key, const RunState& state, const Config& config) {
-    std::string filename = key + ".runstate";
-    std::ofstream out(filename, std::ios::binary);
-    if (!out) {
-        std::cout << "Error: Could not open file for writing: " << filename << std::endl;
-        return false;
-    }
+bool write_run_state(const std::string &key, const RunState &state,
+                     const Config &config) {
+  std::string filename = key + ".runstate";
+  std::ofstream out(filename, std::ios::binary);
+  if (!out) {
+    std::cout << "Error: Could not open file for writing: " << filename
+              << std::endl;
+    return false;
+  }
 
-    // Serialize RunState
-    auto write_array = [&](const void* data, size_t count, size_t size) {
-        out.write(static_cast<const char*>(data), count * size);
-        return out.good();
-    };
+  // Serialize RunState
+  auto write_array = [&](const void *data, size_t count, size_t size) {
+    out.write(static_cast<const char *>(data), count * size);
+    return out.good();
+  };
 
-    if (!write_array(state.x, config.dim, sizeof(float)) ||
-        !write_array(state.xb, config.dim, sizeof(float)) ||
-        !write_array(state.xb2, config.dim, sizeof(float)) ||
-        !write_array(state.hb, config.hidden_dim, sizeof(float)) ||
-        !write_array(state.hb2, config.hidden_dim, sizeof(float)) ||
-        !write_array(state.q, config.dim, sizeof(float)) ||
-        !write_array(state.k, (config.dim * config.n_kv_heads) / config.n_heads, sizeof(float)) ||
-        !write_array(state.v, (config.dim * config.n_kv_heads) / config.n_heads, sizeof(float)) ||
-        !write_array(state.att, config.n_heads * config.seq_len, sizeof(float)) ||
-        !write_array(state.logits, config.vocab_size, sizeof(float)) ||
-        !write_array(state.key_cache, config.n_layers * config.seq_len * ((config.dim * config.n_kv_heads) / config.n_heads), sizeof(float)) ||
-        !write_array(state.value_cache, config.n_layers * config.seq_len * ((config.dim * config.n_kv_heads) / config.n_heads), sizeof(float))) {
-        std::cerr << "Error: Failed to write to file: " << filename << std::endl;
-        return false;
-    }
+  if (!write_array(state.x, config.dim, sizeof(float)) ||
+      !write_array(state.xb, config.dim, sizeof(float)) ||
+      !write_array(state.xb2, config.dim, sizeof(float)) ||
+      !write_array(state.hb, config.hidden_dim, sizeof(float)) ||
+      !write_array(state.hb2, config.hidden_dim, sizeof(float)) ||
+      !write_array(state.q, config.dim, sizeof(float)) ||
+      !write_array(state.k, (config.dim * config.n_kv_heads) / config.n_heads,
+                   sizeof(float)) ||
+      !write_array(state.v, (config.dim * config.n_kv_heads) / config.n_heads,
+                   sizeof(float)) ||
+      !write_array(state.att, config.n_heads * config.seq_len, sizeof(float)) ||
+      !write_array(state.logits, config.vocab_size, sizeof(float)) ||
+      !write_array(state.key_cache,
+                   config.n_layers * config.seq_len *
+                       ((config.dim * config.n_kv_heads) / config.n_heads),
+                   sizeof(float)) ||
+      !write_array(state.value_cache,
+                   config.n_layers * config.seq_len *
+                       ((config.dim * config.n_kv_heads) / config.n_heads),
+                   sizeof(float))) {
+    std::cerr << "Error: Failed to write to file: " << filename << std::endl;
+    return false;
+  }
 
-    return true;
+  return true;
 }
 
 // Function to read RunState from a file
-bool read_run_state(const std::string& key, RunState& state, const Config& config) {
-    std::string filename = key + ".runstate";
-    std::ifstream in(filename, std::ios::binary);
-    if (!in) {
-        std::cout << "INFO: Could not open file for reading: " << filename << std::endl;
-        return false;
-    }
+bool read_run_state(const std::string &key, RunState &state,
+                    const Config &config) {
+  std::string filename = key + ".runstate";
+  std::ifstream in(filename, std::ios::binary);
+  if (!in) {
+    std::cout << "INFO: Could not open file for reading: " << filename
+              << std::endl;
+    return false;
+  }
 
-    // Deserialize RunState
-    auto read_array = [&](void* data, size_t count, size_t size) {
-        in.read(static_cast<char*>(data), count * size);
-        return in.good();
-    };
+  // Deserialize RunState
+  auto read_array = [&](void *data, size_t count, size_t size) {
+    in.read(static_cast<char *>(data), count * size);
+    return in.good();
+  };
 
-    if (!read_array(state.x, config.dim, sizeof(float)) ||
-        !read_array(state.xb, config.dim, sizeof(float)) ||
-        !read_array(state.xb2, config.dim, sizeof(float)) ||
-        !read_array(state.hb, config.hidden_dim, sizeof(float)) ||
-        !read_array(state.hb2, config.hidden_dim, sizeof(float)) ||
-        !read_array(state.q, config.dim, sizeof(float)) ||
-        !read_array(state.k, (config.dim * config.n_kv_heads) / config.n_heads, sizeof(float)) ||
-        !read_array(state.v, (config.dim * config.n_kv_heads) / config.n_heads, sizeof(float)) ||
-        !read_array(state.att, config.n_heads * config.seq_len, sizeof(float)) ||
-        !read_array(state.logits, config.vocab_size, sizeof(float)) ||
-        !read_array(state.key_cache, config.n_layers * config.seq_len * ((config.dim * config.n_kv_heads) / config.n_heads), sizeof(float)) ||
-        !read_array(state.value_cache, config.n_layers * config.seq_len * ((config.dim * config.n_kv_heads) / config.n_heads), sizeof(float))) {
-        std::cerr << "Error: Failed to read from file: " << filename << std::endl;
-        return false;
-    }
+  if (!read_array(state.x, config.dim, sizeof(float)) ||
+      !read_array(state.xb, config.dim, sizeof(float)) ||
+      !read_array(state.xb2, config.dim, sizeof(float)) ||
+      !read_array(state.hb, config.hidden_dim, sizeof(float)) ||
+      !read_array(state.hb2, config.hidden_dim, sizeof(float)) ||
+      !read_array(state.q, config.dim, sizeof(float)) ||
+      !read_array(state.k, (config.dim * config.n_kv_heads) / config.n_heads,
+                  sizeof(float)) ||
+      !read_array(state.v, (config.dim * config.n_kv_heads) / config.n_heads,
+                  sizeof(float)) ||
+      !read_array(state.att, config.n_heads * config.seq_len, sizeof(float)) ||
+      !read_array(state.logits, config.vocab_size, sizeof(float)) ||
+      !read_array(state.key_cache,
+                  config.n_layers * config.seq_len *
+                      ((config.dim * config.n_kv_heads) / config.n_heads),
+                  sizeof(float)) ||
+      !read_array(state.value_cache,
+                  config.n_layers * config.seq_len *
+                      ((config.dim * config.n_kv_heads) / config.n_heads),
+                  sizeof(float))) {
+    std::cerr << "Error: Failed to read from file: " << filename << std::endl;
+    return false;
+  }
 
-    return true;
+  return true;
 }
 
-bool delete_run_state_file(const std::string& key) {
-    std::string filename = key + ".runstate";
-    
-    // Check if the file exists before attempting to delete
-    if (!std::filesystem::exists(filename)) {
-        std::cout << "Warning: File does not exist: " << filename << std::endl;
-        return true;  // Not considered an error
-    }
+bool delete_run_state_file(const std::string &key) {
+  std::string filename = key + ".runstate";
 
-    // Attempt to delete the file
-    if (std::filesystem::remove(filename)) {
-        std::cout << "File deleted successfully: " << filename << std::endl;
-        return true;
-    } else {
-        std::cout << "Error: Could not delete file: " << filename << std::endl;
-        return false;
-    }
+  // Check if the file exists before attempting to delete
+  if (!std::filesystem::exists(filename)) {
+    std::cout << "Warning: File does not exist: " << filename << std::endl;
+    return true; // Not considered an error
+  }
+
+  // Attempt to delete the file
+  if (std::filesystem::remove(filename)) {
+    std::cout << "File deleted successfully: " << filename << std::endl;
+    return true;
+  } else {
+    std::cout << "Error: Could not delete file: " << filename << std::endl;
+    return false;
+  }
 }

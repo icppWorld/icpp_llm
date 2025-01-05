@@ -43,9 +43,10 @@ std::string safe_stringify(const char *piece) {
 }
 
 // Copied from run.c and modified slightly
-std::string generate(IC_API ic_api, RunState *runstate, Chat *chat, Transformer *transformer,
-                     Tokenizer *tokenizer, Sampler *sampler, std::string prompt,
-                     int steps, bool *error) {
+std::string generate(IC_API ic_api, RunState *runstate, Chat *chat,
+                     Transformer *transformer, Tokenizer *tokenizer,
+                     Sampler *sampler, std::string prompt, int steps,
+                     bool *error) {
   // --- DEBUG TEST
   // *error = true;
   // return "Testing return of error=true from 'generate'.";
@@ -240,8 +241,8 @@ void inference_(bool from_motoko) {
   if (!load_runstate(principal, ic_api)) return;
 
   bool error{false};
-  std::string output = do_inference(ic_api, wire_prompt, p_runstate, chat, output_history,
-                                    metadata_user, &error);
+  std::string output = do_inference(ic_api, wire_prompt, p_runstate, chat,
+                                    output_history, metadata_user, &error);
 
   if (error) {
     ic_api.to_wire(CandidTypeVariant{
@@ -261,8 +262,8 @@ void inference_(bool from_motoko) {
   ic_api.to_wire(CandidTypeVariant{"Ok", CandidTypeRecord{inference_record}});
 }
 
-std::string do_inference(IC_API &ic_api, Prompt wire_prompt, RunState *runstate, Chat *chat,
-                         std::string *output_history,
+std::string do_inference(IC_API &ic_api, Prompt wire_prompt, RunState *runstate,
+                         Chat *chat, std::string *output_history,
                          MetadataUser *metadata_user, bool *error) {
 
   // parameter validation/overrides
