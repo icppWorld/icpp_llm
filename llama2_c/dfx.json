@@ -3,22 +3,22 @@
   "canisters": {
     "llama2_260K": {
       "type": "custom",
-      "candid": "src/llama2.did",
+      "candid": "build/llama2.did",
       "wasm": "build/llama2.wasm"
     },
     "llama2_15M": {
       "type": "custom",
-      "candid": "src/llama2.did",
+      "candid": "build/llama2.did",
       "wasm": "build/llama2.wasm"
     },
     "llama2_42M": {
       "type": "custom",
-      "candid": "src/llama2.did",
+      "candid": "build/llama2.did",
       "wasm": "build/llama2.wasm"
     },
     "llama2_110M": {
       "type": "custom",
-      "candid": "src/llama2.did",
+      "candid": "build/llama2.did",
       "wasm": "build/llama2.wasm"
     }
   },
