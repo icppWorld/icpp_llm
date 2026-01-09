@@ -25,6 +25,7 @@ def run_dfx_command(cmd: str, quiet: bool = False) -> Optional[str]:
             print(f"Failed dfx command: '{cmd}' with error: \n{e.output}")
     return None
 
+
 def get_canister(
     canister_name: str,
     candid_path: Path,
