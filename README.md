@@ -54,4 +54,4 @@ More details are provided in the README of the sub-folders, which are standalone
 
 ## Support
 
-For support, kindly create a GitHub Issue as outlined in the [Support](https://icpp-pro.onicai.com/support.html) documentation page.
+For support, see the [Support](https://icpp-pro.onicai.com/support.html) documentation page.

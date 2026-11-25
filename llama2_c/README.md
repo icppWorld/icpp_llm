@@ -2,7 +2,7 @@
 
 # Try it out
 
-The 15M parameter model is the backend of [ICGPT](https://icgpt.onicai.com/).
+The 15M parameter model was the first backend of [ICGPT](https://icgpt.onicai.com/).
 
 # Getting Started
 
@@ -137,7 +137,7 @@ The 15M parameter model is the backend of [ICGPT](https://icgpt.onicai.com/).
 
 # Next steps
 
-You also will notice that using dfx to generate stories is not very user friendly. We created a little react frontend, available as an open source project: https://github.com/icppWorld/icgpt, and deployed to the IC as deployed as [ICGPT](https://icgpt.onicai.com/).
+You also will notice that using dfx to generate stories is not very user friendly. We created a little react frontend, available as an open source project: https://github.com/icppWorld/icgpt, and deployed to the IC as [ICGPT](https://icgpt.onicai.com/), which now runs other models.
 
 # llama2_260K
 
