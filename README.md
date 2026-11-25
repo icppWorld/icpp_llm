@@ -6,7 +6,7 @@
 
 Try it out in [ICGPT](https://icgpt.onicai.com) !
 
-_The LLMs of this repo run in it's back-end canisters._
+_The LLMs of this repo ran in its first back-end canisters. ICGPT now runs other models._
 
 # Getting Started
 
