@@ -2,11 +2,11 @@
 
 # Try it out
 
-The 15M parameter model is the backend of [ICGPT](https://icgpt.icpp.world/).
+The 15M parameter model was the first backend of [ICGPT](https://icgpt.onicai.com/).
 
 # Getting Started
 
-- Install the C++ development environment for the Internet Computer ([docs](https://docs.icpp.world/installation.html)):
+- Install the C++ development environment for the Internet Computer ([docs](https://icpp-pro.onicai.com/installation.html)):
 
   - Create a python environment. (We like MiniConda, but use whatever you like!)
     ```bash
@@ -137,7 +137,7 @@ The 15M parameter model is the backend of [ICGPT](https://icgpt.icpp.world/).
 
 # Next steps
 
-You also will notice that using dfx to generate stories is not very user friendly. We created a little react frontend, available as an open source project: https://github.com/icppWorld/icgpt, and deployed to the IC as deployed as [ICGPT](https://icgpt.icpp.world/).
+You also will notice that using dfx to generate stories is not very user friendly. We created a little react frontend, available as an open source project: https://github.com/icppWorld/icgpt, and deployed to the IC as [ICGPT](https://icgpt.onicai.com/), which now runs other models.
 
 # llama2_260K
 

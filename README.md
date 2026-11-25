@@ -4,9 +4,9 @@
 
 <img src="./assets/icpp-llm-logo.png" alt="icpp-llm logo" width="200">
 
-Try it out in [ICGPT](https://icgpt.icpp.world) !
+Try it out in [ICGPT](https://icgpt.onicai.com) !
 
-_The LLMs of this repo run in it's back-end canisters._
+_The LLMs of this repo ran in its first back-end canisters. ICGPT now runs other models._
 
 # Getting Started
 
@@ -41,7 +41,7 @@ We use MiniConda and run the QA locally like this:
   pip install -r requirements.txt
   ```
 
-- This installs icpp-pro. Next install wasi-sdk, dfx & clang++ as explained in [icpp-pro Installation](https://docs.icpp.world/installation.html)
+- This installs icpp-pro. Next install wasi-sdk, dfx & clang++ as explained in [icpp-pro Installation](https://icpp-pro.onicai.com/installation.html)
 
 - Run the full QA via the Makefile:
   ```bash
@@ -54,4 +54,4 @@ More details are provided in the README of the sub-folders, which are standalone
 
 ## Support
 
-For support, kindly create a GitHub Issue as outlined in the [Support](https://docs.icpp.world/support.html) documentation page.
+For support, see the [Support](https://icpp-pro.onicai.com/support.html) documentation page.
